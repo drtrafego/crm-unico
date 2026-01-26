@@ -38,15 +38,48 @@ async function checkPermissions(orgId: string) {
     const session = await auth();
     if (!session?.user?.id) throw new Error("Unauthorized");
 
+    // FIX: If the action is requested for a Legacy ID (e.g. bilder_agency_shared),
+    // we must check permissions against the ACTUAL authenticated Organization (Casal do Tráfego).
+    // The user is a member of 'Casal do Tráfego' (Client DB), not 'bilder_agency_shared' (Admin DB string).
+
+    let orgIdToCheck = orgId;
+    if (SUPER_ADMIN_DB_ORG_IDS.includes(orgId)) {
+        // Resolve to the ID of "Casal do Tráfego" in the Client DB
+        // We can fetch this dynamicall or, since we know we are in Super Admin context,
+        // we look for the org with slug 'admin' which is the auth anchor.
+        const adminOrg = await db.query.organizations.findFirst({
+            where: eq(organizations.slug, "admin"),
+            columns: { id: true }
+        });
+        if (adminOrg) {
+            orgIdToCheck = adminOrg.id;
+        }
+    }
+
     const member = await db.query.members.findFirst({
         where: and(
-            eq(members.organizationId, orgId),
+            eq(members.organizationId, orgIdToCheck),
             eq(members.userId, session.user.id)
         )
     });
 
-    if (!member) throw new Error("Not a member");
-    if (member.role === 'viewer') throw new Error("Permission denied");
+    if (!member) {
+        // Fallback: Try checking exact match if mapping failed
+        const exactMember = await db.query.members.findFirst({
+            where: and(
+                eq(members.organizationId, orgId),
+                eq(members.userId, session.user.id)
+            )
+        });
+        if (!exactMember) throw new Error(`Not a member (Checked: ${orgIdToCheck} & ${orgId})`);
+        // If exact match worked, use it
+        if (exactMember.role === 'viewer') throw new Error("Permission denied");
+        return exactMember;
+    }
+
+    if (member.role === 'viewer') {
+        throw new Error("Permission denied: Viewers cannot modify data");
+    }
 
     return member;
 }
