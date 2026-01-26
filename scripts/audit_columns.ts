@@ -56,10 +56,10 @@ async function audit() {
     const adminMap = organize(adminCols);
 
     // Compare
-    console.log("# 🔍 Relatório de Auditoria Completa\n");
+    console.log("# 🔍 Relatório de Auditoria de Schema\n");
     console.log(`Data: ${new Date().toLocaleString()}\n`);
 
-    const allTables = new Set([...clientMap.keys(), ...adminMap.keys()]);
+    const allTables = new Set([...Array.from(clientMap.keys()), ...Array.from(adminMap.keys())]);
     let hasIssues = false;
 
     console.log("## Resumo das Tabelas");
