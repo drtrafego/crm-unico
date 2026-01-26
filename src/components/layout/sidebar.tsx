@@ -20,7 +20,7 @@ export function Sidebar({ isCollapsed = false, toggle }: SidebarProps) {
   // If we are not in an org context (e.g. root or admin), don't show sidebar or show different one
   if (!orgSlug) {
     // Simple Admin Sidebar or Return Null
-    if (pathname?.startsWith('/admin')) {
+    if (pathname?.startsWith('/adm')) {
       return (
         <div className={cn(
           "border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 h-screen flex flex-col fixed left-0 top-0 z-10 transition-all duration-300",
@@ -127,14 +127,18 @@ export function Sidebar({ isCollapsed = false, toggle }: SidebarProps) {
 
       <div className="p-4 border-t border-slate-100 dark:border-slate-800">
         <div className="flex flex-col gap-2">
-          {!isCollapsed && (
-            <Link href="/adm/dashboard">
-              <Button variant="outline" className="w-full justify-start gap-2">
-                <LayoutDashboard className="!h-6 !w-6 min-w-[24px] shrink-0" />
-                Voltar p/ Admin
-              </Button>
-            </Link>
-          )}
+          <Link href="/adm/dashboard" title={isCollapsed ? "Voltar p/ Admin" : undefined}>
+            <Button
+              variant="outline"
+              className={cn(
+                "w-full justify-start gap-2 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-indigo-600 hover:border-indigo-100",
+                isCollapsed ? "justify-center px-0" : ""
+              )}
+            >
+              <LayoutDashboard className="!h-6 !w-6 min-w-[24px] shrink-0" />
+              {!isCollapsed && "Voltar p/ Admin"}
+            </Button>
+          </Link>
           <Button
             variant="ghost"
             className={cn("justify-start text-red-500 hover:text-red-600 hover:bg-red-50", isCollapsed ? "justify-center px-0 w-full" : "w-full gap-2")}

@@ -1,23 +1,24 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { cn } from "@/lib/utils";
+import { usePathname, useParams } from "next/navigation";
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
     const [isCollapsed, setIsCollapsed] = useState(false);
-    const [mounted, setMounted] = useState(false);
+    const pathname = usePathname();
+    const params = useParams();
+    const orgSlug = params?.orgSlug as string;
+
+    const showSidebar = !!orgSlug || pathname?.startsWith('/adm');
 
     useEffect(() => {
-        setMounted(true);
         const stored = localStorage.getItem("sidebar-collapsed");
         if (stored === "true") {
             setIsCollapsed(true);
-        } else {
-            // Default to collapsed on small screens if not strictly set
-            if (window.innerWidth < 1024) {
-                setIsCollapsed(true);
-            }
+        } else if (window.innerWidth < 1024) {
+            setIsCollapsed(true);
         }
 
         const handleResize = () => {
@@ -30,28 +31,21 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    const toggle = () => {
-        const newState = !isCollapsed;
-        setIsCollapsed(newState);
-        localStorage.setItem("sidebar-collapsed", String(newState));
-    };
-
-    // Prevent hydration mismatch by using a fixed initial state until mounted, 
-    // OR just accept that the first render might have margin-left-64.
-    // Ideally we use a layout effect or just render. 
-    // To avoid flicker we might want to default to expanded which is safer.
+    const toggle = useCallback(() => {
+        setIsCollapsed(prev => {
+            const newState = !prev;
+            localStorage.setItem("sidebar-collapsed", String(newState));
+            return newState;
+        });
+    }, []);
 
     return (
         <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950">
-            <Sidebar isCollapsed={isCollapsed} toggle={toggle} />
+            {showSidebar && <Sidebar isCollapsed={isCollapsed} toggle={toggle} />}
             <main
                 className={cn(
                     "flex-1 min-w-0 overflow-x-hidden transition-all duration-300 ease-in-out",
-                    isCollapsed ? "ml-16" : "ml-64",
-                    // on mobile, the sidebar might be hidden completely or fixed overlay?
-                    // The original code sidebar was fixed. 
-                    // "fixed left-0 top-0 h-screen"
-                    // So we just adjust the margin of the main content.
+                    showSidebar ? (isCollapsed ? "ml-16" : "ml-64") : "ml-0"
                 )}
             >
                 {children}

@@ -54,9 +54,9 @@ export default async function AdminDashboard() {
   }));
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
-      <div className="container mx-auto py-8 px-4 sm:px-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+    <div className="h-full bg-slate-50 dark:bg-slate-950 px-6 py-8">
+      <div className="max-w-7xl mx-auto space-y-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
               Painel Super Admin

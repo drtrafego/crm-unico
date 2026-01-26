@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { LayoutDashboard, Users } from "lucide-react";
+import { LayoutDashboard, LogOut } from "lucide-react";
+import { signOut } from "next-auth/react";
 
 export default function AdminLayout({
     children,
@@ -8,20 +9,31 @@ export default function AdminLayout({
     children: React.ReactNode;
 }) {
     return (
-        <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950">
-            <header className="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-6 py-3 flex items-center gap-4">
-                <h2 className="font-semibold text-slate-700 dark:text-slate-200 mr-4">Super Admin</h2>
-                <nav className="flex items-center gap-2">
-                    <Link href="/adm/dashboard">
-                        <Button variant="ghost" size="sm" className="gap-2">
-                            <LayoutDashboard className="h-4 w-4" />
-                            Gestão de Clientes
-                        </Button>
-                    </Link>
+        <div className="flex flex-col h-screen bg-slate-50 dark:bg-slate-950">
+            <header className="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-6 py-3 flex items-center justify-between sticky top-0 z-30 shadow-sm">
+                <div className="flex items-center gap-6">
+                    <h2 className="font-bold text-indigo-600 mr-2">Super Admin</h2>
+                    <nav className="flex items-center gap-1">
+                        <Link href="/adm/dashboard">
+                            <Button variant="ghost" size="sm" className="gap-2 text-slate-600 dark:text-slate-400">
+                                <LayoutDashboard className="h-4 w-4" />
+                                Gestão de Clientes
+                            </Button>
+                        </Link>
+                    </nav>
+                </div>
 
-                </nav>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-2 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10"
+                    onClick={() => signOut()}
+                >
+                    <LogOut className="h-4 w-4" />
+                    Sair
+                </Button>
             </header>
-            <main className="flex-1 overflow-hidden">
+            <main className="flex-1 overflow-y-auto">
                 {children}
             </main>
         </div>
