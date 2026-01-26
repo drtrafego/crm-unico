@@ -45,8 +45,6 @@ async function checkPermissions(orgId: string) {
     let orgIdToCheck = orgId;
     if (SUPER_ADMIN_DB_ORG_IDS.includes(orgId)) {
         // Resolve to the ID of "Casal do Tráfego" in the Client DB
-        // We can fetch this dynamicall or, since we know we are in Super Admin context,
-        // we look for the org with slug 'admin' which is the auth anchor.
         const adminOrg = await db.query.organizations.findFirst({
             where: eq(organizations.slug, "admin"),
             columns: { id: true }
@@ -72,7 +70,7 @@ async function checkPermissions(orgId: string) {
             )
         });
         if (!exactMember) throw new Error(`Not a member (Checked: ${orgIdToCheck} & ${orgId})`);
-        // If exact match worked, use it
+
         if (exactMember.role === 'viewer') throw new Error("Permission denied");
         return exactMember;
     }
@@ -136,7 +134,6 @@ export async function getLeads(orgId: string) {
     }
 
     // 2. VIRTUAL MAPPING for Super Admin
-    // We need to map leads from "Legacy IDs" to the "Primary ID" columns based on title matching.
 
     // Fetch all columns involved (Legacy + Primary)
     const allColumns = await targetDb.query.columns.findMany({
