@@ -1,15 +1,38 @@
 'use server'
 
-import { db } from "@/lib/db";
-import { leads, columns, leadHistory, members } from "@/server/db/schema";
+import { db, adminDb } from "@/lib/db";
+import { leads, columns, leadHistory, members, organizations } from "@/server/db/schema";
 import { eq, asc, desc, and, ne, lt, gt } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
+
+const SUPER_ADMIN_DB_ORG_ID = "super-admin-personal";
+
+// Helper to determine which DB and OrgID to use
+async function getContext(orgId: string) {
+    // Check if this is the "admin" organization (Casal do Tráfego)
+    const org = await db.query.organizations.findFirst({
+        where: eq(organizations.id, orgId),
+        columns: { slug: true }
+    });
+
+    const isSuperAdmin = org?.slug === "admin";
+
+    return {
+        // If super admin, use adminDb, otherwise client db
+        targetDb: isSuperAdmin ? adminDb : db,
+        // If super admin, use the fixed ID expected by that DB
+        targetOrgId: isSuperAdmin ? SUPER_ADMIN_DB_ORG_ID : orgId,
+        isSuperAdmin
+    };
+}
 
 async function checkPermissions(orgId: string) {
     const session = await auth();
     if (!session?.user?.id) throw new Error("Unauthorized");
 
+    // We always check permissions against the Client DB where 'members' and 'organizations' live
+    // This authenticates the user regardless of where the data lives
     const member = await db.query.members.findFirst({
         where: and(
             eq(members.organizationId, orgId),
@@ -33,12 +56,13 @@ async function logHistory(
     action: 'create' | 'move' | 'update',
     details: string,
     fromColumn?: string,
-    toColumn?: string
+    toColumn?: string,
+    contextDb: typeof db = db // Inject the correct DB
 ) {
     const session = await auth();
     const userId = session?.user?.id;
 
-    await db.insert(leadHistory).values({
+    await contextDb.insert(leadHistory).values({
         leadId,
         action,
         details,
@@ -49,9 +73,25 @@ async function logHistory(
 }
 
 export async function getLeadHistory(leadId: string) {
+    // This is tricky because we don't have orgId passed here usually.
+    // However, leadId should be unique UUID. We can try both or search primarily in one.
+    // Ideally, UI should pass orgId.
+    // HACK: Try finding lead in Client DB first, if not found (or if we know context), try Admin.
+    // Since we don't have orgId, checking both is safest but slower.
+
+    // Better approach: This action is called from UI which usually knows context. 
+    // But sticking to the signature:
+
     const history = await db.select().from(leadHistory)
         .where(eq(leadHistory.leadId, leadId))
         .orderBy(desc(leadHistory.createdAt));
+
+    if (history.length === 0) {
+        const adminHistory = await adminDb.select().from(leadHistory)
+            .where(eq(leadHistory.leadId, leadId))
+            .orderBy(desc(leadHistory.createdAt));
+        if (adminHistory.length > 0) return adminHistory;
+    }
 
     return history;
 }
@@ -59,9 +99,11 @@ export async function getLeadHistory(leadId: string) {
 // --- Refactored Actions for Multi-tenant ---
 
 export async function getColumns(orgId: string) {
+    const { targetDb, targetOrgId } = await getContext(orgId);
+
     // First, fetch all existing columns
-    const existing = await db.query.columns.findMany({
-        where: eq(columns.organizationId, orgId),
+    const existing = await targetDb.query.columns.findMany({
+        where: eq(columns.organizationId, targetOrgId),
         orderBy: [asc(columns.order)],
     });
 
@@ -70,10 +112,10 @@ export async function getColumns(orgId: string) {
 
     // 1. Handle empty state - Only initialize if NO columns exist
     if (existing.length === 0) {
-        const inserted = await db.insert(columns).values(
+        const inserted = await targetDb.insert(columns).values(
             expectedTitles.map((title, i) => ({
                 title,
-                organizationId: orgId,
+                organizationId: targetOrgId,
                 order: i
             }))
         ).returning();
@@ -86,42 +128,43 @@ export async function getColumns(orgId: string) {
 
 export async function deleteLead(id: string, orgId: string) {
     await checkPermissions(orgId);
-    await db.delete(leads).where(and(eq(leads.id, id), eq(leads.organizationId, orgId)));
-    revalidatePath(`/org/${orgId}/kanban`); // This path needs to be dynamic or handled by caller context
+    const { targetDb, targetOrgId } = await getContext(orgId);
+
+    await targetDb.delete(leads).where(and(eq(leads.id, id), eq(leads.organizationId, targetOrgId)));
+    revalidatePath(`/org/${orgId}/kanban`);
 }
 
 export async function getLeads(orgId: string) {
-    return await db.query.leads.findMany({
-        where: eq(leads.organizationId, orgId),
+    const { targetDb, targetOrgId } = await getContext(orgId);
+
+    return await targetDb.query.leads.findMany({
+        where: eq(leads.organizationId, targetOrgId),
         orderBy: [asc(leads.position), desc(leads.createdAt)],
     });
 }
 
 export async function updateLeadStatus(id: string, newColumnId: string, newPosition: number, orgId: string) {
     await checkPermissions(orgId);
-    console.log(`[Move] Lead: ${id} -> Col: ${newColumnId} (Pos: ${newPosition})`);
+    const { targetDb, targetOrgId } = await getContext(orgId);
+
+    console.log(`[Move] Lead: ${id} -> Col: ${newColumnId} (Pos: ${newPosition}) on Org: ${targetOrgId}`);
 
     try {
         // --- Logic for Response Time Metric ---
-        const lead = await db.query.leads.findFirst({
-            where: and(eq(leads.id, id), eq(leads.organizationId, orgId)),
+        const lead = await targetDb.query.leads.findFirst({
+            where: and(eq(leads.id, id), eq(leads.organizationId, targetOrgId)),
         });
 
         if (lead) {
-            // Check if moving FROM the first column (usually "New")
-            // We need to identify the "New" column. Assuming it's the one with order 0 or specific title.
-            // Better approach: Check if lead.status is changing from 'New' equivalent.
-            // Simplified logic: If firstContactAt is null and we are moving to a different column, set it.
             if (!lead.firstContactAt && newColumnId !== lead.columnId) {
-                await db.update(leads)
+                await targetDb.update(leads)
                     .set({ firstContactAt: new Date() })
                     .where(eq(leads.id, id));
             }
 
             // Log History if column changed
             if (newColumnId !== lead.columnId) {
-                // Fetch new column title for better logging (optional but nice)
-                const newCol = await db.query.columns.findFirst({
+                const newCol = await targetDb.query.columns.findFirst({
                     where: eq(columns.id, newColumnId)
                 });
 
@@ -130,18 +173,19 @@ export async function updateLeadStatus(id: string, newColumnId: string, newPosit
                     'move',
                     `Movido para ${newCol?.title || 'nova coluna'}`,
                     lead.columnId || undefined,
-                    newColumnId
+                    newColumnId,
+                    targetDb
                 );
             }
         }
         // --------------------------------------
 
-        await db.update(leads)
+        await targetDb.update(leads)
             .set({
                 columnId: newColumnId,
                 position: newPosition
             })
-            .where(and(eq(leads.id, id), eq(leads.organizationId, orgId)));
+            .where(and(eq(leads.id, id), eq(leads.organizationId, targetOrgId)));
 
         revalidatePath(`/org/${orgId}/kanban`);
         console.log(`[updateLeadStatus] Success`);
@@ -161,11 +205,13 @@ export async function createLead(formData: FormData, orgId: string) {
     const value = valueStr ? valueStr : null;
 
     await checkPermissions(orgId);
-    console.log(`[createLead] Creating lead for Org: ${orgId}`);
+    const { targetDb, targetOrgId } = await getContext(orgId);
+
+    console.log(`[createLead] Creating lead for Org: ${orgId} (Target: ${targetOrgId})`);
 
     // Get the first column to add the lead to
-    const firstColumn = await db.query.columns.findFirst({
-        where: eq(columns.organizationId, orgId),
+    const firstColumn = await targetDb.query.columns.findFirst({
+        where: eq(columns.organizationId, targetOrgId),
         orderBy: [asc(columns.order)],
     });
 
@@ -173,7 +219,7 @@ export async function createLead(formData: FormData, orgId: string) {
         throw new Error("No columns found");
     }
 
-    const [newLead] = await db.insert(leads).values({
+    const [newLead] = await targetDb.insert(leads).values({
         name,
         company,
         email,
@@ -182,23 +228,30 @@ export async function createLead(formData: FormData, orgId: string) {
         value,
         status: 'active',
         columnId: firstColumn.id,
-        organizationId: orgId,
+        organizationId: targetOrgId,
         position: 0, // Add to top
     }).returning();
 
-    await logHistory(newLead.id, 'create', `Lead criado em ${firstColumn.title}`, undefined, firstColumn.id);
+    await logHistory(newLead.id, 'create', `Lead criado em ${firstColumn.title}`, undefined, firstColumn.id, targetDb);
 
     revalidatePath(`/org/${orgId}/kanban`);
 }
 
 export async function createColumn(title: string, orgId: string) {
     await checkPermissions(orgId);
-    console.log(`[createColumn] Org: ${orgId} | Title: ${title}`);
-    const existingColumns = await getColumns(orgId);
+    const { targetDb, targetOrgId } = await getContext(orgId);
 
-    await db.insert(columns).values({
+    console.log(`[createColumn] Org: ${orgId} | Title: ${title}`);
+    const existingColumns = await getColumns(orgId); // reusing getColumns which handles context internally? 
+    // Wait, getColumns takes orgId and calculates context. 
+    // If we pass orgId, it works. But we need length.
+
+    // Optimization: we already pulled context. let's just count locally or call getColumns.
+    // Calling getColumns(orgId) is safe.
+
+    await targetDb.insert(columns).values({
         title,
-        organizationId: orgId,
+        organizationId: targetOrgId,
         order: existingColumns.length,
     });
 
@@ -207,23 +260,27 @@ export async function createColumn(title: string, orgId: string) {
 
 export async function updateColumn(id: string, title: string, orgId: string) {
     await checkPermissions(orgId);
+    const { targetDb, targetOrgId } = await getContext(orgId);
+
     console.log(`[updateColumn] Org: ${orgId} | Col: ${id} -> Title: ${title}`);
-    await db.update(columns)
+    await targetDb.update(columns)
         .set({ title })
-        .where(and(eq(columns.id, id), eq(columns.organizationId, orgId)));
+        .where(and(eq(columns.id, id), eq(columns.organizationId, targetOrgId)));
     revalidatePath(`/org/${orgId}/kanban`);
 }
 
 export async function updateColumnOrder(orderedIds: string[], orgId: string) {
     await checkPermissions(orgId);
+    const { targetDb, targetOrgId } = await getContext(orgId);
+
     console.log(`[updateColumnOrder] Org: ${orgId} | New Order:`, orderedIds);
 
     try {
         // Process updates sequentially
         for (let i = 0; i < orderedIds.length; i++) {
-            const result = await db.update(columns)
+            const result = await targetDb.update(columns)
                 .set({ order: i })
-                .where(and(eq(columns.id, orderedIds[i]), eq(columns.organizationId, orgId)))
+                .where(and(eq(columns.id, orderedIds[i]), eq(columns.organizationId, targetOrgId)))
                 .returning({ id: columns.id });
 
             if (result.length === 0) {
@@ -235,8 +292,8 @@ export async function updateColumnOrder(orderedIds: string[], orgId: string) {
         console.log(`[updateColumnOrder] Success`);
 
         // Fetch and return the verified new order
-        const updatedColumns = await db.query.columns.findMany({
-            where: eq(columns.organizationId, orgId),
+        const updatedColumns = await targetDb.query.columns.findMany({
+            where: eq(columns.organizationId, targetOrgId),
             orderBy: [asc(columns.order)],
         });
 
@@ -249,9 +306,10 @@ export async function updateColumnOrder(orderedIds: string[], orgId: string) {
 
 export async function deleteColumn(id: string, orgId: string) {
     await checkPermissions(orgId);
+    const { targetDb, targetOrgId } = await getContext(orgId);
 
     // Get the column being deleted to know its order
-    const columnToDelete = await db.query.columns.findFirst({
+    const columnToDelete = await targetDb.query.columns.findFirst({
         where: eq(columns.id, id)
     });
 
@@ -259,9 +317,9 @@ export async function deleteColumn(id: string, orgId: string) {
 
     // Find a fallback column:
     // 1. Try to find the immediate predecessor (order < deleted.order)
-    let fallbackCol = await db.query.columns.findFirst({
+    let fallbackCol = await targetDb.query.columns.findFirst({
         where: and(
-            eq(columns.organizationId, orgId),
+            eq(columns.organizationId, targetOrgId),
             ne(columns.id, id),
             lt(columns.order, columnToDelete.order) // Less than
         ),
@@ -270,9 +328,9 @@ export async function deleteColumn(id: string, orgId: string) {
 
     // 2. If no predecessor (was first column), find immediate successor
     if (!fallbackCol) {
-        fallbackCol = await db.query.columns.findFirst({
+        fallbackCol = await targetDb.query.columns.findFirst({
             where: and(
-                eq(columns.organizationId, orgId),
+                eq(columns.organizationId, targetOrgId),
                 ne(columns.id, id),
                 gt(columns.order, columnToDelete.order) // Greater than
             ),
@@ -285,21 +343,21 @@ export async function deleteColumn(id: string, orgId: string) {
     }
 
     // Move leads to the fallback column
-    await db.update(leads)
+    await targetDb.update(leads)
         .set({ columnId: fallbackCol.id })
         .where(eq(leads.columnId, id));
 
     // Delete the column
-    await db.delete(columns).where(and(eq(columns.id, id), eq(columns.organizationId, orgId)));
+    await targetDb.delete(columns).where(and(eq(columns.id, id), eq(columns.organizationId, targetOrgId)));
 
     // Reorder remaining columns to close the gap
-    const remainingColumns = await db.query.columns.findMany({
-        where: eq(columns.organizationId, orgId),
+    const remainingColumns = await targetDb.query.columns.findMany({
+        where: eq(columns.organizationId, targetOrgId),
         orderBy: [asc(columns.order)]
     });
 
     for (let i = 0; i < remainingColumns.length; i++) {
-        await db.update(columns)
+        await targetDb.update(columns)
             .set({ order: i })
             .where(eq(columns.id, remainingColumns[i].id));
     }
@@ -309,9 +367,9 @@ export async function deleteColumn(id: string, orgId: string) {
 
 export async function updateLeadContent(id: string, data: Partial<typeof leads.$inferInsert>, orgId: string) {
     await checkPermissions(orgId);
+    const { targetDb, targetOrgId } = await getContext(orgId);
+
     // Whitelist allowed fields to prevent accidental overwrites of critical data
-    // like columnId, position, organizationId, etc.
-    // Removed 'status' from whitelist to prevent any accidental status changes during edit
     const allowedFields: (keyof typeof leads.$inferInsert)[] = [
         'name',
         'company',
@@ -341,14 +399,11 @@ export async function updateLeadContent(id: string, data: Partial<typeof leads.$
         updatePayload.value = null;
     }
 
-    // If nothing to update, return early
-    // Note: We might still need to update columnId/position if passed, so check that later or check data keys
-
     console.log(`Updating lead content ${id} with payload:`, updatePayload);
 
     // Verify lead exists first (optional but good for debugging)
-    const existingLead = await db.query.leads.findFirst({
-        where: and(eq(leads.id, id), eq(leads.organizationId, orgId)),
+    const existingLead = await targetDb.query.leads.findFirst({
+        where: and(eq(leads.id, id), eq(leads.organizationId, targetOrgId)),
         columns: { id: true, columnId: true, position: true }
     });
 
@@ -358,15 +413,9 @@ export async function updateLeadContent(id: string, data: Partial<typeof leads.$
     }
 
     // Handle columnId and position
-    // If provided in data (from trusted client source context), use it.
-    // Otherwise, preserve existing DB value.
-    // This solves the race condition where client has moved the item (optimistic)
-    // but DB hasn't updated yet when edit happens.
     if (data.columnId !== undefined) {
-        console.log(`[updateLeadContent] Using provided columnId: ${data.columnId}`);
         updatePayload.columnId = data.columnId;
     } else {
-        console.log(`[updateLeadContent] Using existing DB columnId: ${existingLead.columnId}`);
         updatePayload.columnId = existingLead.columnId;
     }
 
@@ -376,16 +425,14 @@ export async function updateLeadContent(id: string, data: Partial<typeof leads.$
         updatePayload.position = existingLead.position;
     }
 
-    console.log(`Final update payload for lead ${id}:`, updatePayload);
-
-    await db.update(leads)
+    await targetDb.update(leads)
         .set(updatePayload)
-        .where(and(eq(leads.id, id), eq(leads.organizationId, orgId)));
+        .where(and(eq(leads.id, id), eq(leads.organizationId, targetOrgId)));
 
     // Log content update
     const changedFields = Object.keys(updatePayload).filter(k => k !== 'columnId' && k !== 'position');
     if (changedFields.length > 0) {
-        await logHistory(id, 'update', `Atualizou: ${changedFields.join(', ')}`);
+        await logHistory(id, 'update', `Atualizou: ${changedFields.join(', ')}`, undefined, undefined, targetDb);
     }
 
     revalidatePath(`/org/${orgId}/kanban`);
