@@ -70,7 +70,6 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
 
     // --- Data Processing & Metrics ---
     const {
-        filteredLeads,
         interactiveLeads,
         kpis,
         charts,
