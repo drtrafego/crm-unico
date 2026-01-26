@@ -432,10 +432,10 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                                 <div className="mt-6 flex flex-col gap-2">
                                     <div className="flex justify-between text-[10px]">
                                         <span className="text-slate-500 uppercase">Com Observação</span>
-                                        <span className="text-indigo-400 font-bold">{Math.round((insights.sentimentStats.notesCount / (totalLeadsCount || 1)) * 100)}%</span>
+                                        <span className="text-indigo-400 font-bold">{Math.round((insights.sentimentStats.notesCount / (kpis.totalLeads || 1)) * 100)}%</span>
                                     </div>
                                     <div className="h-1.5 w-full bg-slate-900 rounded-full overflow-hidden">
-                                        <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${(insights.sentimentStats.notesCount / (totalLeadsCount || 1)) * 100}%` }} />
+                                        <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${(insights.sentimentStats.notesCount / (kpis.totalLeads || 1)) * 100}%` }} />
                                     </div>
                                 </div>
                             </div>
