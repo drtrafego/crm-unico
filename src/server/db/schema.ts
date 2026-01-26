@@ -126,6 +126,7 @@ export const leads = pgTable("leads", {
   utmSource: text("utm_source"),
   utmMedium: text("utm_medium"),
   utmCampaign: text("utm_campaign"),
+  pagePath: text("page_path"),
 });
 
 export const settings = pgTable("settings", {
