@@ -51,7 +51,7 @@ export async function GET() {
 
         return NextResponse.json({ success: true, org, member: member || "Created" });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error(error);
         return NextResponse.json({ error: error.message }, { status: 500 });
     }

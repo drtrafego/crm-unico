@@ -69,7 +69,7 @@ async function main() {
             .set({ id: TARGET_ID })
             .where(eq(organizations.id, OLD_ID));
         console.log("✅ Updated Organization ID.");
-    } catch (err) {
+    } catch (err: any) {
         console.error("Could not update Org ID directly (Constraint?):", err.message);
         // Fallback: Create new, move data, delete old
         const existingTarget = await db.select().from(organizations).where(eq(organizations.id, TARGET_ID));

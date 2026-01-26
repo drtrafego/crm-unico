@@ -29,7 +29,7 @@ async function main() {
     }
 }
 
-async function checkDB(label, connectionString, imports) {
+async function checkDB(label: string, connectionString: string, imports: any) {
     const { neon, drizzle, organizations, leads, members, users } = imports;
 
     if (connectionString.startsWith('"')) connectionString = connectionString.slice(1, -1);
@@ -41,14 +41,14 @@ async function checkDB(label, connectionString, imports) {
     // 1. List Organizations
     const orgs = await db.select().from(organizations);
     console.log(`\nOrganizations Found: ${orgs.length}`);
-    orgs.forEach(o => console.log(` - [${o.id}] "${o.name}" (Slug: ${o.slug})`));
+    orgs.forEach((o: any) => console.log(` - [${o.id}] "${o.name}" (Slug: ${o.slug})`));
 
     // 2. Count Leads per Org
     const allLeads = await db.select().from(leads);
     console.log(`\nTotal Leads Found: ${allLeads.length}`);
 
-    const leadsByOrg = {};
-    allLeads.forEach(l => {
+    const leadsByOrg: Record<string, number> = {};
+    allLeads.forEach((l: any) => {
         const oid = l.organizationId || "NULL";
         leadsByOrg[oid] = (leadsByOrg[oid] || 0) + 1;
     });
@@ -59,7 +59,7 @@ async function checkDB(label, connectionString, imports) {
 
     // 3. Check specific hardcoded ID
     const superAdminID = "super-admin-personal";
-    const superOrg = orgs.find(o => o.id === superAdminID);
+    const superOrg = orgs.find((o: any) => o.id === superAdminID);
     if (!superOrg) {
         console.warn(`\n⚠️  The hardcoded ID '${superAdminID}' used in code does NOT exist in organizations table.`);
     } else {

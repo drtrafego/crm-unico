@@ -128,7 +128,7 @@ export function Sidebar({ isCollapsed = false, toggle }: SidebarProps) {
       <div className="p-4 border-t border-slate-100 dark:border-slate-800">
         <div className="flex flex-col gap-2">
           {!isCollapsed && (
-            <Link href="/admin/dashboard">
+            <Link href="/adm">
               <Button variant="outline" className="w-full justify-start gap-2">
                 <LayoutDashboard className="!h-6 !w-6 min-w-[24px] shrink-0" />
                 Voltar p/ Admin
