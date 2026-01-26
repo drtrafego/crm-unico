@@ -260,7 +260,7 @@ export function Board({ columns: initialColumns, initialLeads, onLeadsChange, or
             </span>
           </div>
         )}
-        <div className="flex gap-4 h-full overflow-auto p-4 items-start">
+        <div className="flex gap-4 h-full overflow-x-auto overflow-y-hidden px-4 pt-2 pb-2 items-start custom-scrollbar">
           <SortableContext items={columnsId} strategy={horizontalListSortingStrategy}>
             {columns.map((col) => (
               <Column
