@@ -90,7 +90,7 @@ export function Column({ column, leads, orgId, overrides }: ColumnProps) {
       ref={setNodeRef}
       style={style}
       className={cn(
-        "w-[300px] min-w-[300px] flex flex-col h-full max-h-full bg-slate-100/80 dark:bg-slate-800/50 rounded-xl border border-slate-200/60 dark:border-slate-700/50",
+        "w-[300px] min-w-[300px] flex flex-col bg-slate-100/80 dark:bg-slate-800/50 rounded-xl border border-slate-200/60 dark:border-slate-700/50",
         isDeleting && "opacity-50 pointer-events-none"
       )}
     >
@@ -159,7 +159,7 @@ export function Column({ column, leads, orgId, overrides }: ColumnProps) {
       </div>
 
       {/* Cards Area */}
-      <div className="flex-1 p-2 overflow-y-auto custom-scrollbar min-h-0">
+      <div className="p-2">
         <div className="min-h-[50px]">
           <SortableContext items={leadsIds} strategy={verticalListSortingStrategy}>
             <div className="flex flex-col gap-3 pb-2">

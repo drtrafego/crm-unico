@@ -30,7 +30,7 @@ export default async function CRMPage({
   ]);
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+    <div className="flex-1 flex flex-col min-h-0 h-full">
       <CrmView
         initialLeads={leads}
         columns={columns}

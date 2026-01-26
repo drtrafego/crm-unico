@@ -250,7 +250,7 @@ export function Board({ columns: initialColumns, initialLeads, onLeadsChange, or
       onDragOver={onDragOver}
       onDragEnd={onDragEnd}
     >
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col">
         {lastError && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded relative mb-2 mx-4" role="alert">
             <strong className="font-bold">Erro! </strong>
@@ -260,7 +260,7 @@ export function Board({ columns: initialColumns, initialLeads, onLeadsChange, or
             </span>
           </div>
         )}
-        <div className="flex gap-4 h-full overflow-x-auto overflow-y-hidden px-4 pt-4 pb-0 items-start custom-scrollbar">
+        <div className="flex gap-4 overflow-x-auto overflow-y-hidden px-4 pt-4 pb-4 items-start custom-scrollbar">
           <SortableContext items={columnsId} strategy={horizontalListSortingStrategy}>
             {columns.map((col) => (
               <Column
