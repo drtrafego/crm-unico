@@ -1,45 +1,38 @@
 
-import { db } from "@/lib/db";
-import { organizations, leads, leadHistory } from "@/server/db/schema";
-import { count, eq, desc, sql } from "drizzle-orm";
+import { db, adminDb } from "@/lib/db";
+import { sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 export async function GET() {
     try {
-        const orgs = await db.query.organizations.findMany();
+        const getColumns = async (database: any, dbName: string) => {
+            return await database.execute(sql`
+                SELECT column_name, data_type 
+                FROM information_schema.columns 
+                WHERE table_name = 'leads' 
+                AND table_schema = 'public'
+                ORDER BY column_name;
+            `);
+        };
 
-        const orgStats = await Promise.all(orgs.map(async (org) => {
-            const leadCount = await db
-                .select({ count: count() })
-                .from(leads)
-                .where(eq(leads.organizationId, org.id));
-
-            const historyCount = await db
-                .select({ count: count() })
-                .from(leadHistory)
-                .leftJoin(leads, eq(leadHistory.leadId, leads.id))
-                .where(eq(leads.organizationId, org.id));
-
-            return {
-                id: org.id,
-                name: org.name,
-                slug: org.slug,
-                leadCount: leadCount[0].count,
-                historyCount: historyCount[0]?.count || 0
-            };
-        }));
-
-        // Raw SQL to list public tables
-        const tableListResult = await db.execute(sql`SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name`);
+        const clientColumns = await getColumns(db, 'Client DB');
+        const adminColumns = await getColumns(adminDb, 'Admin DB');
 
         return NextResponse.json({
-            message: "Debug Info v2",
-            environment: process.env.NODE_ENV,
-            tables: tableListResult.rows,
-            organizations: orgStats
+            message: "Schema Comparison",
+            client_db_leads_columns: clientColumns.rows,
+            admin_db_leads_columns: adminColumns.rows,
+            diff: {
+                missing_in_admin: clientColumns.rows.filter((c: any) =>
+                    !adminColumns.rows.some((a: any) => a.column_name === c.column_name)
+                ),
+                missing_in_client: adminColumns.rows.filter((a: any) =>
+                    !clientColumns.rows.some((c: any) => c.column_name === a.column_name)
+                )
+            }
         }, { status: 200 });
 
     } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: error.message, stack: error.stack }, { status: 500 });
     }
 }
