@@ -13,7 +13,7 @@ export function KPI({
 }: {
     value: string | number,
     label: string,
-    icon: any,
+    icon: LucideIcon,
     color: string,
     iconBg?: string
 }) {
