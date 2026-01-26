@@ -203,7 +203,7 @@ export function CrmView({ initialLeads, columns, companyName, initialViewMode, o
   }, [totalLeads, wonLeads]);
 
   return (
-    <div className="flex flex-col gap-3 px-2 sm:px-0">
+    <div className="flex flex-col gap-3 px-2 sm:px-0 h-full">
       <CompanyOnboarding hasCompanyName={!!companyName} orgId={orgId} />
       {/* Header & Controls - Compacted */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
