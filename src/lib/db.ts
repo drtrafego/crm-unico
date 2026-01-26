@@ -10,7 +10,7 @@ if (!process.env.DATABASE_URL && process.env.NODE_ENV !== "production") {
     console.warn("⚠️ DATABASE_URL is not defined");
 }
 
-const sql = neon(connectionString);
+const sql = neon(connectionString, { fetchOptions: { cache: 'no-store' } });
 export const db = drizzle(sql, { schema });
 
 // Secondary connection for Super Admin personal CRM
@@ -20,5 +20,5 @@ if (!process.env.ADMIN_DATABASE_URL && process.env.NODE_ENV !== "production") {
     console.warn("⚠️ ADMIN_DATABASE_URL is not defined, falling back to DATABASE_URL or mock");
 }
 
-const adminSql = neon(adminConnectionString);
+const adminSql = neon(adminConnectionString, { fetchOptions: { cache: 'no-store' } });
 export const adminDb = drizzle(adminSql, { schema });

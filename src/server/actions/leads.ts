@@ -1,8 +1,8 @@
 'use server'
 
 import { db } from "@/lib/db";
-import { leads, columns, organizations, leadHistory, members } from "@/server/db/schema";
-import { eq, asc, desc, and, ne, lt, gt, inArray } from "drizzle-orm";
+import { leads, columns, leadHistory, members } from "@/server/db/schema";
+import { eq, asc, desc, and, ne, lt, gt } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 
@@ -143,7 +143,7 @@ export async function updateLeadStatus(id: string, newColumnId: string, newPosit
             })
             .where(and(eq(leads.id, id), eq(leads.organizationId, orgId)));
 
-        // revalidatePath('/dashboard/crm'); // TODO: Fix revalidation path
+        revalidatePath(`/org/${orgId}/kanban`);
         console.log(`[updateLeadStatus] Success`);
     } catch (error) {
         console.error("[updateLeadStatus] Error:", error);
@@ -188,7 +188,7 @@ export async function createLead(formData: FormData, orgId: string) {
 
     await logHistory(newLead.id, 'create', `Lead criado em ${firstColumn.title}`, undefined, firstColumn.id);
 
-    // revalidatePath('/dashboard/crm');
+    revalidatePath(`/org/${orgId}/kanban`);
 }
 
 export async function createColumn(title: string, orgId: string) {
@@ -202,7 +202,7 @@ export async function createColumn(title: string, orgId: string) {
         order: existingColumns.length,
     });
 
-    // revalidatePath('/dashboard/crm');
+    revalidatePath(`/org/${orgId}/kanban`);
 }
 
 export async function updateColumn(id: string, title: string, orgId: string) {
@@ -211,7 +211,7 @@ export async function updateColumn(id: string, title: string, orgId: string) {
     await db.update(columns)
         .set({ title })
         .where(and(eq(columns.id, id), eq(columns.organizationId, orgId)));
-    // revalidatePath('/dashboard/crm');
+    revalidatePath(`/org/${orgId}/kanban`);
 }
 
 export async function updateColumnOrder(orderedIds: string[], orgId: string) {
@@ -231,7 +231,7 @@ export async function updateColumnOrder(orderedIds: string[], orgId: string) {
             }
         }
 
-        // revalidatePath('/dashboard/crm');
+        revalidatePath(`/org/${orgId}/kanban`);
         console.log(`[updateColumnOrder] Success`);
 
         // Fetch and return the verified new order
@@ -304,7 +304,7 @@ export async function deleteColumn(id: string, orgId: string) {
             .where(eq(columns.id, remainingColumns[i].id));
     }
 
-    // revalidatePath('/dashboard/crm');
+    revalidatePath(`/org/${orgId}/kanban`);
 }
 
 export async function updateLeadContent(id: string, data: Partial<typeof leads.$inferInsert>, orgId: string) {
@@ -329,7 +329,7 @@ export async function updateLeadContent(id: string, data: Partial<typeof leads.$
     // Only copy allowed fields
     for (const key of allowedFields) {
         if (data[key] !== undefined) {
-            // @ts-ignore - dynamic assignment
+            // @ts-expect-error - dynamic assignment
             updatePayload[key] = data[key];
         }
     }
@@ -388,5 +388,5 @@ export async function updateLeadContent(id: string, data: Partial<typeof leads.$
         await logHistory(id, 'update', `Atualizou: ${changedFields.join(', ')}`);
     }
 
-    // revalidatePath('/dashboard/crm');
+    revalidatePath(`/org/${orgId}/kanban`);
 }

@@ -29,7 +29,7 @@ export async function getSettings(orgId: string) {
 
   // Update email if it's missing in DB but we have it now
   if (!existing.email && email) {
-      await db.update(settings).set({ email }).where(eq(settings.id, existing.id));
+    await db.update(settings).set({ email }).where(eq(settings.id, existing.id));
   }
 
   return existing;
@@ -37,24 +37,24 @@ export async function getSettings(orgId: string) {
 
 export async function updateCompanyName(name: string, orgId: string) {
   const existing = await getSettings(orgId); // This will now ensure creation
-  
+
   if (existing) {
     await db.update(settings)
       .set({ companyName: name })
       .where(eq(settings.id, existing.id));
   }
-  
-  // revalidatePath('/dashboard/crm');
+
+  revalidatePath(`/org/${orgId}/settings`);
 }
 
 export async function updateViewMode(viewMode: string, orgId: string) {
-    const existing = await getSettings(orgId); // Ensure existence
+  const existing = await getSettings(orgId); // Ensure existence
 
-    if (existing) {
-        await db.update(settings)
-            .set({ viewMode })
-            .where(eq(settings.id, existing.id));
-    }
-    // revalidatePath('/dashboard/crm');
+  if (existing) {
+    await db.update(settings)
+      .set({ viewMode })
+      .where(eq(settings.id, existing.id));
+  }
+  revalidatePath(`/org/${orgId}/settings`);
 }
 
