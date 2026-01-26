@@ -186,7 +186,9 @@ export async function updateColumnOrder(orderedIds: string[], orgId: string) {
             .where(and(eq(columns.id, orderedIds[i]), eq(columns.organizationId, primaryOrgId)));
     }
     revalidatePath(`/org/${orgId}/kanban`);
-    return { success: true };
+
+    const updatedColumns = await getColumns(orgId);
+    return { success: true, columns: updatedColumns };
 }
 
 export async function deleteColumn(id: string, orgId: string) {
