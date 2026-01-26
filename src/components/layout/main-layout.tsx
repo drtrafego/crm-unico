@@ -44,7 +44,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             {showSidebar && <Sidebar isCollapsed={isCollapsed} toggle={toggle} />}
             <main
                 className={cn(
-                    "flex-1 min-w-0 flex flex-col overflow-x-hidden transition-all duration-300 ease-in-out",
+                    "flex-1 min-w-0 flex flex-col overflow-y-auto custom-scrollbar transition-all duration-300 ease-in-out",
                     showSidebar ? (isCollapsed ? "ml-16" : "ml-64") : "ml-0"
                 )}
             >
