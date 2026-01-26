@@ -2,13 +2,14 @@
 
 import { db, adminDb } from "@/lib/db";
 import { leads, columns, leadHistory, members, organizations } from "@/server/db/schema";
-import { eq, asc, desc, and, ne, lt, gt } from "drizzle-orm";
+import { eq, asc, desc, and, ne, lt, gt, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 
-const SUPER_ADMIN_DB_ORG_ID = "super-admin-personal";
+// Added both IDs provided by the user
+const SUPER_ADMIN_DB_ORG_IDS = ["bilder_agency_shared", "5026ab39-9cd0-4dde-ba5a-dcf4f51612d5"];
 
-// Helper to determine which DB and OrgID to use
+// Helper to determine which DB and OrgIDs to use
 async function getContext(orgId: string) {
     // Check if this is the "admin" organization (Casal do Tráfego)
     const org = await db.query.organizations.findFirst({
@@ -21,8 +22,8 @@ async function getContext(orgId: string) {
     return {
         // If super admin, use adminDb, otherwise client db
         targetDb: isSuperAdmin ? adminDb : db,
-        // If super admin, use the fixed ID expected by that DB
-        targetOrgId: isSuperAdmin ? SUPER_ADMIN_DB_ORG_ID : orgId,
+        // If super admin, use the mapped IDs. Otherwise usage the single orgId (wrapped in array for consistency)
+        targetOrgIds: isSuperAdmin ? SUPER_ADMIN_DB_ORG_IDS : [orgId],
         isSuperAdmin
     };
 }
@@ -75,14 +76,8 @@ async function logHistory(
 export async function getLeadHistory(leadId: string) {
     // This is tricky because we don't have orgId passed here usually.
     // However, leadId should be unique UUID. We can try both or search primarily in one.
-    // Ideally, UI should pass orgId.
-    // HACK: Try finding lead in Client DB first, if not found (or if we know context), try Admin.
-    // Since we don't have orgId, checking both is safest but slower.
 
-    // Better approach: This action is called from UI which usually knows context. 
-    // But sticking to the signature:
-
-    const history = await db.select().from(leadHistory)
+    let history = await db.select().from(leadHistory)
         .where(eq(leadHistory.leadId, leadId))
         .orderBy(desc(leadHistory.createdAt));
 
@@ -99,23 +94,24 @@ export async function getLeadHistory(leadId: string) {
 // --- Refactored Actions for Multi-tenant ---
 
 export async function getColumns(orgId: string) {
-    const { targetDb, targetOrgId } = await getContext(orgId);
+    const { targetDb, targetOrgIds } = await getContext(orgId);
 
-    // First, fetch all existing columns
+    // Fetch existing columns matching ANY of the target IDs
     const existing = await targetDb.query.columns.findMany({
-        where: eq(columns.organizationId, targetOrgId),
+        where: inArray(columns.organizationId, targetOrgIds),
         orderBy: [asc(columns.order)],
     });
 
-    // Define the expected standard columns
     const expectedTitles = ["Novos Leads", "Em Contato", "Não Retornou", "Proposta Enviada", "Fechado", "Perdido"];
 
     // 1. Handle empty state - Only initialize if NO columns exist
     if (existing.length === 0) {
+        // Create columns for the FIRST target ID (primary) as default
+        const primaryId = targetOrgIds[0];
         const inserted = await targetDb.insert(columns).values(
             expectedTitles.map((title, i) => ({
                 title,
-                organizationId: targetOrgId,
+                organizationId: primaryId,
                 order: i
             }))
         ).returning();
@@ -128,31 +124,30 @@ export async function getColumns(orgId: string) {
 
 export async function deleteLead(id: string, orgId: string) {
     await checkPermissions(orgId);
-    const { targetDb, targetOrgId } = await getContext(orgId);
+    const { targetDb, targetOrgIds } = await getContext(orgId);
 
-    await targetDb.delete(leads).where(and(eq(leads.id, id), eq(leads.organizationId, targetOrgId)));
+    await targetDb.delete(leads).where(and(eq(leads.id, id), inArray(leads.organizationId, targetOrgIds)));
     revalidatePath(`/org/${orgId}/kanban`);
 }
 
 export async function getLeads(orgId: string) {
-    const { targetDb, targetOrgId } = await getContext(orgId);
+    const { targetDb, targetOrgIds } = await getContext(orgId);
 
     return await targetDb.query.leads.findMany({
-        where: eq(leads.organizationId, targetOrgId),
+        where: inArray(leads.organizationId, targetOrgIds),
         orderBy: [asc(leads.position), desc(leads.createdAt)],
     });
 }
 
 export async function updateLeadStatus(id: string, newColumnId: string, newPosition: number, orgId: string) {
     await checkPermissions(orgId);
-    const { targetDb, targetOrgId } = await getContext(orgId);
+    const { targetDb, targetOrgIds } = await getContext(orgId);
 
-    console.log(`[Move] Lead: ${id} -> Col: ${newColumnId} (Pos: ${newPosition}) on Org: ${targetOrgId}`);
+    console.log(`[Move] Lead: ${id} -> Col: ${newColumnId} (Pos: ${newPosition}) on Orgs: ${targetOrgIds.join(', ')}`);
 
     try {
-        // --- Logic for Response Time Metric ---
         const lead = await targetDb.query.leads.findFirst({
-            where: and(eq(leads.id, id), eq(leads.organizationId, targetOrgId)),
+            where: and(eq(leads.id, id), inArray(leads.organizationId, targetOrgIds)),
         });
 
         if (lead) {
@@ -178,14 +173,13 @@ export async function updateLeadStatus(id: string, newColumnId: string, newPosit
                 );
             }
         }
-        // --------------------------------------
 
         await targetDb.update(leads)
             .set({
                 columnId: newColumnId,
                 position: newPosition
             })
-            .where(and(eq(leads.id, id), eq(leads.organizationId, targetOrgId)));
+            .where(and(eq(leads.id, id), inArray(leads.organizationId, targetOrgIds)));
 
         revalidatePath(`/org/${orgId}/kanban`);
         console.log(`[updateLeadStatus] Success`);
@@ -205,13 +199,16 @@ export async function createLead(formData: FormData, orgId: string) {
     const value = valueStr ? valueStr : null;
 
     await checkPermissions(orgId);
-    const { targetDb, targetOrgId } = await getContext(orgId);
+    const { targetDb, targetOrgIds } = await getContext(orgId);
 
-    console.log(`[createLead] Creating lead for Org: ${orgId} (Target: ${targetOrgId})`);
+    // Always use the first ID for new creations to maintain consistency
+    const primaryOrgId = targetOrgIds[0];
+
+    console.log(`[createLead] Creating lead for Org: ${orgId} (Target Primary: ${primaryOrgId})`);
 
     // Get the first column to add the lead to
     const firstColumn = await targetDb.query.columns.findFirst({
-        where: eq(columns.organizationId, targetOrgId),
+        where: inArray(columns.organizationId, targetOrgIds),
         orderBy: [asc(columns.order)],
     });
 
@@ -228,7 +225,7 @@ export async function createLead(formData: FormData, orgId: string) {
         value,
         status: 'active',
         columnId: firstColumn.id,
-        organizationId: targetOrgId,
+        organizationId: primaryOrgId,
         position: 0, // Add to top
     }).returning();
 
@@ -239,19 +236,15 @@ export async function createLead(formData: FormData, orgId: string) {
 
 export async function createColumn(title: string, orgId: string) {
     await checkPermissions(orgId);
-    const { targetDb, targetOrgId } = await getContext(orgId);
+    const { targetDb, targetOrgIds } = await getContext(orgId);
+    const primaryOrgId = targetOrgIds[0];
 
     console.log(`[createColumn] Org: ${orgId} | Title: ${title}`);
-    const existingColumns = await getColumns(orgId); // reusing getColumns which handles context internally? 
-    // Wait, getColumns takes orgId and calculates context. 
-    // If we pass orgId, it works. But we need length.
-
-    // Optimization: we already pulled context. let's just count locally or call getColumns.
-    // Calling getColumns(orgId) is safe.
+    const existingColumns = await getColumns(orgId); // Uses the new getColumns logic
 
     await targetDb.insert(columns).values({
         title,
-        organizationId: targetOrgId,
+        organizationId: primaryOrgId,
         order: existingColumns.length,
     });
 
@@ -260,18 +253,18 @@ export async function createColumn(title: string, orgId: string) {
 
 export async function updateColumn(id: string, title: string, orgId: string) {
     await checkPermissions(orgId);
-    const { targetDb, targetOrgId } = await getContext(orgId);
+    const { targetDb, targetOrgIds } = await getContext(orgId);
 
     console.log(`[updateColumn] Org: ${orgId} | Col: ${id} -> Title: ${title}`);
     await targetDb.update(columns)
         .set({ title })
-        .where(and(eq(columns.id, id), eq(columns.organizationId, targetOrgId)));
+        .where(and(eq(columns.id, id), inArray(columns.organizationId, targetOrgIds)));
     revalidatePath(`/org/${orgId}/kanban`);
 }
 
 export async function updateColumnOrder(orderedIds: string[], orgId: string) {
     await checkPermissions(orgId);
-    const { targetDb, targetOrgId } = await getContext(orgId);
+    const { targetDb, targetOrgIds } = await getContext(orgId);
 
     console.log(`[updateColumnOrder] Org: ${orgId} | New Order:`, orderedIds);
 
@@ -280,7 +273,8 @@ export async function updateColumnOrder(orderedIds: string[], orgId: string) {
         for (let i = 0; i < orderedIds.length; i++) {
             const result = await targetDb.update(columns)
                 .set({ order: i })
-                .where(and(eq(columns.id, orderedIds[i]), eq(columns.organizationId, targetOrgId)))
+                // Match against ANY of the valid Org IDs
+                .where(and(eq(columns.id, orderedIds[i]), inArray(columns.organizationId, targetOrgIds)))
                 .returning({ id: columns.id });
 
             if (result.length === 0) {
@@ -291,9 +285,8 @@ export async function updateColumnOrder(orderedIds: string[], orgId: string) {
         revalidatePath(`/org/${orgId}/kanban`);
         console.log(`[updateColumnOrder] Success`);
 
-        // Fetch and return the verified new order
         const updatedColumns = await targetDb.query.columns.findMany({
-            where: eq(columns.organizationId, targetOrgId),
+            where: inArray(columns.organizationId, targetOrgIds),
             orderBy: [asc(columns.order)],
         });
 
@@ -306,7 +299,7 @@ export async function updateColumnOrder(orderedIds: string[], orgId: string) {
 
 export async function deleteColumn(id: string, orgId: string) {
     await checkPermissions(orgId);
-    const { targetDb, targetOrgId } = await getContext(orgId);
+    const { targetDb, targetOrgIds } = await getContext(orgId);
 
     // Get the column being deleted to know its order
     const columnToDelete = await targetDb.query.columns.findFirst({
@@ -315,26 +308,24 @@ export async function deleteColumn(id: string, orgId: string) {
 
     if (!columnToDelete) return; // Already deleted
 
-    // Find a fallback column:
-    // 1. Try to find the immediate predecessor (order < deleted.order)
+    // Find a fallback column
     let fallbackCol = await targetDb.query.columns.findFirst({
         where: and(
-            eq(columns.organizationId, targetOrgId),
+            inArray(columns.organizationId, targetOrgIds),
             ne(columns.id, id),
             lt(columns.order, columnToDelete.order) // Less than
         ),
-        orderBy: [desc(columns.order)] // Highest order less than current (closest predecessor)
+        orderBy: [desc(columns.order)]
     });
 
-    // 2. If no predecessor (was first column), find immediate successor
     if (!fallbackCol) {
         fallbackCol = await targetDb.query.columns.findFirst({
             where: and(
-                eq(columns.organizationId, targetOrgId),
+                inArray(columns.organizationId, targetOrgIds),
                 ne(columns.id, id),
                 gt(columns.order, columnToDelete.order) // Greater than
             ),
-            orderBy: [asc(columns.order)] // Lowest order greater than current
+            orderBy: [asc(columns.order)]
         });
     }
 
@@ -348,11 +339,11 @@ export async function deleteColumn(id: string, orgId: string) {
         .where(eq(leads.columnId, id));
 
     // Delete the column
-    await targetDb.delete(columns).where(and(eq(columns.id, id), eq(columns.organizationId, targetOrgId)));
+    await targetDb.delete(columns).where(and(eq(columns.id, id), inArray(columns.organizationId, targetOrgIds)));
 
-    // Reorder remaining columns to close the gap
+    // Reorder remaining columns
     const remainingColumns = await targetDb.query.columns.findMany({
-        where: eq(columns.organizationId, targetOrgId),
+        where: inArray(columns.organizationId, targetOrgIds),
         orderBy: [asc(columns.order)]
     });
 
@@ -367,24 +358,15 @@ export async function deleteColumn(id: string, orgId: string) {
 
 export async function updateLeadContent(id: string, data: Partial<typeof leads.$inferInsert>, orgId: string) {
     await checkPermissions(orgId);
-    const { targetDb, targetOrgId } = await getContext(orgId);
+    const { targetDb, targetOrgIds } = await getContext(orgId);
 
-    // Whitelist allowed fields to prevent accidental overwrites of critical data
     const allowedFields: (keyof typeof leads.$inferInsert)[] = [
-        'name',
-        'company',
-        'email',
-        'whatsapp',
-        'notes',
-        'value',
-        'campaignSource',
-        'followUpDate',
-        'followUpNote'
+        'name', 'company', 'email', 'whatsapp', 'notes', 'value',
+        'campaignSource', 'followUpDate', 'followUpNote'
     ];
 
     const updatePayload: Partial<typeof leads.$inferInsert> = {};
 
-    // Only copy allowed fields
     for (const key of allowedFields) {
         if (data[key] !== undefined) {
             // @ts-expect-error - dynamic assignment
@@ -392,7 +374,6 @@ export async function updateLeadContent(id: string, data: Partial<typeof leads.$
         }
     }
 
-    // Handle empty strings or whitespace for value
     if (typeof updatePayload.value === 'string' && updatePayload.value.trim() === '') {
         updatePayload.value = null;
     } else if (updatePayload.value === "") {
@@ -401,9 +382,8 @@ export async function updateLeadContent(id: string, data: Partial<typeof leads.$
 
     console.log(`Updating lead content ${id} with payload:`, updatePayload);
 
-    // Verify lead exists first (optional but good for debugging)
     const existingLead = await targetDb.query.leads.findFirst({
-        where: and(eq(leads.id, id), eq(leads.organizationId, targetOrgId)),
+        where: and(eq(leads.id, id), inArray(leads.organizationId, targetOrgIds)),
         columns: { id: true, columnId: true, position: true }
     });
 
@@ -412,7 +392,6 @@ export async function updateLeadContent(id: string, data: Partial<typeof leads.$
         return;
     }
 
-    // Handle columnId and position
     if (data.columnId !== undefined) {
         updatePayload.columnId = data.columnId;
     } else {
@@ -427,9 +406,8 @@ export async function updateLeadContent(id: string, data: Partial<typeof leads.$
 
     await targetDb.update(leads)
         .set(updatePayload)
-        .where(and(eq(leads.id, id), eq(leads.organizationId, targetOrgId)));
+        .where(and(eq(leads.id, id), inArray(leads.organizationId, targetOrgIds)));
 
-    // Log content update
     const changedFields = Object.keys(updatePayload).filter(k => k !== 'columnId' && k !== 'position');
     if (changedFields.length > 0) {
         await logHistory(id, 'update', `Atualizou: ${changedFields.join(', ')}`, undefined, undefined, targetDb);
