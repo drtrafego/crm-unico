@@ -72,7 +72,7 @@ async function audit() {
         const clientC = clientMap.get(table);
 
         if (adminC && clientC) {
-            const missing = [...adminC].filter(c => !clientC.has(c));
+            const missing = Array.from(adminC).filter(c => !clientC.has(c));
             if (missing.length === 0) {
                 console.log(`- ✅ \`${table}\`: Sincronizada`);
             } else {
@@ -103,7 +103,7 @@ async function audit() {
         }
 
         if (adminC && clientC) {
-            const missingInClient = [...adminC].filter(c => !clientC.has(c));
+            const missingInClient = Array.from(adminC).filter(c => !clientC.has(c));
 
             if (missingInClient.length > 0) {
                 console.log(`\n### ⚠️ Tabela: \`${table}\``);
