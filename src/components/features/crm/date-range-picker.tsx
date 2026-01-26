@@ -25,9 +25,10 @@ import {
 interface DateRangePickerProps {
   date: DateRange | undefined;
   setDate: (date: DateRange | undefined) => void;
+  className?: string;
 }
 
-export function DateRangePickerWithPresets({ date, setDate }: DateRangePickerProps) {
+export function DateRangePickerWithPresets({ date, setDate, className }: DateRangePickerProps) {
   const [preset, setPreset] = React.useState<string>("30");
 
   const handlePresetChange = (value: string) => {
@@ -46,7 +47,7 @@ export function DateRangePickerWithPresets({ date, setDate }: DateRangePickerPro
   };
 
   return (
-    <div className="flex items-center gap-2">
+    <div className={cn("flex items-center gap-2", className)}>
       <Select value={preset} onValueChange={handlePresetChange}>
         <SelectTrigger className="w-[120px] sm:w-[180px] text-xs h-8 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-50">
           <SelectValue placeholder="Período" />

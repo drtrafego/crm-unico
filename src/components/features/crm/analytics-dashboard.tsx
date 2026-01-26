@@ -388,10 +388,10 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                             </div>
                         </div>
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                            <InsightStat label="Positivos" value={insights.sentimentStats.positive} sublabel="Interessados, confirmaram, etc" color="text-emerald-400" icon={Smile} />
-                            <InsightStat label="Negativos" value={insights.sentimentStats.negative} sublabel="Desistiram, sem interesse, etc" color="text-rose-400" icon={Frown} />
-                            <InsightStat label="Urgentes" value={insights.sentimentStats.urgent} sublabel="Mencionaram urgência ou pressa" color="text-amber-400" icon={Flame} />
-                            <InsightStat label="Média chars" value={insights.sentimentStats.avgChars} sublabel="Tamanho médio das notas" color="text-blue-400" icon={FileText} />
+                            <InsightStat label="Positivos" value={insights.sentimentStats.positive} sublabel="Potenciais clientes" color="text-emerald-400" icon={Smile} />
+                            <InsightStat label="Negativos" value={insights.sentimentStats.negative} sublabel="Sem interesse no momento" color="text-rose-400" icon={Frown} />
+                            <InsightStat label="Urgentes" value={insights.sentimentStats.urgent} sublabel="Atendimento imediato" color="text-amber-400" icon={Flame} />
+                            <InsightStat label="Engajamento" value={insights.sentimentStats.avgChars} sublabel="Tamanho médio das notas" color="text-blue-400" icon={FileText} />
                         </div>
                     </div>
                 </CardHeader>
@@ -423,20 +423,25 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                                     ))}
                                 </div>
                             </div>
-                            <div>
-                                <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4 text-center">Resumo por Período</h4>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <PeriodSummary title="Últimos 7 dias" leads={periodStats.l7.count} sales={periodStats.l7.sales} color="text-indigo-400" />
-                                    <PeriodSummary title="Últimos 30 dias" leads={periodStats.l30.count} sales={periodStats.l30.sales} color="text-purple-400" />
+                            <div className="flex flex-col justify-between">
+                                <div>
+                                    <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4 text-center">Resumo por Período</h4>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <PeriodSummary title="Últimos 7 dias" leads={periodStats.l7.count} sales={periodStats.l7.sales} color="text-indigo-400" />
+                                        <PeriodSummary title="Últimos 30 dias" leads={periodStats.l30.count} sales={periodStats.l30.sales} color="text-purple-400" />
+                                    </div>
                                 </div>
-                                <div className="mt-6 flex flex-col gap-2">
-                                    <div className="flex justify-between text-[10px]">
-                                        <span className="text-slate-500 uppercase">Com Observação</span>
-                                        <span className="text-indigo-400 font-bold">{Math.round((insights.sentimentStats.notesCount / (kpis.totalLeads || 1)) * 100)}%</span>
+                                <div className="mt-auto pt-6 flex flex-col gap-2">
+                                    <div className="flex justify-between items-center mb-1">
+                                        <span className="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">Taxa de Anotação</span>
+                                        <span className="text-white font-black text-xs px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-400 border border-indigo-500/20">
+                                            {Math.round((insights.sentimentStats.notesCount / (kpis.totalLeads || 1)) * 100)}%
+                                        </span>
                                     </div>
-                                    <div className="h-1.5 w-full bg-slate-900 rounded-full overflow-hidden">
-                                        <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${(insights.sentimentStats.notesCount / (kpis.totalLeads || 1)) * 100}%` }} />
+                                    <div className="h-2 w-full bg-slate-900/50 rounded-full border border-slate-800 overflow-hidden p-[2px]">
+                                        <div className="h-full bg-indigo-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)]" style={{ width: `${(insights.sentimentStats.notesCount / (kpis.totalLeads || 1)) * 100}%` }} />
                                     </div>
+                                    <p className="text-[9px] text-slate-500 italic mt-1 text-center">Leads com observações registradas</p>
                                 </div>
                             </div>
                         </div>

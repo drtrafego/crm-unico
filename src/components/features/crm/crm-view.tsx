@@ -12,11 +12,10 @@ import { NewLeadDialog } from "@/components/features/kanban/new-lead-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Users, TrendingUp, AlertCircle, CheckCircle2, LayoutGrid, List, Wallet, Search } from "lucide-react";
+import { Users, TrendingUp, AlertCircle, LayoutGrid, List, Wallet, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import { CompanyOnboarding } from "./company-onboarding";
-import { UserMenu } from "@/components/layout/user-menu";
 
 import { updateViewMode } from "@/server/actions/settings";
 
@@ -154,23 +153,6 @@ export function CrmView({ initialLeads, columns, companyName, initialViewMode, o
 
   const wonValue = wonLeads.reduce((sum, lead) => sum + parseValue(lead.value), 0);
 
-  const lostLeadsCount = filteredLeads.filter(l => {
-    const col = columns.find(c => c.id === l.columnId);
-    if (!col) return false;
-    const title = col.title.toLowerCase().trim();
-    return title.includes("perdido") || title.includes("lost");
-  }).length;
-
-  const activeLeads = filteredLeads.filter(l => {
-    const col = columns.find(c => c.id === l.columnId);
-    if (!col) return false;
-    const title = col.title.toLowerCase().trim();
-
-    const isWon = title.includes("ganho") || title.includes("won") || title.includes("fechado") || (col.order === 4 && !title.includes("perdido") && !title.includes("lost"));
-    const isLost = title.includes("perdido") || title.includes("lost");
-    return !isWon && !isLost;
-  });
-
   // Custom Pipeline Value: Sum of "Proposta Enviada" ONLY as requested by user
   // "somátória ainda não está na coluna Proposta Enviada" implies specific mapping.
   const potentialValue = filteredLeads
@@ -221,100 +203,93 @@ export function CrmView({ initialLeads, columns, companyName, initialViewMode, o
   }, [totalLeads, wonLeads]);
 
   return (
-    <div className="flex flex-col gap-6 h-full">
+    <div className="flex flex-col gap-3 h-full px-2 sm:px-0">
       <CompanyOnboarding hasCompanyName={!!companyName} orgId={orgId} />
-      {/* Header & Controls */}
-      {/* Header & Controls */}
-      <div className="flex flex-col gap-4">
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">{companyName || "Dashboard"}</h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Gerencie seus leads</p>
+      {/* Header & Controls - Compacted */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="hidden sm:block">
+            <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100 leading-tight">{companyName || "Dashboard"}</h1>
+            <p className="text-[10px] text-slate-500 dark:text-slate-400">Gerencie seus leads</p>
           </div>
-          <UserMenu />
-        </div>
-
-        <div className="flex flex-col xl:flex-row gap-2 flex-wrap">
-          <div className="relative w-full sm:max-w-[300px]">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <div className="relative w-full sm:w-[240px]">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
             <Input
               placeholder="Pesquisar..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 bg-white dark:bg-slate-950 h-9 w-full border-slate-200 dark:border-slate-800"
+              className="pl-8 bg-white dark:bg-slate-950 h-8 text-xs border-slate-200 dark:border-slate-800"
             />
           </div>
+        </div>
 
-          <div className="flex items-center gap-2 w-full flex-wrap pb-1">
-            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700 shrink-0">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleViewChange("board")}
-                className={cn(
-                  "h-8 px-2 text-xs",
-                  view === "board" && "bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400"
-                )}
-              >
-                <LayoutGrid className="h-3.5 w-3.5 mr-1" /> Kanban
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleViewChange("list")}
-                className={cn(
-                  "h-8 px-2 text-xs",
-                  view === "list" && "bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400"
-                )}
-              >
-                <List className="h-3.5 w-3.5 mr-1" /> Lista
-              </Button>
-            </div>
-
-            {mounted && (
-              <div className="flex flex-col sm:flex-row gap-2 flex-1 min-w-[200px] w-full sm:w-auto">
-                <div className="flex-1">
-                  <DateRangePickerWithPresets date={dateRange} setDate={setDateRange} />
-                </div>
-                <NewLeadDialog orgId={orgId} overrides={overrides} />
-              </div>
-            )}
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleViewChange("board")}
+              className={cn(
+                "h-7 px-2 text-[10px] font-bold",
+                view === "board" && "bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400"
+              )}
+            >
+              <LayoutGrid className="h-3 w-3 mr-1" /> Kanban
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleViewChange("list")}
+              className={cn(
+                "h-7 px-2 text-[10px] font-bold",
+                view === "list" && "bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400"
+              )}
+            >
+              <List className="h-3 w-3 mr-1" /> Lista
+            </Button>
           </div>
+
+          {mounted && (
+            <div className="flex items-center gap-2">
+              <DateRangePickerWithPresets date={dateRange} setDate={setDateRange} className="h-8 text-xs" />
+              <NewLeadDialog orgId={orgId} overrides={overrides} />
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* Stats Cards - Smaller and More Compact */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
         <StatsCard
           title="Total de Leads"
           value={totalLeads}
           icon={Users}
           description="registrados"
-          badge={{ text: `${lastMonthTotalLeads > 0 ? '+' : ''}${lastMonthTotalLeads}% vs mês anterior`, variant: 'success' }}
-          iconClassName="h-5 w-5"
+          badge={{ text: `${lastMonthTotalLeads > 0 ? '+' : ''}${lastMonthTotalLeads}%`, variant: 'success' }}
+          iconClassName="h-4 w-4"
         />
         <StatsCard
           title="Novos Leads"
           value={newLeadsCount}
           icon={AlertCircle}
-          description="aguardando contato"
-          badge={{ text: `+${todayLeadsCount} novos hoje`, variant: 'success' }}
-          iconClassName="h-5 w-5 text-blue-600 dark:text-blue-400"
+          description="aguardando"
+          badge={{ text: `+${todayLeadsCount} hoje`, variant: 'success' }}
+          iconClassName="h-4 w-4 text-blue-600 dark:text-blue-400"
         />
         <StatsCard
           title="Potencial (Pipeline)"
           value={formatCurrency(potentialValue)}
           icon={TrendingUp}
           description="em negociação"
-          iconClassName="h-5 w-5 text-amber-600 dark:text-amber-400"
+          iconClassName="h-4 w-4 text-amber-600 dark:text-amber-400"
         />
         <StatsCard
           title="Ganhos (Receita)"
           value={formatCurrency(wonValue)}
           icon={Wallet}
-          description={`${wonLeads.length} negócios fechados`}
-          badge={{ text: `+${conversionRate}% conversão`, variant: 'success' }}
-          iconClassName="h-5 w-5 text-emerald-600 dark:text-emerald-400"
+          description={`${wonLeads.length} fechados`}
+          badge={{ text: `${conversionRate}%`, variant: 'success' }}
+          iconClassName="h-4 w-4 text-emerald-600 dark:text-emerald-400"
         />
       </div>
 
@@ -344,7 +319,7 @@ function StatsCard({
 }: {
   title: string;
   value: string | number;
-  icon: any;
+  icon: LucideIcon;
   description?: string;
   className?: string;
   iconClassName?: string;
@@ -352,29 +327,29 @@ function StatsCard({
 }) {
   return (
     <Card className={cn("bg-white dark:bg-[#0f172a] border-slate-200 dark:border-slate-800", className)}>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 p-4">
-        <CardTitle className="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0.5 p-2.5">
+        <CardTitle className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest truncate">
           {title}
         </CardTitle>
-        <div className="bg-slate-100 dark:bg-slate-800 p-1.5 rounded-lg">
-          <Icon className={cn("h-4 w-4 text-slate-500 dark:text-slate-400", iconClassName)} />
+        <div className="bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+          <Icon className={cn("h-3.5 w-3.5 text-slate-500 dark:text-slate-400", iconClassName)} />
         </div>
       </CardHeader>
-      <CardContent className="p-4 pt-0">
-        <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 truncate mb-1">{value}</div>
+      <CardContent className="p-2.5 pt-0">
+        <div className="text-lg font-black text-slate-900 dark:text-slate-100 truncate mb-0.5">{value}</div>
         <div className="flex items-center gap-1.5 flex-wrap">
           {badge && (
             <span className={cn(
-              "text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-1",
-              badge.variant === 'success' && "text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400",
-              badge.variant === 'warning' && "text-amber-600 bg-amber-50 dark:bg-amber-900/30 dark:text-amber-400",
-              badge.variant === 'neutral' && "text-slate-600 bg-slate-50 dark:bg-slate-800 dark:text-slate-400",
+              "text-[9px] font-black px-1.5 py-0.5 rounded-full",
+              badge.variant === 'success' && "text-emerald-500 bg-emerald-500/10",
+              badge.variant === 'warning' && "text-amber-500 bg-amber-500/10",
+              badge.variant === 'neutral' && "text-slate-400 bg-slate-400/10",
             )}>
               {badge.text}
             </span>
           )}
           {description && (
-            <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+            <p className="text-[9px] font-medium text-slate-500 dark:text-slate-400 truncate tracking-tight">
               {description}
             </p>
           )}

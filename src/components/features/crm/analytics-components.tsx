@@ -49,16 +49,18 @@ export function InsightStat({
     icon: LucideIcon
 }) {
     return (
-        <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-800/50 relative overflow-hidden group">
-            <div className="flex justify-between items-start mb-2">
-                <span className={cn("flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider", color)}>
-                    <div className={cn("w-1.5 h-1.5 rounded-full", color.replace('text-', 'bg-'))} />
-                    {label}
-                </span>
-                <Icon className={cn("h-4 w-4 opacity-50 group-hover:opacity-100 transition-opacity", color)} />
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 relative overflow-hidden group hover:border-indigo-500/50 transition-all duration-300 shadow-lg">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 blur-[40px] -mr-8 -mt-8 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="flex justify-between items-start mb-3">
+                <div className={cn("p-1.5 rounded-lg", color.replace('text-', 'bg-').replace('400', '500/10'))}>
+                    <Icon className={cn("h-4 w-4", color)} />
+                </div>
+                <div className="text-3xl font-black text-white tracking-tighter">{value}</div>
             </div>
-            <div className="text-2xl font-bold text-white mb-0.5">{value}</div>
-            <div className="text-[10px] text-slate-500">{sublabel}</div>
+            <div>
+                <p className={cn("text-[10px] font-black uppercase tracking-widest mb-0.5", color)}>{label}</p>
+                <p className="text-[10px] text-slate-500 leading-tight font-medium">{sublabel}</p>
+            </div>
         </div>
     );
 }
@@ -102,10 +104,12 @@ export function ActionTag({
 // --- Period Summary Card (Mini) ---
 export function PeriodSummary({ title, leads, sales, color }: { title: string, leads: number, sales: number, color: string }) {
     return (
-        <div className="p-3 bg-indigo-950/20 rounded-lg border border-indigo-500/10 flex flex-col items-center text-center">
-            <span className="text-[10px] text-slate-400 uppercase tracking-wider mb-1">{title}</span>
-            <div className={cn("text-xl font-bold", color)}>{leads}</div>
-            <div className="text-[10px] text-slate-500">leads / {sales} vendas</div>
+        <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl flex flex-col items-center text-center group hover:border-slate-700 transition-all shadow-md">
+            <span className="text-[9px] text-slate-500 uppercase font-black tracking-widest mb-2">{title}</span>
+            <div className={cn("text-3xl font-black tracking-tighter mb-1", color)}>{leads}</div>
+            <div className="px-2 py-0.5 rounded-full bg-slate-800 text-[10px] text-slate-300 font-bold border border-slate-700/50">
+                {sales} <span className="text-slate-500 ml-0.5">Vendas</span>
+            </div>
         </div>
     );
 }
