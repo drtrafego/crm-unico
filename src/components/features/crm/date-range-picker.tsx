@@ -28,7 +28,7 @@ interface DateRangePickerProps {
 }
 
 export function DateRangePickerWithPresets({ date, setDate }: DateRangePickerProps) {
-  const [preset, setPreset] = React.useState<string>("7");
+  const [preset, setPreset] = React.useState<string>("30");
 
   const handlePresetChange = (value: string) => {
     setPreset(value);
@@ -48,10 +48,10 @@ export function DateRangePickerWithPresets({ date, setDate }: DateRangePickerPro
   return (
     <div className="flex items-center gap-2">
       <Select value={preset} onValueChange={handlePresetChange}>
-        <SelectTrigger className="w-[120px] sm:w-[180px] text-xs h-8">
+        <SelectTrigger className="w-[120px] sm:w-[180px] text-xs h-8 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-50">
           <SelectValue placeholder="Período" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
           <SelectItem value="today">Hoje</SelectItem>
           <SelectItem value="yesterday">Ontem</SelectItem>
           <SelectItem value="7">Últimos 7 dias</SelectItem>
@@ -68,7 +68,7 @@ export function DateRangePickerWithPresets({ date, setDate }: DateRangePickerPro
             variant={"outline"}
             className={cn(
               "w-auto flex-1 sm:w-[260px] justify-start text-left font-normal h-8 text-xs",
-              "flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-start text-slate-900 shadow-sm hover:bg-slate-50 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-50 data-[placeholder]:text-slate-500 [&>span]:min-w-0 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-50 dark:focus:border-blue-500 dark:focus:ring-blue-500/20 dark:data-[placeholder]:text-slate-400",
+              "flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white dark:bg-slate-950 px-3 py-2 text-start text-slate-900 dark:text-slate-50 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-50 data-[placeholder]:text-slate-500 dark:data-[placeholder]:text-slate-400 [&>span]:min-w-0 dark:border-slate-800",
               !date && "text-slate-500 dark:text-slate-400"
             )}
           >

@@ -185,6 +185,41 @@ export function CrmView({ initialLeads, columns, companyName, initialViewMode, o
 
   const formatCurrency = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
+  // Advanced Stats Calculation for sub-details
+  const todayLeadsCount = useMemo(() => {
+    const today = startOfDay(new Date());
+    return filteredLeads.filter(l => new Date(l.createdAt) >= today).length;
+  }, [filteredLeads]);
+
+  const lastMonthTotalLeads = useMemo(() => {
+    // This is a naive calculation for demonstration: compares current 30 days vs previous 30 days
+    // In a real app we might fetch more data or calculate more precisely
+    const thirtyDaysAgo = subDays(new Date(), 30);
+    const sixtyDaysAgo = subDays(new Date(), 60);
+
+    const currentPeriodCount = optimisticLeads.filter(l =>
+      isWithinInterval(new Date(l.createdAt), {
+        start: startOfDay(thirtyDaysAgo),
+        end: endOfDay(new Date())
+      })
+    ).length;
+
+    const previousPeriodCount = optimisticLeads.filter(l =>
+      isWithinInterval(new Date(l.createdAt), {
+        start: startOfDay(sixtyDaysAgo),
+        end: endOfDay(thirtyDaysAgo)
+      })
+    ).length;
+
+    if (previousPeriodCount === 0) return currentPeriodCount > 0 ? 100 : 0;
+    return Math.round(((currentPeriodCount - previousPeriodCount) / previousPeriodCount) * 100);
+  }, [optimisticLeads]);
+
+  const conversionRate = useMemo(() => {
+    if (totalLeads === 0) return 0;
+    return Math.round((wonLeads.length / totalLeads) * 100);
+  }, [totalLeads, wonLeads]);
+
   return (
     <div className="flex flex-col gap-6 h-full">
       <CompanyOnboarding hasCompanyName={!!companyName} orgId={orgId} />
@@ -206,7 +241,7 @@ export function CrmView({ initialLeads, columns, companyName, initialViewMode, o
               placeholder="Pesquisar..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 bg-white dark:bg-slate-900 h-9 w-full"
+              className="pl-8 bg-white dark:bg-slate-950 h-9 w-full border-slate-200 dark:border-slate-800"
             />
           </div>
 
@@ -251,31 +286,34 @@ export function CrmView({ initialLeads, columns, companyName, initialViewMode, o
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatsCard
-          title="Total"
+          title="Total de Leads"
           value={totalLeads}
           icon={Users}
-          description="Leads"
+          description="registrados"
+          badge={{ text: `${lastMonthTotalLeads > 0 ? '+' : ''}${lastMonthTotalLeads}% vs mês anterior`, variant: 'success' }}
           iconClassName="h-5 w-5"
         />
         <StatsCard
-          title="Novos"
+          title="Novos Leads"
           value={newLeadsCount}
           icon={AlertCircle}
-          description="Aguardando"
+          description="aguardando contato"
+          badge={{ text: `+${todayLeadsCount} novos hoje`, variant: 'success' }}
           iconClassName="h-5 w-5 text-blue-600 dark:text-blue-400"
         />
         <StatsCard
-          title="Pipeline"
+          title="Potencial (Pipeline)"
           value={formatCurrency(potentialValue)}
           icon={TrendingUp}
-          description="Em negociação"
+          description="em negociação"
           iconClassName="h-5 w-5 text-amber-600 dark:text-amber-400"
         />
         <StatsCard
-          title="Receita"
+          title="Ganhos (Receita)"
           value={formatCurrency(wonValue)}
           icon={Wallet}
-          description="Fechados"
+          description={`${wonLeads.length} negócios fechados`}
+          badge={{ text: `+${conversionRate}% conversão`, variant: 'success' }}
           iconClassName="h-5 w-5 text-emerald-600 dark:text-emerald-400"
         />
       </div>
@@ -301,7 +339,8 @@ function StatsCard({
   icon: Icon,
   description,
   className,
-  iconClassName
+  iconClassName,
+  badge
 }: {
   title: string;
   value: string | number;
@@ -309,22 +348,37 @@ function StatsCard({
   description?: string;
   className?: string;
   iconClassName?: string;
+  badge?: { text: string; variant: 'success' | 'warning' | 'neutral' }
 }) {
   return (
-    <Card className={cn("bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800", className)}>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 p-3">
-        <CardTitle className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
+    <Card className={cn("bg-white dark:bg-[#0f172a] border-slate-200 dark:border-slate-800", className)}>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 p-4">
+        <CardTitle className="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
           {title}
         </CardTitle>
-        <Icon className={cn("h-4 w-4 text-slate-500 dark:text-slate-400", iconClassName)} />
+        <div className="bg-slate-100 dark:bg-slate-800 p-1.5 rounded-lg">
+          <Icon className={cn("h-4 w-4 text-slate-500 dark:text-slate-400", iconClassName)} />
+        </div>
       </CardHeader>
-      <CardContent className="p-3 pt-0">
-        <div className="text-lg sm:text-2xl font-bold text-slate-900 dark:text-slate-100 truncate">{value}</div>
-        {description && (
-          <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">
-            {description}
-          </p>
-        )}
+      <CardContent className="p-4 pt-0">
+        <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 truncate mb-1">{value}</div>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {badge && (
+            <span className={cn(
+              "text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-1",
+              badge.variant === 'success' && "text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400",
+              badge.variant === 'warning' && "text-amber-600 bg-amber-50 dark:bg-amber-900/30 dark:text-amber-400",
+              badge.variant === 'neutral' && "text-slate-600 bg-slate-50 dark:bg-slate-800 dark:text-slate-400",
+            )}>
+              {badge.text}
+            </span>
+          )}
+          {description && (
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+              {description}
+            </p>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
