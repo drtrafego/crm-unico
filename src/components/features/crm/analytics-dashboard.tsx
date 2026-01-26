@@ -242,7 +242,7 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
     };
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500 pb-10">
+        <div className="space-y-6 animate-in fade-in duration-500 pb-4">
             {/* Toolbar Filters */}
             <div className="flex flex-col md:flex-row items-center gap-4 bg-slate-950 p-4 rounded-xl border border-slate-800 shadow-sm sticky top-0 z-20">
                 <div className="flex items-center gap-2">
