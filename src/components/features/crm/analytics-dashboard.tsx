@@ -3,19 +3,16 @@
 import { useMemo, useState } from "react";
 import { Lead, Column } from "@/server/db/schema";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart, Area, Line, Legend, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart, Line, Cell } from "recharts";
 import { format, subDays, startOfDay, endOfDay, isWithinInterval, eachDayOfInterval, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
     Wallet, TrendingUp, Users, Target, AlertOctagon, Clock, CalendarClock,
-    RotateCcw, Phone, Mail, Video, MessageSquare, Smile, Frown, Flame, FileText,
-    CheckCircle2, Search, Crosshair, ArrowUpRight, BarChart3, FilterX, CalendarIcon, MoreHorizontal
+    RotateCcw, Smile, Frown, Flame, FileText, BarChart3
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
 import { DateRangePickerWithPresets } from "./date-range-picker";
 import { DateRange } from "react-day-picker";
 import { KPI, InsightStat, ActionTag, PeriodSummary } from "./analytics-components";
@@ -42,7 +39,7 @@ const getStateFromPhone = (phone?: string | null) => {
     return DD_TO_STATE[clean.substring(0, 2)] || 'Outros';
 };
 
-const parseValue = (val: any) => {
+const parseValue = (val: string | number | null | undefined) => {
     if (!val) return 0;
     if (typeof val === 'number') return val;
     const clean = val.toString().replace(/[^\d,.-]/g, '').replace(',', '.');
@@ -155,7 +152,7 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
         });
         const regionalData = Object.entries(stateCount)
             .map(([name, value]) => ({ name, value }))
-            .sort((a: any, b: any) => b.value - a.value).slice(0, 8);
+            .sort((a, b) => b.value - a.value).slice(0, 8);
 
         // Daily Heat
         const dailyData = (() => {
@@ -175,8 +172,8 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
         })).filter(d => d.value > 0);
 
         // 6. Insights logic
-        let sentimentStats = { positive: 0, negative: 0, urgent: 0, avgChars: 0, charCount: 0, notesCount: 0 };
-        let actionItems = { interested: 0, talking: 0, waiting: 0, proposal: 0, meeting: 0 };
+        const sentimentStats = { positive: 0, negative: 0, urgent: 0, avgChars: 0, charCount: 0, notesCount: 0 };
+        const actionItems = { interested: 0, talking: 0, waiting: 0, proposal: 0, meeting: 0 };
 
         activeLeads.forEach(l => {
             if (!l.notes) return;
@@ -226,7 +223,6 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
         };
 
         return {
-            filteredLeads: filtered,
             interactiveLeads: activeLeads,
             uniqueOrigins,
             states,
