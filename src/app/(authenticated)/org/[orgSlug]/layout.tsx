@@ -38,16 +38,16 @@ export default async function OrgLayout({
 
   // If not a member and not a super-admin (logic to be added), deny access
   if (!membership) {
-      // Optional: Check if user is super admin to bypass this
-      // if (!isSuperAdmin(session.user.email)) {
-      redirect("/unauthorized");
-      // }
+    // Optional: Check if user is super admin to bypass this
+    // if (!isSuperAdmin(session.user.email)) {
+    redirect("/unauthorized");
+    // }
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
-        {/* Pass org context to children if needed via Context Provider or just render */}
-        {children}
+    <div className="flex-1 flex flex-col min-h-0">
+      {/* Pass org context to children if needed via Context Provider or just render */}
+      {children}
     </div>
   );
 }
