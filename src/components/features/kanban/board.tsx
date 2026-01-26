@@ -91,13 +91,10 @@ export function Board({ columns: initialColumns, initialLeads, onLeadsChange, or
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        delay: 250,
-        tolerance: 5,
+        distance: 5,
       },
     }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
+    useSensor(TouchSensor)
   );
 
   const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);

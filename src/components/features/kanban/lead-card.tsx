@@ -100,7 +100,7 @@ export function LeadCard({ lead }: LeadCardProps) {
             }
           }}
         >
-          <CardContent className="p-4 space-y-3">
+          <CardContent className="p-4 space-y-2">
             {/* Header with Tags */}
             <div className="flex items-start justify-between gap-2">
               <div className="flex flex-wrap gap-1">
@@ -216,9 +216,9 @@ export function LeadCard({ lead }: LeadCardProps) {
                 </TooltipProvider>
 
                 {lead.value && (
-                  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100/50">
-                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(lead.value))}
-                  </span>
+                  <div className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1 rounded">
+                    R$ {lead.value}
+                  </div>
                 )}
                 <Button
                   variant="ghost"
@@ -233,7 +233,7 @@ export function LeadCard({ lead }: LeadCardProps) {
 
             {/* Title & Description */}
             <div className="space-y-1">
-              <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100 leading-tight">
+              <h4 className="text-sm font-medium text-slate-900 dark:text-slate-100 leading-tight">
                 {lead.name}
               </h4>
               {lead.company && (

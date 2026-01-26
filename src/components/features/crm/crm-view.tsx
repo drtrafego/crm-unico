@@ -54,7 +54,7 @@ export function CrmView({ initialLeads, columns, companyName, initialViewMode, o
   };
 
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: subDays(new Date(), 30), // Last 30 days default for better data visibility
+    from: subDays(new Date(), 30), // Last 30 days default
     to: new Date(),
   });
 

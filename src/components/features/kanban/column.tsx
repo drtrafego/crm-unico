@@ -99,7 +99,7 @@ export function Column({ column, leads, orgId, overrides }: ColumnProps) {
         {...attributes}
         {...listeners}
         className={cn(
-          "p-3 pb-2 flex items-center justify-between group cursor-grab active:cursor-grabbing sticky top-0 z-10 bg-inherit rounded-t-xl backdrop-blur-sm",
+          "p-3 font-semibold cursor-grab sticky top-0 z-10 bg-inherit rounded-t-xl backdrop-blur-sm",
           isEditing && "cursor-default"
         )}
       >
@@ -123,20 +123,19 @@ export function Column({ column, leads, orgId, overrides }: ColumnProps) {
             </Button>
           </div>
         ) : (
-          <>
-            <h3 className="font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2 text-sm">
-              <GripVertical className="h-4 w-4 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-              {column.title}
-              <span className="bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full text-xs font-medium">
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-2">
+              <span className="text-sm">{column.title}</span>
+              <span className="bg-slate-200 text-slate-600 px-2 rounded-full text-xs font-medium">
                 {leads.length}
               </span>
-            </h3>
+            </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-6 w-6 transition-opacity"
+                  className="h-6 w-6"
                   onPointerDown={(e) => e.stopPropagation()} // Prevent drag start on menu click
                 >
                   <MoreHorizontal className="h-4 w-4" />
@@ -155,7 +154,7 @@ export function Column({ column, leads, orgId, overrides }: ColumnProps) {
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
-          </>
+          </div>
         )}
       </div>
 

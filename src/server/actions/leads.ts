@@ -99,7 +99,7 @@ export async function getLeads(orgId: string) {
 
 export async function updateLeadStatus(id: string, newColumnId: string, newPosition: number, orgId: string) {
     await checkPermissions(orgId);
-    console.log(`[updateLeadStatus] Org: ${orgId} | Lead: ${id} -> Col: ${newColumnId} (Pos: ${newPosition})`);
+    console.log(`[Move] Lead: ${id} -> Col: ${newColumnId} (Pos: ${newPosition})`);
 
     try {
         // --- Logic for Response Time Metric ---
