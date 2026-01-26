@@ -132,7 +132,7 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
 
         // 5. Charts
         // Monthly Evolution
-        const monthlyDataMap: any = {};
+        const monthlyDataMap: Record<string, { month: string, leads: number, revenue: number, sortDate: Date }> = {};
         activeLeads.forEach(l => {
             if (!l.createdAt) return;
             const date = new Date(l.createdAt);
@@ -141,7 +141,7 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
             monthlyDataMap[m].leads++;
             if (fechadoColumn && l.columnId === fechadoColumn.id) monthlyDataMap[m].revenue += parseValue(l.value);
         });
-        const monthlyData = Object.values(monthlyDataMap).sort((a: any, b: any) => a.sortDate - b.sortDate);
+        const monthlyData = Object.values(monthlyDataMap).sort((a, b) => a.sortDate.getTime() - b.sortDate.getTime());
 
         // Regional Distribution
         const stateCount: Record<string, number> = {};
