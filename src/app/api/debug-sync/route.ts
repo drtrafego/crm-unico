@@ -5,7 +5,8 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
     try {
-        const getColumns = async (database: any, dbName: string) => {
+        // 1. Check Schema (Did the update work?)
+        const getColumns = async (database: any) => {
             return await database.execute(sql`
                 SELECT column_name, data_type 
                 FROM information_schema.columns 
@@ -14,21 +15,43 @@ export async function GET() {
                 ORDER BY column_name;
             `);
         };
+        const adminSchema = await getColumns(adminDb);
 
-        const clientColumns = await getColumns(db, 'Client DB');
-        const adminColumns = await getColumns(adminDb, 'Admin DB');
+        // 2. Check Data Integrity (Admin DB)
+        const orgId = 'super-admin-personal';
+
+        const columns = await adminDb.execute(sql`
+            SELECT id, title, "order" 
+            FROM columns 
+            WHERE organization_id = ${orgId} 
+            ORDER BY "order" ASC
+        `);
+
+        const leadDistribution = await adminDb.execute(sql`
+            SELECT column_id, count(*) as count 
+            FROM leads 
+            WHERE organization_id = ${orgId} 
+            GROUP BY column_id
+        `);
+
+        // Check for leads with invalid/null column_id
+        const orphanedLeads = await adminDb.execute(sql`
+            SELECT count(*) as count 
+            FROM leads 
+            WHERE organization_id = ${orgId} 
+            AND (column_id IS NULL OR column_id NOT IN (SELECT id FROM columns WHERE organization_id = ${orgId}))
+        `);
 
         return NextResponse.json({
-            message: "Schema Comparison",
-            client_db_leads_columns: clientColumns.rows,
-            admin_db_leads_columns: adminColumns.rows,
-            diff: {
-                missing_in_admin: clientColumns.rows.filter((c: any) =>
-                    !adminColumns.rows.some((a: any) => a.column_name === c.column_name)
-                ),
-                missing_in_client: adminColumns.rows.filter((a: any) =>
-                    !clientColumns.rows.some((c: any) => c.column_name === a.column_name)
-                )
+            message: "Deep Data Diagnostic",
+            schema_status: {
+                has_first_contact_at: adminSchema.rows.some((c: any) => c.column_name === 'first_contact_at'),
+                total_columns_in_table: adminSchema.rows.length
+            },
+            data_status: {
+                visible_kanban_columns: columns.rows,
+                leads_by_column: leadDistribution.rows,
+                orphaned_leads: orphanedLeads.rows[0].count
             }
         }, { status: 200 });
 
