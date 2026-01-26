@@ -18,12 +18,7 @@ export default function AdminLayout({
                             Gestão de Clientes
                         </Button>
                     </Link>
-                    <Link href="/adm/leads">
-                        <Button variant="ghost" size="sm" className="gap-2">
-                            <Users className="h-4 w-4" />
-                            Meus Leads
-                        </Button>
-                    </Link>
+
                 </nav>
             </header>
             <main className="flex-1 overflow-hidden">
