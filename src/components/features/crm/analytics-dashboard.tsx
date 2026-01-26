@@ -42,7 +42,7 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
 
         // 3. Calcular KPIs
         const totalLeads = filtered.length;
-        const wonLeads = filtered.filter(l => wonColumnIds.includes(l.columnId));
+        const wonLeads = filtered.filter(l => l.columnId && wonColumnIds.includes(l.columnId));
 
         // Parse de valor monetário (R$)
         const parseValue = (val: any) => {
@@ -72,7 +72,7 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
             if (!srcMap.has(src)) srcMap.set(src, { name: src, value: 0, revenue: 0 });
             const entry = srcMap.get(src);
             entry.value++;
-            if (wonColumnIds.includes(lead.columnId)) entry.revenue += parseValue(lead.value);
+            if (lead.columnId && wonColumnIds.includes(lead.columnId)) entry.revenue += parseValue(lead.value);
         });
         const sourceData = Array.from(srcMap.values()).sort((a: any, b: any) => b.value - a.value);
 
