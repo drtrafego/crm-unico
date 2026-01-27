@@ -82,7 +82,37 @@ export async function addMember(email: string, orgId: string, role: 'admin' | 'e
 }
 
 export async function removeMember(memberId: string, orgId: string) {
-    await db.delete(members).where(eq(members.id, memberId));
+    const session = await auth();
+    if (!session?.user?.id) {
+        throw new Error("Unauthorized");
+    }
+
+    // 1. Check requester permissions
+    const requester = await db.query.members.findFirst({
+        where: and(
+            eq(members.organizationId, orgId),
+            eq(members.userId, session.user.id)
+        )
+    });
+
+    const adminEmails = process.env.ADMIN_EMAILS?.split(",") || [];
+    const isSuperAdmin = adminEmails.includes(session.user?.email || '');
+
+    if ((!requester || (requester.role !== 'owner' && requester.role !== 'admin')) && !isSuperAdmin) {
+        throw new Error("Permission denied");
+    }
+
+    // 2. Try to delete member
+    const deletedMember = await db.delete(members)
+        .where(and(eq(members.id, memberId), eq(members.organizationId, orgId)))
+        .returning();
+
+    // 3. If not a member, try to delete invitation
+    if (deletedMember.length === 0) {
+        await db.delete(invitations)
+            .where(and(eq(invitations.id, memberId), eq(invitations.organizationId, orgId)));
+    }
+
     revalidatePath(`/org/${orgId}/settings`);
 }
 
