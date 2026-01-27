@@ -18,9 +18,15 @@ export async function OPTIONS() {
 
 // Smart field normalization that supports multiple formats including Elementor
 function normalizeLeadData(rawData: Record<string, any>) {
+  // 0. Create a lowercase key map for easier lookup
+  const lowerCasedRawData: Record<string, any> = {};
+  for (const key of Object.keys(rawData)) {
+    lowerCasedRawData[key.toLowerCase()] = rawData[key];
+  }
+
   // First, check if data is in Elementor format: fields[fieldname][value]
   const elementorData: Record<string, string> = {};
-  for (const key of Object.keys(rawData)) {
+  for (const key of Object.keys(rawData)) { // still check original keys for regex
     // Match pattern: fields[NAME][value] or fields[NAME][raw_value]
     const match = key.match(/^fields\[(\w+)\]\[(value|raw_value)\]$/);
     if (match) {
@@ -34,19 +40,20 @@ function normalizeLeadData(rawData: Record<string, any>) {
 
   console.log("[Webhook] Elementor parsed:", JSON.stringify(elementorData));
 
-  // Merge: use Elementor data if available, otherwise use raw data
-  const dataToNormalize = Object.keys(elementorData).length > 0 ? elementorData : rawData;
+  // Merge: use Elementor data if available, otherwise use LOWERCASED raw data
+  const dataToNormalize = Object.keys(elementorData).length > 0 ? elementorData : lowerCasedRawData;
 
   // Field name mappings (now simpler since Elementor data is pre-processed)
   const nameFields = ['name', 'nome', 'nome_completo', 'full_name', 'fullname'];
   const emailFields = ['email', 'e-mail', 'email_corporativo'];
-  const phoneFields = ['phone', 'telefone', 'whatsapp', 'celular', 'tel', 'fone'];
+  const phoneFields = ['phone', 'telefone', 'whatsapp', 'celular', 'tel', 'fone', 'mobile'];
   const companyFields = ['company', 'empresa', 'company_name'];
   const messageFields = ['message', 'mensagem', 'notes', 'observacoes', 'observacao'];
 
   const findValue = (fields: string[]) => {
     for (const field of fields) {
-      const value = dataToNormalize[field] || dataToNormalize[field.toLowerCase()];
+      // Lookup is now simple because keys in dataToNormalize are guaranteed lowercase
+      const value = dataToNormalize[field];
       if (value !== undefined && value !== null && value !== '') {
         return String(value);
       }
