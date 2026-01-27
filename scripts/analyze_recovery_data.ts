@@ -44,7 +44,7 @@ async function analyze() {
 
             // Exact or Fuzzy Matching logic
             if (colMap.has(statusLower)) {
-                match = `✅ Exact Match: ${columns.find((c: any) => c.title.toLowerCase().trim() === statusLower).title}`;
+                match = `✅ Exact Match: ${columns.find((c: any) => c.title.toLowerCase().trim() === statusLower)?.title || 'UNKNOWN'}`;
             } else if (statusLower === 'active') {
                 match = `💡 Potential: Atendimento em Andamento (Active)`;
             } else if (statusLower === 'novo' || statusLower === 'new') {
