@@ -1,0 +1,14 @@
+[dotenv@17.2.3] injecting env (11) from .env.local -- tip: ÔÜÖ´©Å  suppress all logs with { quiet: true }
+Loading environment...
+ÔÜá´©Å ADMIN_DATABASE_URL is not defined, falling back to DATABASE_URL or mock
+Verifying Super Admin Columns...
+
+--- Super Admin Columns ---
+[0] Novos Leads (ID: c184664c-d7f2-4840-a418-a2952406cd13)
+[1] Contato Realizado (ID: 5e64be30-986a-44f2-a09e-0a64f71f5658)
+[2] N├úo Retornou (ID: f67e1079-b921-4ce8-9821-4fd2d6959d92)
+[4] Fechado (ID: e8c7131c-64c1-43a9-8b0d-779664147fb6)
+[5] Perdido (ID: 7dffc7a8-3b04-4b03-8cc8-10eb4d58ff75)
+[5] Proposta Enviada (ID: 6bedfa77-4bff-4301-950f-09eddabd2bda)
+---------------------------
+

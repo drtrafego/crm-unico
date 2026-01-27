@@ -1,0 +1,10 @@
+[dotenv@17.2.3] injecting env (11) from .env.local -- tip: ­ƒôí add observability to secrets: https://dotenvx.com/ops
+ÔÜá´©Å ADMIN_DATABASE_URL is not defined, falling back to DATABASE_URL or mock
+Fixing Admin Columns...
+Updated/Ensured: Novos Leads at 0
+Updated/Ensured: Contato Realizado at 1
+Updated/Ensured: N├úo Retornou at 2
+Updated/Ensured: Proposta Enviada at 5
+Updated/Ensured: Call Realizada at 7
+Updated/Ensured: N├úo tem interesse at 9
+Fix applied.

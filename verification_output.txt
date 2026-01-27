@@ -1,0 +1,32 @@
+[dotenv@17.2.3] injecting env (11) from .env.local -- tip: ­ƒøá´©Å  run anywhere with `dotenvx run -- yourcommand`
+­ƒöî Conectando em: ep-red-water-ahtndd0s-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require (Ocultando senha)
+
+­ƒôè Tabelas encontradas no Banco:
+ - columns
+ - members
+ - invitations
+ - session
+ - organizations
+ - leads
+ - settings
+ - user
+ - verificationToken
+ - account
+ - lead_history
+ - Leads
+
+­ƒôª Total de Leads: 183
+
+­ƒòÁ´©Å Amostra de Leads e suas Colunas (Top 10):
+ - [Novos Leads] Jos├® Roberto de Souza  (2025-12-21T22:34:10.070Z)
+ - [N├úo Retornou] Wilson  (2026-01-14T20:14:49.191Z)
+ - [Novos Leads] Lisbeth Marisol Franco de Naranjo  (2026-01-02T18:08:55.072Z)
+ - [Novos Leads] Luzinetemartins08@gmail.com (2026-01-02T18:37:59.977Z)
+ - [Novos Leads] Vitor Manoel  (2026-01-06T22:33:01.583Z)
+ - [Novos Leads] Aldair Jos├® Figueiredo  (2026-01-15T23:14:13.540Z)
+ - [Novos Leads] Letycia (2025-12-18T15:20:48.704Z)
+ - [N├úo Retornou] Ely de Souza  (2025-12-24T21:00:58.384Z)
+ - [Proposta Enviada] DEVACY (2026-01-14T22:48:06.755Z)
+ - [N├úo Fechou] De chapa (2026-01-15T20:13:16.048Z)
+
+Ô£à Coluna 'page_path' existe!
