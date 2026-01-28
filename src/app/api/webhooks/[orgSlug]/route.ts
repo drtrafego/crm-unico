@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { organizations, leads, columns, leadHistory } from "@/server/db/schema";
 import { eq } from "drizzle-orm";
+import { normalizeSourceString } from "@/lib/leads-helper";
 
 // CORS headers for cross-origin requests
 const corsHeaders = {
@@ -145,22 +146,21 @@ export async function POST(
     const utmMedium = rawData.utm_medium || rawData.medium;
     const utmCampaign = rawData.utm_campaign || rawData.campaign;
 
-    let campaignSource = rawData.campaignSource || rawData.campaign_source;
+    // 1. Tries to use the explicit campaign source
+    let rawCampaignSource = rawData.campaignSource || rawData.campaign_source || rawData.origem;
 
-    // Normalization Fallback
+    // 2. If not present, tries to use UTM Source
+    if (!rawCampaignSource) {
+      rawCampaignSource = utmSource;
+    }
+
+    // 3. Normalize the result using the centralized helper
+    let campaignSource = normalizeSourceString(rawCampaignSource);
+
+    // 4. If normalization failed (returned null), use the raw string.
+    //    If both are null, fallback to "Direto"
     if (!campaignSource) {
-      const raw = (utmSource || "").toLowerCase().trim();
-      if (raw) {
-        if (raw.includes("google") || raw.includes("adwords")) {
-          campaignSource = "Google";
-        } else if (raw.includes("meta") || raw.includes("facebook") || raw.includes("instagram")) {
-          campaignSource = "Meta";
-        } else {
-          campaignSource = utmSource; // Fallback to raw UTM
-        }
-      } else {
-        campaignSource = "Direto";
-      }
+      campaignSource = rawCampaignSource || "Direto";
     }
     // --------------------------
 
@@ -257,22 +257,21 @@ export async function GET(
     const utmMedium = searchParams.utm_medium || searchParams.medium;
     const utmCampaign = searchParams.utm_campaign || searchParams.campaign;
 
-    let campaignSource = searchParams.campaignSource || searchParams.campaign_source || searchParams.origem;
+    // 1. Tries to use the explicit campaign source
+    let rawCampaignSource = searchParams.campaignSource || searchParams.campaign_source || searchParams.origem;
 
-    // Normalization Fallback
+    // 2. If not present, tries to use UTM Source
+    if (!rawCampaignSource) {
+      rawCampaignSource = utmSource;
+    }
+
+    // 3. Normalize the result using the centralized helper
+    let campaignSource = normalizeSourceString(rawCampaignSource as string);
+
+    // 4. If normalization failed (returned null), use the raw string.
+    //    If both are null, fallback to "Direto"
     if (!campaignSource) {
-      const raw = (utmSource || "").toLowerCase().trim();
-      if (raw) {
-        if (raw.includes("google") || raw.includes("adwords")) {
-          campaignSource = "Google";
-        } else if (raw.includes("meta") || raw.includes("facebook") || raw.includes("instagram")) {
-          campaignSource = "Meta";
-        } else {
-          campaignSource = utmSource; // Fallback to raw UTM
-        }
-      } else {
-        campaignSource = "Direto";
-      }
+      campaignSource = (rawCampaignSource as string) || "Direto";
     }
     // --------------------------
 

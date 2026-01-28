@@ -1,0 +1,16 @@
+[dotenv@17.2.3] injecting env (11) from .env.local -- tip: Ô£à audit secrets and track compliance: https://dotenvx.com/ops
+
+­ƒöì Checking Organization: 'locadora-da-construo'
+ÔÅ░ DB Time: Tue Jan 27 2026 11:26:20 GMT-0300 (Hor├írio Padr├úo da Argentina)
+
+­ƒöì Recent Leads (All Orgs):
+­ƒôª Full Lead Data:
+{
+  "id": "bb28c564-963a-46d9-ac61-f6bccb6c1360",
+  "name": "Gast├úo Teste 12",
+  "whatsapp": "(65) 99988-7777",
+  "email": null,
+  "notes": null,
+  "campaign_source": "Direto",
+  "created_at": "2026-01-27T17:23:31.184Z"
+}
