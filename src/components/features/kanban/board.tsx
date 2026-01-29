@@ -8,10 +8,10 @@ import {
   DragOverlay,
   useSensor,
   useSensors,
-  PointerSensor,
-  KeyboardSensor,
+  MouseSensor,
   TouchSensor,
-  closestCorners,
+  KeyboardSensor,
+  closestCenter,
   DragStartEvent,
   DragOverEvent,
   DragEndEvent,
@@ -84,17 +84,23 @@ export function Board({ columns: initialColumns, initialLeads, onLeadsChange, or
     setLeads(initialLeads);
   }, [initialLeads]);
 
-  // Note: We don't use useEffect to notify parent of leads changes
-  // because it would cause an infinite loop. Instead, we call onLeadsChange
-  // directly in event handlers when needed.
-
+  // Distinct sensors for Mouse (click & drag immediately after small movement)
+  // vs Touch (press & hold to distinguish from scrolling)
   const sensors = useSensors(
-    useSensor(PointerSensor, {
+    useSensor(MouseSensor, {
       activationConstraint: {
-        distance: 5,
+        distance: 10, // Avoid accidental drags
       },
     }),
-    useSensor(TouchSensor)
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250, // Press and hold for 250ms to start dragging
+        tolerance: 5, // Allow 5px movement during the delay
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
   );
 
   const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
@@ -245,7 +251,7 @@ export function Board({ columns: initialColumns, initialLeads, onLeadsChange, or
     <DndContext
       id="kanban-board"
       sensors={sensors}
-      collisionDetection={closestCorners}
+      collisionDetection={closestCenter}
       onDragStart={onDragStart}
       onDragOver={onDragOver}
       onDragEnd={onDragEnd}
