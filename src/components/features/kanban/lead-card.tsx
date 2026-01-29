@@ -251,19 +251,31 @@ export function LeadCard({ lead }: LeadCardProps) {
               {/* Assignee */}
               <div className="flex items-center gap-2">
                 <Avatar className="h-6 w-6 border-2 border-white dark:border-slate-800">
-                  <AvatarImage src={`https://avatar.vercel.sh/${lead.email}`} />
+                  <AvatarImage src={`https://avatar.vercel.sh/${lead?.email || 'unknown'}`} />
                   <AvatarFallback className="text-[10px] bg-indigo-100 text-indigo-600">
-                    {lead.name.substring(0, 2).toUpperCase()}
+                    {lead?.name ? lead.name.substring(0, 2).toUpperCase() : "??"}
                   </AvatarFallback>
                 </Avatar>
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{lead.name.split(' ')[0]}</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                  {lead?.name ? lead.name.split(' ')[0] : "Sem Nome"}
+                </span>
               </div>
 
               {/* Meta Stats */}
               <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
                 <div className="flex items-center gap-1 text-[10px]">
                   <Calendar className="h-3 w-3" />
-                  <span>{new Date(lead.createdAt).toLocaleDateString('pt-BR', { month: 'short', day: 'numeric' })}</span>
+                  <span>
+                    {(() => {
+                      try {
+                        return lead?.createdAt
+                          ? new Date(lead.createdAt).toLocaleDateString('pt-BR', { month: 'short', day: 'numeric' })
+                          : "-";
+                      } catch (e) {
+                        return "-";
+                      }
+                    })()}
+                  </span>
                 </div>
               </div>
             </div>

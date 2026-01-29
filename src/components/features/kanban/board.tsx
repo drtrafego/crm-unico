@@ -15,6 +15,7 @@ import {
   DragStartEvent,
   DragOverEvent,
   DragEndEvent,
+  MeasuringStrategy,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -256,6 +257,11 @@ export function Board({ columns: initialColumns, initialLeads, onLeadsChange, or
       id="kanban-board"
       sensors={sensors}
       collisionDetection={pointerWithin}
+      measuring={{
+        droppable: {
+          strategy: MeasuringStrategy.Always,
+        },
+      }}
       onDragStart={onDragStart}
       onDragOver={onDragOver}
       onDragEnd={onDragEnd}
