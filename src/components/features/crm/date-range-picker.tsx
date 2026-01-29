@@ -40,6 +40,10 @@ export function DateRangePickerWithPresets({ date, setDate, className }: DateRan
     } else if (value === "yesterday") {
       const yesterday = subDays(today, 1);
       setDate({ from: yesterday, to: yesterday });
+    } else if (value === "all_time") {
+      // Start from 01/12/2025 as requested
+      const startDate = new Date(2025, 11, 1); // Month is 0-indexed: 11 = December
+      setDate({ from: startDate, to: today });
     } else {
       const days = parseInt(value);
       setDate({ from: subDays(today, days - 1), to: today });
@@ -59,6 +63,7 @@ export function DateRangePickerWithPresets({ date, setDate, className }: DateRan
           <SelectItem value="14">Últimos 14 dias</SelectItem>
           <SelectItem value="30">Últimos 30 dias</SelectItem>
           <SelectItem value="60">Últimos 60 dias</SelectItem>
+          <SelectItem value="all_time">Todo período</SelectItem>
         </SelectContent>
       </Select>
 

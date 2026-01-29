@@ -198,6 +198,32 @@ export async function deleteColumn(id: string, orgId: string) {
     const col = await targetDb.query.columns.findFirst({ where: eq(columns.id, id) });
     if (!col) return;
 
+    // Check if there are leads in this column
+    const leadsInColumn = await targetDb.query.leads.findMany({
+        where: eq(leads.columnId, id),
+        columns: { id: true }
+    });
+
+    if (leadsInColumn.length > 0) {
+        // Find a fallback column (first available that is NOT the one being deleted)
+        const fallbackColumn = await targetDb.query.columns.findFirst({
+            where: and(
+                eq(columns.organizationId, primaryOrgId),
+                ne(columns.id, id)
+            ),
+            orderBy: [asc(columns.order)]
+        });
+
+        if (!fallbackColumn) {
+            throw new Error("Cannot delete the only column with existing leads.");
+        }
+
+        // Move all leads to the fallback column
+        await targetDb.update(leads)
+            .set({ columnId: fallbackColumn.id })
+            .where(eq(leads.columnId, id));
+    }
+
     await targetDb.delete(columns).where(eq(columns.id, id));
     revalidatePath(`/org/${orgId}/kanban`);
 }
