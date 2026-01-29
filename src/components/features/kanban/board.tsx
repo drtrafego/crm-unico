@@ -11,7 +11,6 @@ import {
   MouseSensor,
   TouchSensor,
   KeyboardSensor,
-  closestCenter,
   pointerWithin,
   DragStartEvent,
   DragOverEvent,
@@ -33,12 +32,6 @@ import { PlusIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-
-const SENSORS_CONFIG = {
-  activationConstraint: {
-    distance: 5,
-  },
-};
 
 import { CRMActionOverrides } from "@/types/crm-actions";
 
