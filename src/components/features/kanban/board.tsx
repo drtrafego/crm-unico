@@ -12,6 +12,7 @@ import {
   TouchSensor,
   KeyboardSensor,
   closestCenter,
+  pointerWithin,
   DragStartEvent,
   DragOverEvent,
   DragEndEvent,
@@ -135,6 +136,8 @@ export function Board({ columns: initialColumns, initialLeads, onLeadsChange, or
         const activeIndex = leads.findIndex((l) => l.id === activeId);
         const overIndex = leads.findIndex((l) => l.id === overId);
 
+        if (activeIndex === -1 || overIndex === -1) return leads;
+
         if (leads[activeIndex].columnId !== leads[overIndex].columnId) {
           const newLeads = [...leads];
           newLeads[activeIndex].columnId = leads[overIndex].columnId;
@@ -148,8 +151,9 @@ export function Board({ columns: initialColumns, initialLeads, onLeadsChange, or
     if (isActiveALead && isOverAColumn) {
       setLeads((leads) => {
         const activeIndex = leads.findIndex((l) => l.id === activeId);
-        const activeLead = leads[activeIndex];
+        if (activeIndex === -1) return leads;
 
+        const activeLead = leads[activeIndex];
         if (activeLead.columnId === overId) return leads;
 
         const newLeads = [...leads];
@@ -178,6 +182,9 @@ export function Board({ columns: initialColumns, initialLeads, onLeadsChange, or
         setColumns((columns) => {
           const oldIndex = columns.findIndex((col) => col.id === activeId);
           const newIndex = columns.findIndex((col) => col.id === overId);
+
+          if (oldIndex === -1 || newIndex === -1) return columns;
+
           const newOrder = arrayMove(columns, oldIndex, newIndex);
 
           // Set ignore flag BEFORE calling server action to prevent race condition
@@ -213,8 +220,12 @@ export function Board({ columns: initialColumns, initialLeads, onLeadsChange, or
         const activeIndex = leads.findIndex((l) => l.id === activeId);
         const overIndex = leads.findIndex((l) => l.id === overId);
 
+        if (activeIndex === -1 || overIndex === -1) return leads;
+
         const newOrderedLeads = arrayMove(leads, activeIndex, overIndex);
         const movedLead = newOrderedLeads[overIndex];
+
+        if (!movedLead) return leads;
 
         const columnLeads = newOrderedLeads.filter(l => l.columnId === movedLead.columnId);
         const newPosition = columnLeads.findIndex(l => l.id === movedLead.id);
@@ -251,7 +262,7 @@ export function Board({ columns: initialColumns, initialLeads, onLeadsChange, or
     <DndContext
       id="kanban-board"
       sensors={sensors}
-      collisionDetection={closestCenter}
+      collisionDetection={pointerWithin}
       onDragStart={onDragStart}
       onDragOver={onDragOver}
       onDragEnd={onDragEnd}
