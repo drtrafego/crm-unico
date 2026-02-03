@@ -14,9 +14,10 @@ interface SettingsClientProps {
     orgId: string;
     orgSlug: string;
     initialViewMode: string;
+    canEdit?: boolean;
 }
 
-export function SettingsClient({ orgId, orgSlug, initialViewMode }: SettingsClientProps) {
+export function SettingsClient({ orgId, orgSlug, initialViewMode, canEdit = true }: SettingsClientProps) {
     const { theme, setTheme } = useTheme();
     const [mounted, setMounted] = useState(false);
     const [viewMode, setViewMode] = useState(initialViewMode);
@@ -85,7 +86,7 @@ export function SettingsClient({ orgId, orgSlug, initialViewMode }: SettingsClie
                             <Button
                                 variant="outline"
                                 onClick={() => handleViewModeChange('kanban')}
-                                disabled={isSaving}
+                                disabled={isSaving || !canEdit}
                                 className={cn(
                                     "flex-1 gap-2",
                                     viewMode === 'kanban'
@@ -99,7 +100,7 @@ export function SettingsClient({ orgId, orgSlug, initialViewMode }: SettingsClie
                             <Button
                                 variant="outline"
                                 onClick={() => handleViewModeChange('list')}
-                                disabled={isSaving}
+                                disabled={isSaving || !canEdit}
                                 className={cn(
                                     "flex-1 gap-2",
                                     viewMode === 'list'

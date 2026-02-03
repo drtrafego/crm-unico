@@ -33,7 +33,7 @@ interface Member {
   status?: "active" | "pending";
 }
 
-export function MembersList({ members, orgId }: { members: Member[], orgId: string }) {
+export function MembersList({ members, orgId, canEdit = true }: { members: Member[], orgId: string, canEdit?: boolean }) {
   const [newEmail, setNewEmail] = useState("");
   const [newRole, setNewRole] = useState<"admin" | "editor" | "viewer">("viewer");
   const [isLoading, setIsLoading] = useState(false);
@@ -76,35 +76,37 @@ export function MembersList({ members, orgId }: { members: Member[], orgId: stri
         <CardDescription>Gerencie quem tem acesso a esta organização.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Add Member Form */}
-        <div className="flex gap-2 items-end">
-          <div className="grid gap-2 flex-1">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              placeholder="email@exemplo.com"
-              value={newEmail}
-              onChange={(e) => setNewEmail(e.target.value)}
-            />
+        {/* Add Member Form - Only show for admin/owner */}
+        {canEdit && (
+          <div className="flex gap-2 items-end">
+            <div className="grid gap-2 flex-1">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                placeholder="email@exemplo.com"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-2 w-32">
+              <Label htmlFor="role">Permissão</Label>
+              <Select value={newRole} onValueChange={(v: "admin" | "viewer") => setNewRole(v)}>
+                <SelectTrigger id="role">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="viewer">Visualizador</SelectItem>
+                  <SelectItem value="editor">Editor</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button onClick={handleAdd} disabled={isLoading}>
+              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
+              Convidar
+            </Button>
           </div>
-          <div className="grid gap-2 w-32">
-            <Label htmlFor="role">Permissão</Label>
-            <Select value={newRole} onValueChange={(v: "admin" | "viewer") => setNewRole(v)}>
-              <SelectTrigger id="role">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="viewer">Visualizador</SelectItem>
-                <SelectItem value="editor">Editor</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <Button onClick={handleAdd} disabled={isLoading}>
-            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
-            Convidar
-          </Button>
-        </div>
+        )}
 
         {/* Members List */}
         <div className="space-y-4">
@@ -127,7 +129,7 @@ export function MembersList({ members, orgId }: { members: Member[], orgId: stri
                 <Select
                   value={member.role}
                   onValueChange={(v: "admin" | "editor" | "viewer" | "owner") => handleRoleChange(member.id, v)}
-                  disabled={member.role === 'owner'} // Prevent changing owner role directly here for safety/simplicity
+                  disabled={member.role === 'owner' || !canEdit} // Prevent changing owner role and disable for non-admins
                 >
                   <SelectTrigger className="w-[130px] h-8 text-xs">
                     <SelectValue />
@@ -140,7 +142,7 @@ export function MembersList({ members, orgId }: { members: Member[], orgId: stri
                   </SelectContent>
                 </Select>
 
-                {member.role !== 'owner' && (
+                {member.role !== 'owner' && canEdit && (
                   <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => handleRemove(member.id)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>

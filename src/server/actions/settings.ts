@@ -1,11 +1,33 @@
 'use server'
 
 import { db } from "@/lib/db";
-import { settings } from "@/server/db/schema";
-import { eq } from "drizzle-orm";
+import { settings, members } from "@/server/db/schema";
+import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 import { auth } from "@/auth";
+
+// Helper to check if user is admin or owner
+async function checkSettingsPermission(orgId: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const member = await db.query.members.findFirst({
+    where: and(
+      eq(members.organizationId, orgId),
+      eq(members.userId, session.user.id)
+    )
+  });
+
+  if (!member) throw new Error("Not a member");
+
+  // Only admin and owner can modify settings
+  if (member.role !== 'admin' && member.role !== 'owner') {
+    throw new Error("Permission denied: Only admin or owner can modify settings");
+  }
+
+  return member;
+}
 
 export async function getSettings(orgId: string) {
   const session = await auth();
@@ -36,6 +58,7 @@ export async function getSettings(orgId: string) {
 }
 
 export async function updateCompanyName(name: string, orgId: string) {
+  await checkSettingsPermission(orgId); // Only admin/owner can modify
   const existing = await getSettings(orgId); // This will now ensure creation
 
   if (existing) {
@@ -48,6 +71,7 @@ export async function updateCompanyName(name: string, orgId: string) {
 }
 
 export async function updateViewMode(viewMode: string, orgId: string) {
+  await checkSettingsPermission(orgId); // Only admin/owner can modify
   const existing = await getSettings(orgId); // Ensure existence
 
   if (existing) {

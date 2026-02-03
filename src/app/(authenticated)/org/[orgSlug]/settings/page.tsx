@@ -5,8 +5,8 @@ import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { organizations } from "@/server/db/schema";
-import { eq } from "drizzle-orm";
+import { organizations, members } from "@/server/db/schema";
+import { eq, and } from "drizzle-orm";
 import { notFound } from "next/navigation";
 
 import { getMembers } from "@/server/actions/members";
@@ -32,7 +32,17 @@ export default async function SettingsPage({
     notFound();
   }
 
-  const members = await getMembers(org.id);
+  // Get current user's role in this organization
+  const currentMember = user?.id ? await db.query.members.findFirst({
+    where: and(
+      eq(members.organizationId, org.id),
+      eq(members.userId, user.id)
+    )
+  }) : null;
+
+  const canEdit = currentMember?.role === 'admin' || currentMember?.role === 'owner';
+
+  const allMembers = await getMembers(org.id);
   const settings = await getSettings(org.id);
 
   const webhookPayload = {
@@ -78,10 +88,10 @@ export default async function SettingsPage({
         </Card>
 
         {/* Theme & View Mode Settings */}
-        <SettingsClient orgId={org.id} orgSlug={orgSlug} initialViewMode={settings?.viewMode || 'kanban'} />
+        <SettingsClient orgId={org.id} orgSlug={orgSlug} initialViewMode={settings?.viewMode || 'kanban'} canEdit={canEdit} />
 
-        {/* Members Section */}
-        <MembersList members={members} orgId={org.id} />
+        {/* Members Section - Only admin/owner can manage */}
+        <MembersList members={allMembers} orgId={org.id} canEdit={canEdit} />
 
         {/* Notifications Section */}
         <Card>
@@ -112,8 +122,8 @@ export default async function SettingsPage({
           </CardContent>
         </Card>
 
-        {/* Integrations Section */}
-        <IntegrationsCard webhookUrl={webhookUrl} webhookPayload={webhookPayload} />
+        {/* Integrations Section - Only admin/owner can see webhook */}
+        {canEdit && <IntegrationsCard webhookUrl={webhookUrl} webhookPayload={webhookPayload} />}
 
       </div>
     </div>
