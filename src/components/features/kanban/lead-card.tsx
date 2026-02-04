@@ -159,10 +159,21 @@ export function LeadCard({ lead }: LeadCardProps) {
                 {lead.followUpDate && (() => {
                   const today = new Date();
                   today.setHours(0, 0, 0, 0);
+
+                  // Fix: Treat stored date as UTC date to avoid timezone shifts
+                  // When parsing "2026-02-03", new Date() assumes UTC, but displaying it or comparing
+                  // with local 'today' can shift it if we are behind UTC (like in Brazil).
                   const followUp = new Date(lead.followUpDate);
-                  followUp.setHours(0, 0, 0, 0);
-                  const isOverdue = followUp < today;
-                  const isToday = followUp.getTime() === today.getTime();
+                  // Adjust followUp to be comparable to local 'today' by respecting the specific day, ignoring time
+                  const followUpDateLocal = new Date(
+                    followUp.getUTCFullYear(),
+                    followUp.getUTCMonth(),
+                    followUp.getUTCDate(),
+                    0, 0, 0, 0
+                  );
+
+                  const isOverdue = followUpDateLocal < today;
+                  const isToday = followUpDateLocal.getTime() === today.getTime();
 
                   return (
                     <Badge
@@ -180,7 +191,7 @@ export function LeadCard({ lead }: LeadCardProps) {
                         isToday && "bg-amber-500",
                         !isOverdue && !isToday && "bg-blue-500"
                       )} />
-                      {followUp.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                      {followUpDateLocal.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
                     </Badge>
                   );
                 })()}

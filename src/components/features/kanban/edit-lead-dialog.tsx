@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { updateLeadContent, getLeadHistory } from "@/server/actions/leads";
 import { Lead } from "@/server/db/schema";
 import { User, Phone, Mail, Building2, FileText, Save, X, DollarSign, Trash2, History, Clock } from "lucide-react";
@@ -324,17 +325,33 @@ export function EditLeadDialog({ lead, open, onOpenChange, orgId, overrides }: E
                   history.map((item) => (
                     <div key={item.id} className="relative pl-6 border-l-2 border-slate-200 dark:border-slate-800 pb-6 last:pb-0">
                       <div className={cn(
-                        "absolute -left-[9px] top-0 h-4 w-4 rounded-full border-2 border-white dark:border-slate-900",
+                        "absolute -left-[9px] top-0 h-4 w-4 rounded-full border-2 border-white dark:border-slate-900 flex items-center justify-center",
                         item.action === 'create' ? "bg-green-500" :
                           item.action === 'move' ? "bg-blue-500" :
-                            "bg-slate-400"
-                      )} />
+                            "bg-amber-500"
+                      )}>
+                      </div>
                       <div className="flex flex-col gap-1">
-                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {format(new Date(item.createdAt), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
-                        </span>
-                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {format(new Date(item.createdAt), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+                          </span>
+
+                          {item.userName && (
+                            <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-900 px-2 py-0.5 rounded-full">
+                              <Avatar className="h-4 w-4">
+                                <AvatarImage src={item.userImage || undefined} />
+                                <AvatarFallback className="text-[9px]">{item.userName.charAt(0).toUpperCase()}</AvatarFallback>
+                              </Avatar>
+                              <span className="text-[10px] font-medium text-slate-600 dark:text-slate-300 max-w-[80px] truncate">
+                                {item.userName}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100 mt-0.5">
                           {item.action === 'create' && "Lead Criado"}
                           {item.action === 'move' && "Mudança de Fase"}
                           {item.action === 'update' && "Atualização"}
@@ -347,13 +364,15 @@ export function EditLeadDialog({ lead, open, onOpenChange, orgId, overrides }: E
                   ))
                 )}
               </div>
+
             </ScrollArea>
             <DialogFooter className="p-6 pt-4 bg-slate-50/50 dark:bg-slate-900/30 border-t border-slate-100 dark:border-slate-800 shrink-0">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Fechar</Button>
             </DialogFooter>
           </div>
-        )}
-      </DialogContent>
-    </Dialog>
+        )
+        }
+      </DialogContent >
+    </Dialog >
   );
 }

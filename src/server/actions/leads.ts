@@ -1,16 +1,10 @@
 'use server'
 
 import { db } from "@/lib/db";
-import { leads, columns, leadHistory, members, organizations } from "@/server/db/schema";
+import { leads, columns, leadHistory, members, organizations, users } from "@/server/db/schema";
 import { eq, asc, desc, and, ne, lt, gt, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
-
-/**
- * DATABASE UNIFICATION: 
- * All actions now use the Client DB (db). 
- * The Admin DB (adminDb) is no longer used for Lead management.
- */
 
 // Helper to determine which OrgID to use (Simplified: always use the provided orgId)
 async function getContext(orgId: string) {
@@ -46,15 +40,32 @@ async function checkPermissions(orgId: string) {
 
 async function logHistory(leadId: string, action: 'create' | 'move' | 'update', details: string, fromColumn?: string, toColumn?: string) {
     const session = await auth();
-    await db.insert(leadHistory).values({
-        leadId, action, details, fromColumn, toColumn, userId: session?.user?.id
-    });
+    try {
+        await db.insert(leadHistory).values({
+            leadId, action, details, fromColumn, toColumn, userId: session?.user?.id
+        });
+    } catch (error) {
+        console.error("Failed to log history:", error);
+    }
 }
 
 export async function getLeadHistory(leadId: string) {
-    return await db.select().from(leadHistory)
+    const history = await db.select({
+        id: leadHistory.id,
+        action: leadHistory.action,
+        details: leadHistory.details,
+        createdAt: leadHistory.createdAt,
+        fromColumn: leadHistory.fromColumn,
+        toColumn: leadHistory.toColumn,
+        userName: users.name,
+        userImage: users.image
+    })
+        .from(leadHistory)
+        .leftJoin(users, eq(leadHistory.userId, users.id))
         .where(eq(leadHistory.leadId, leadId))
         .orderBy(desc(leadHistory.createdAt));
+
+    return history;
 }
 
 export async function getColumns(orgId: string) {
@@ -102,6 +113,18 @@ export async function updateLeadStatus(id: string, newColumnId: string, newPosit
         });
 
         if (lead) {
+            // Log movement if column changed
+            if (newColumnId !== lead.columnId) {
+                const cols = await targetDb.query.columns.findMany({
+                    where: inArray(columns.id, [lead.columnId || '', newColumnId]),
+                    columns: { id: true, title: true }
+                });
+                const fromColTitle = cols.find(c => c.id === lead.columnId)?.title || "Unknown";
+                const toColTitle = cols.find(c => c.id === newColumnId)?.title || "Unknown";
+
+                await logHistory(lead.id, 'move', `Moveu de "${fromColTitle}" para "${toColTitle}"`, fromColTitle, toColTitle);
+            }
+
             if (!lead.firstContactAt && newColumnId !== lead.columnId) {
                 await targetDb.update(leads)
                     .set({ firstContactAt: new Date() })
@@ -243,6 +266,36 @@ export async function updateLeadContent(id: string, data: Partial<typeof leads.$
 
     if (data.columnId) payload.columnId = data.columnId;
     if (data.position !== undefined) payload.position = data.position;
+
+    // Check for changes and log history
+    if (id) {
+        const currentLead = await targetDb.query.leads.findFirst({
+            where: eq(leads.id, id)
+        });
+
+        if (currentLead) {
+            const changes: string[] = [];
+
+            if (payload.value !== undefined && Number(payload.value) !== Number(currentLead.value)) {
+                changes.push(`Valor alterado de ${currentLead.value || 0} para ${payload.value}`);
+            }
+            if (payload.notes !== undefined && payload.notes !== currentLead.notes) {
+                changes.push(`Observações atualizadas`);
+            }
+            if (payload.campaignSource !== undefined && payload.campaignSource !== currentLead.campaignSource) {
+                changes.push(`Origem alterada de ${currentLead.campaignSource || 'N/A'} para ${payload.campaignSource}`);
+            }
+            if (payload.followUpDate !== undefined) {
+                const oldDate = currentLead.followUpDate ? new Date(currentLead.followUpDate).toISOString().split('T')[0] : 'N/A';
+                const newDate = payload.followUpDate ? new Date(payload.followUpDate).toISOString().split('T')[0] : 'N/A';
+                if (oldDate !== newDate) changes.push(`Data de retorno: ${oldDate} -> ${newDate}`);
+            }
+
+            if (changes.length > 0) {
+                await logHistory(id, 'update', changes.join('; '));
+            }
+        }
+    }
 
     await targetDb.update(leads)
         .set(payload)
