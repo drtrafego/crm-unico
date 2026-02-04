@@ -276,6 +276,21 @@ export async function updateLeadContent(id: string, data: Partial<typeof leads.$
         if (currentLead) {
             const changes: string[] = [];
 
+            if (payload.name !== undefined && payload.name !== currentLead.name) {
+                changes.push(`Nome alterado de "${currentLead.name}" para "${payload.name}"`);
+            }
+            if (payload.company !== undefined && payload.company !== currentLead.company) {
+                changes.push(`Empresa alterada para "${payload.company}"`);
+            }
+            if (payload.email !== undefined && payload.email !== currentLead.email) {
+                changes.push(`Email alterado`);
+            }
+            if (payload.whatsapp !== undefined && payload.whatsapp !== currentLead.whatsapp) {
+                changes.push(`WhatsApp alterado`);
+            }
+            if (payload.followUpNote !== undefined && payload.followUpNote !== currentLead.followUpNote) {
+                changes.push(`Motivo de retorno atualizado`);
+            }
             if (payload.value !== undefined && Number(payload.value) !== Number(currentLead.value)) {
                 changes.push(`Valor alterado de ${currentLead.value || 0} para ${payload.value}`);
             }

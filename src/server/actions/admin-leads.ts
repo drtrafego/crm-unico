@@ -308,6 +308,23 @@ export async function updateAdminLeadContent(id: string, data: Partial<typeof le
     // --- Log History Logic --- 
     const changes: string[] = [];
 
+    if (updatePayload.name !== undefined && updatePayload.name !== existingLead.name) {
+        changes.push(`Nome alterado de "${existingLead.name}" para "${updatePayload.name}"`);
+    }
+    if (updatePayload.company !== undefined && updatePayload.company !== existingLead.company) {
+        changes.push(`Empresa alterada para "${updatePayload.company}"`);
+    }
+    if (updatePayload.email !== undefined && updatePayload.email !== existingLead.email) {
+        changes.push(`Email alterado`);
+    }
+    if (updatePayload.whatsapp !== undefined && updatePayload.whatsapp !== existingLead.whatsapp) {
+        changes.push(`WhatsApp alterado`);
+    }
+
+    if (updatePayload.followUpNote !== undefined && updatePayload.followUpNote !== existingLead.followUpNote) {
+        changes.push(`Motivo de retorno atualizado`);
+    }
+
     if (updatePayload.value !== undefined) {
         const oldVal = existingLead.value ? Number(existingLead.value) : 0;
         const newVal = updatePayload.value ? Number(updatePayload.value) : 0;
