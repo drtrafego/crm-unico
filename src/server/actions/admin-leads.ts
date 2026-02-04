@@ -287,12 +287,12 @@ export async function updateAdminLeadContent(id: string, data: Partial<typeof le
     }
 
     const existingLead = await adminDb.query.leads.findFirst({
-        where: and(eq(leads.id, id), eq(leads.organizationId, SUPER_ADMIN_ORG_ID)),
-        columns: { id: true, columnId: true, position: true }
+        where: and(eq(leads.id, id), eq(leads.organizationId, SUPER_ADMIN_ORG_ID))
     });
 
     if (!existingLead) return;
 
+    // Determine values specifically for diffing, respecting partial updates
     if (data.columnId !== undefined) {
         updatePayload.columnId = data.columnId;
     } else {
@@ -305,14 +305,39 @@ export async function updateAdminLeadContent(id: string, data: Partial<typeof le
         updatePayload.position = existingLead.position;
     }
 
+    // --- Log History Logic --- 
+    const changes: string[] = [];
+
+    if (updatePayload.value !== undefined) {
+        const oldVal = existingLead.value ? Number(existingLead.value) : 0;
+        const newVal = updatePayload.value ? Number(updatePayload.value) : 0;
+        if (oldVal !== newVal) {
+            changes.push(`Valor alterado de ${oldVal} para ${newVal}`);
+        }
+    }
+
+    if (updatePayload.notes !== undefined && updatePayload.notes !== existingLead.notes) {
+        changes.push(`Observações atualizadas`);
+    }
+
+    if (updatePayload.campaignSource !== undefined && updatePayload.campaignSource !== existingLead.campaignSource) {
+        changes.push(`Origem alterada de ${existingLead.campaignSource || 'N/A'} para ${updatePayload.campaignSource}`);
+    }
+
+    if (updatePayload.followUpDate !== undefined) {
+        const oldDate = existingLead.followUpDate ? new Date(existingLead.followUpDate).toISOString().split('T')[0] : 'N/A';
+        const newDate = updatePayload.followUpDate ? new Date(updatePayload.followUpDate).toISOString().split('T')[0] : 'N/A';
+        if (oldDate !== newDate) changes.push(`Data de retorno: ${oldDate} -> ${newDate}`);
+    }
+
+    if (changes.length > 0) {
+        await logHistory(id, 'update', changes.join('; '));
+    }
+    // -------------------------
+
     await adminDb.update(leads)
         .set(updatePayload)
         .where(and(eq(leads.id, id), eq(leads.organizationId, SUPER_ADMIN_ORG_ID)));
-
-    const changedFields = Object.keys(updatePayload).filter(k => k !== 'columnId' && k !== 'position');
-    if (changedFields.length > 0) {
-        await logHistory(id, 'update', `Atualizou: ${changedFields.join(', ')}`);
-    }
 
     revalidatePath('/adm/leads');
 }
