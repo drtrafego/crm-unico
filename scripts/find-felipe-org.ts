@@ -15,7 +15,7 @@ async function main() {
     );
 
     console.log("Found", orgs.length, "organizations");
-    orgs.forEach(o => {
+    orgs.forEach((o: any) => {
         console.log(`ID: ${o.id}, Name: ${o.name}, Slug: ${o.slug}`);
     });
     process.exit(0);
