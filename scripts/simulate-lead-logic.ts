@@ -7,7 +7,7 @@ const { leads, leadHistory } = require("../src/server/db/schema");
 const { eq } = require("drizzle-orm");
 
 // --- Replica da lógica do leads-helper.ts ---
-function normalizeSourceString(source) {
+function normalizeSourceString(source: string | null | undefined) {
     if (!source) return null;
     const s = source.toLowerCase().trim();
 
@@ -57,7 +57,7 @@ async function main() {
     // Find default column
     const defaultColumn = await db.query.columns.findFirst({
         where: eq(require("../src/server/db/schema").columns.organizationId, ORG_ID),
-        orderBy: (columns, { asc }) => [asc(columns.order)],
+        orderBy: (columns: any, { asc }: any) => [asc(columns.order)],
     });
 
     console.log(`Inserting into Column: ${defaultColumn?.title || 'Unknown'}`);
