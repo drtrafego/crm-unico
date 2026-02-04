@@ -226,18 +226,6 @@ export function EditLeadDialog({ lead, open, onOpenChange, orgId, overrides }: E
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="notes" className="text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-slate-400" /> Observações
-                  </Label>
-                  <Textarea
-                    id="notes"
-                    name="notes"
-                    defaultValue={lead.notes || ""}
-                    className="bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 focus:bg-white dark:focus:bg-slate-950 transition-colors min-h-[100px] resize-none"
-                  />
-                </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 p-4 bg-blue-50/50 dark:bg-blue-900/10 rounded-lg border border-blue-100 dark:border-blue-800/50">
                   <div className="space-y-2">
                     <Label htmlFor="followUpDate" className="text-blue-900 dark:text-blue-300 flex items-center gap-2 font-medium">
@@ -265,7 +253,17 @@ export function EditLeadDialog({ lead, open, onOpenChange, orgId, overrides }: E
                   </div>
                 </div>
 
-
+                <div className="space-y-2">
+                  <Label htmlFor="notes" className="text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-slate-400" /> Observações
+                  </Label>
+                  <Textarea
+                    id="notes"
+                    name="notes"
+                    defaultValue={lead.notes || ""}
+                    className="bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 focus:bg-white dark:focus:bg-slate-950 transition-colors min-h-[100px] resize-none"
+                  />
+                </div>
               </div>
             </ScrollArea>
 

@@ -241,7 +241,7 @@ export function LeadCard({ lead }: LeadCardProps) {
                   {lead.company}
                 </p>
               )}
-              <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 min-h-[1.5em]">
+              <p className="text-xs text-slate-400 dark:text-slate-500 line-clamp-2 min-h-[1.5em]">
                 {lead.notes || "Sem observações"}
               </p>
             </div>
