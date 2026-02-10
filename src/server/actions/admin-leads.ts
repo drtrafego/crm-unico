@@ -141,6 +141,8 @@ export async function createAdminLead(formData: FormData) {
     const valueStr = formData.get("value") as string;
     const value = valueStr ? valueStr : null;
 
+    const campaignSource = formData.get("campaignSource") as string;
+
     await checkAdminPermissions();
 
     const firstColumn = await adminDb.query.columns.findFirst({
@@ -159,6 +161,7 @@ export async function createAdminLead(formData: FormData) {
         whatsapp,
         notes,
         value,
+        campaignSource,
         status: 'active',
         columnId: firstColumn.id,
         organizationId: SUPER_ADMIN_ORG_ID,

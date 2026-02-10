@@ -49,22 +49,15 @@ export function EditLeadDialog({ lead, open, onOpenChange, orgId, overrides }: E
   useEffect(() => {
     if (open && activeTab === 'timeline') {
       setIsLoadingHistory(true);
-      // NOTE: History fetching is also hardcoded to import. 
-      // Ideally we override this too if needed, but for now assuming getLeadHistory is generic enough 
-      // OR we need to add getLeadHistory to overrides.
-      // The instruction was specific about mutations, but fetchers are also important.
-      // However, usually fetchers run on server components. Here it is client-side fetch? 
-      // getLeadHistory IS a server action. 
-      // Let's stick to mutations first as per plan, but `getLeadHistory` will fail for admin if not overridden.
-      // I should add `getLeadHistory` to overrides or just ignore for now if not critical. 
-      // Actually `getLeadHistory` imports `db`, so it WILL fail for admin.
-      // I'll leave it as is for now and note it.
-      getLeadHistory(lead.id)
+
+      const fetchHistory = overrides?.getHistory || getLeadHistory;
+
+      fetchHistory(lead.id)
         .then(data => setHistory(data))
         .catch(err => console.error("Failed to load history:", err))
         .finally(() => setIsLoadingHistory(false));
     }
-  }, [open, activeTab, lead.id]);
+  }, [open, activeTab, lead.id, overrides]);
 
   async function handleSubmit(formData: FormData) {
     const followUpDateStr = formData.get("followUpDate") as string;

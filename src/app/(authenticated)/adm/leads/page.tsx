@@ -1,4 +1,4 @@
-import { getAdminLeads, getAdminColumns, getAdminSettings } from "@/server/actions/admin-leads";
+import { getAdminLeads, getAdminColumns, getAdminSettings, getAdminLeadHistory } from "@/server/actions/admin-leads";
 import { CrmView } from "@/components/features/crm/crm-view";
 import {
     updateAdminLeadStatus,
@@ -30,7 +30,8 @@ export default async function AdminCRMPage() {
         deleteColumn: deleteAdminColumn,
         createLead: createAdminLead,
         updateLeadContent: updateAdminLeadContent,
-        deleteLead: deleteAdminLead
+        deleteLead: deleteAdminLead,
+        getHistory: getAdminLeadHistory,
     };
 
     return (
