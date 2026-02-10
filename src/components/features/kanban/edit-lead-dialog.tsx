@@ -23,7 +23,8 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
+import { getWhatsAppLink, cn } from "@/lib/utils";
+import { getLeadSource } from "@/lib/leads-helper";
 
 import { CRMActionOverrides } from "@/types/crm-actions";
 
@@ -208,7 +209,7 @@ export function EditLeadDialog({ lead, open, onOpenChange, orgId, overrides }: E
                     <select
                       id="campaignSource"
                       name="campaignSource"
-                      defaultValue={lead.campaignSource || ""}
+                      defaultValue={getLeadSource(lead) || ""}
                       className="flex h-9 w-full rounded-md border border-slate-200 bg-slate-50 dark:bg-slate-900/50 dark:border-slate-800 px-3 py-1 text-sm transition-colors focus:bg-white dark:focus:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     >
                       <option value="">Selecione...</option>
@@ -216,6 +217,8 @@ export function EditLeadDialog({ lead, open, onOpenChange, orgId, overrides }: E
                       <option value="Meta">Meta</option>
                       <option value="Captação Ativa">Captação Ativa</option>
                       <option value="Orgânicos">Orgânicos</option>
+                      <option value="Direto">Direto</option>
+                      <option value="Indicação">Indicação</option>
                     </select>
                   </div>
                 </div>
