@@ -12,8 +12,9 @@ import { NewLeadDialog } from "@/components/features/kanban/new-lead-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Users, TrendingUp, AlertCircle, LayoutGrid, List, Wallet, Search, LucideIcon } from "lucide-react";
+import { Users, TrendingUp, AlertCircle, LayoutGrid, List, Wallet, Search, LucideIcon, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AnalyticsDashboard } from "./analytics-dashboard";
 
 import { CompanyOnboarding } from "./company-onboarding";
 
@@ -35,16 +36,17 @@ export function CrmView({ initialLeads, columns, companyName, initialViewMode, o
   const router = useRouter();
   const pathname = usePathname();
 
-  const initialView = (searchParams.get("view") as "board" | "list") || (initialViewMode as "board" | "list") || "board";
-  const [view, setView] = useState<"board" | "list">(initialView);
+  const initialView = (searchParams.get("view") as "board" | "list" | "analytics") || (initialViewMode as "board" | "list" | "analytics") || "board";
+  const [view, setView] = useState<"board" | "list" | "analytics">(initialView);
 
   useEffect(() => {
     const viewParam = searchParams.get("view");
     if (viewParam === "list" && view !== "list") setView("list");
     if (viewParam === "board" && view !== "board") setView("board");
+    if (viewParam === "analytics" && view !== "analytics") setView("analytics");
   }, [searchParams, view]);
 
-  const handleViewChange = (newView: "board" | "list") => {
+  const handleViewChange = (newView: "board" | "list" | "analytics") => {
     setView(newView);
     const params = new URLSearchParams(searchParams);
     params.set("view", newView);
@@ -244,6 +246,17 @@ export function CrmView({ initialLeads, columns, companyName, initialViewMode, o
             >
               <List className="h-3 w-3 mr-1" /> Lista
             </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleViewChange("analytics")}
+              className={cn(
+                "h-7 px-2 text-[10px] font-bold",
+                view === "analytics" && "bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400"
+              )}
+            >
+              <BarChart3 className="h-3 w-3 mr-1" /> Analytics
+            </Button>
           </div>
 
           {mounted && (
@@ -295,10 +308,12 @@ export function CrmView({ initialLeads, columns, companyName, initialViewMode, o
       <div className="flex-1 min-h-0 overflow-hidden">
         {view === "board" ? (
           <Board initialLeads={filteredLeads} columns={columns} onLeadsChange={handleLeadsChange} orgId={orgId} overrides={overrides} />
-        ) : (
+        ) : view === "list" ? (
           <div className="p-4 h-full overflow-y-auto">
             <LeadsList leads={filteredLeads} columns={columns} orgId={orgId} overrides={overrides} />
           </div>
+        ) : (
+          <AnalyticsDashboard leads={filteredLeads} columns={columns} />
         )}
       </div>
     </div>
