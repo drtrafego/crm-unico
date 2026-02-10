@@ -121,14 +121,11 @@ export function CrmView({ initialLeads, columns, companyName, initialViewMode, o
     if (!col) return false;
 
     const title = col.title.toLowerCase().trim();
-    // Check for keywords - STRICTLY "Fechado", "Won", "Ganho" for Revenue
-    if (title.includes("ganho") || title.includes("won") || title.includes("fechado")) return true;
+    // Check for keywords - STRICTLY "Fechado", "Won", "Ganho", "Vendido" for Revenue
+    if (title.includes("ganho") || title.includes("won") || title.includes("fechado") || title.includes("vendido")) return true;
 
-    // Fallback: Check order. Usually "Fechado" is one of the last columns.
-    // If it's the 2nd to last or last column and NOT "Perdido", maybe it's won?
-    // Standard order: Novos, Contact, Nao Retornou, Proposta, Fechado, Perdido. (6 columns)
-    // Fechado is index 4.
-    if (col.order === 4 && !title.includes("perdido") && !title.includes("lost")) return true;
+    // Fallback: Check for "Contrato" but NOT "Enviado" (to avoid Contrato Enviado if that exists, though usually it is Proposta)
+    if (title.includes("contrato") && title.includes("fechado")) return true;
 
     return false;
   });
