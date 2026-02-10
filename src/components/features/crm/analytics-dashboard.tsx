@@ -11,7 +11,8 @@ import { format, subDays, startOfDay, endOfDay, isWithinInterval, eachDayOfInter
 import { ptBR } from "date-fns/locale";
 import {
     Wallet, TrendingUp, Users, Target, Clock, CalendarClock,
-    RotateCcw, Smile, Frown, Flame, FileText, MousePointerClick, Gem, BrainCircuit, Link2, Briefcase
+    RotateCcw, Flame, FileText, MousePointerClick, Gem, BrainCircuit, Link2,
+    AlertTriangle, CheckCircle2, XCircle, Activity, Zap, Timer, Bell
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -19,7 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { DateRangePickerWithPresets } from "./date-range-picker";
 import { DateRange } from "react-day-picker";
 import { KPI } from "./analytics-components";
-import { processAnalyticsData, calculateConversionBySource, analyzeKeywords } from "@/lib/analytics-helper";
+import { processAnalyticsData, calculateConversionBySource, getStaleAlerts, getFunnelData, getVelocityMetrics, getFollowUpMetrics, getHealthScore } from "@/lib/analytics-helper";
 import { cn } from "@/lib/utils";
 
 // --- Colors & Helpers ---
@@ -60,7 +61,6 @@ interface AnalyticsDashboardProps {
 }
 
 export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboardProps) {
-    // --- State ---
     const [dateRange, setDateRange] = useState<DateRange | undefined>({
         from: subDays(new Date(), 90),
         to: new Date()
@@ -68,10 +68,7 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
     const [selectedOrigin, setSelectedOrigin] = useState<string>("all");
     const [selectedState, setSelectedState] = useState<string>("all");
     const [selectedColumn, setSelectedColumn] = useState<string | null>(null);
-    const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-    // --- Identification Functions (Robust) ---
-    // Check titles in a case-insensitive way
     const checkStatus = (title: string, type: 'won' | 'lost') => {
         const t = title.toLowerCase();
         if (type === 'won') return /(fechado|won|ganho|vendido|contrato|sucesso)/.test(t) && !t.includes('não');
@@ -91,18 +88,10 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
         return col ? checkStatus(col.title, 'lost') : false;
     };
 
-    // --- Data Processing & Metrics ---
     const {
-        interactiveLeads,
-        kpis,
-        charts,
-        uniqueOrigins,
-        states,
-        newMetrics,
-        salesIntelligence,
-        utmStats
+        kpis, charts, uniqueOrigins, states, newMetrics,
+        intelligence, utmStats
     } = useMemo(() => {
-        // 1. Base Filter (Toolbar)
         const filtered = initialLeads.filter(lead => {
             if (dateRange?.from) {
                 const start = startOfDay(dateRange.from);
@@ -115,24 +104,15 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
             return true;
         });
 
-        // 2. Interactive Filter (Click Selection)
         const activeLeads = filtered.filter(lead => {
             if (selectedColumn && lead.columnId !== columns.find(c => c.title === selectedColumn)?.id) return false;
-            // Note: Category filtering would require re-running analysis on individual leads, 
-            // simpler to just filter if notes contain keywords from that category.
-            if (selectedCategory) {
-                // Simple approximation: check if note contains mapped keywords would be expensive. 
-                // Ideally we'd optimize this. For now, we skip heavy regex filtering here to keep it snappy
-                // or implement if user insists.
-            }
             return true;
         });
 
-        // 3. Metadata Lists
         const uniqueOrigins = Array.from(new Set(initialLeads.map(l => l.campaignSource || "Direto").filter(Boolean))).sort();
         const states = Array.from(new Set(initialLeads.map(l => getStateFromPhone(l.whatsapp)))).sort();
 
-        // 4. KPIs
+        // KPIs
         const totalLeadsCount = activeLeads.length;
         const wonLeads = activeLeads.filter(isLeadWon);
         const lostLeads = activeLeads.filter(isLeadLost);
@@ -142,15 +122,12 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
         const pipeline = openLeads.reduce((acc, l) => acc + parseValue(l.value), 0);
         const conversionRate = totalLeadsCount ? (wonLeads.length / totalLeadsCount) * 100 : 0;
         const averageTicket = wonLeads.length ? revenue / wonLeads.length : 0;
-
         const avgCycle = wonLeads.length
             ? Math.round(wonLeads.reduce((acc, l) => acc + differenceInDays(new Date(), l.createdAt ? new Date(l.createdAt) : new Date()), 0) / wonLeads.length)
             : 0;
-
         const followUpsCount = activeLeads.filter(l => l.followUpDate && startOfDay(new Date(l.followUpDate)) >= startOfDay(new Date())).length;
 
-        // 5. Charts
-        // Monthly Evolution
+        // Charts
         const monthlyDataMap: Record<string, { month: string, leads: number, revenue: number, sortDate: Date }> = {};
         activeLeads.forEach(l => {
             if (!l.createdAt) return;
@@ -162,17 +139,10 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
         });
         const monthlyData = Object.values(monthlyDataMap).sort((a, b) => a.sortDate.getTime() - b.sortDate.getTime());
 
-        // Regional Distribution
         const stateCount: Record<string, number> = {};
-        activeLeads.forEach(l => {
-            const s = getStateFromPhone(l.whatsapp);
-            stateCount[s] = (stateCount[s] || 0) + 1;
-        });
-        const regionalData = Object.entries(stateCount)
-            .map(([name, value]) => ({ name, value }))
-            .sort((a, b) => b.value - a.value).slice(0, 8);
+        activeLeads.forEach(l => { const s = getStateFromPhone(l.whatsapp); stateCount[s] = (stateCount[s] || 0) + 1; });
+        const regionalData = Object.entries(stateCount).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value).slice(0, 8);
 
-        // Daily Heat
         const dailyData = (() => {
             if (!dateRange?.from) return [];
             const daysInterval = eachDayOfInterval({ start: dateRange.from, end: dateRange.to || dateRange.from });
@@ -182,79 +152,65 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
             }));
         })();
 
-        // Pipeline Stages
         const funnelData = columns.map(col => ({
             name: col.title,
             value: filtered.filter(l => l.columnId === col.id).length,
             fill: PIPELINE_COLORS[columns.indexOf(col) % PIPELINE_COLORS.length]
         })).filter(d => d.value > 0);
 
-        // --- NEW METRICS ---
+        // New Metrics
         const processedNewMetrics = processAnalyticsData(activeLeads);
         const conversionData = calculateConversionBySource(activeLeads, isLeadWon);
-        const newMetrics = {
-            ...processedNewMetrics,
-            conversionData
-        };
 
-        // --- SALES INTELLIGENCE (CATEGORIES) ---
-        const salesIntelligence = analyzeKeywords(activeLeads, isLeadWon, isLeadLost);
+        // === INTELLIGENCE v3 ===
+        const staleAlerts = getStaleAlerts(activeLeads, columns, isLeadWon, isLeadLost);
+        const funnel = getFunnelData(activeLeads, columns);
+        const velocity = getVelocityMetrics(activeLeads, columns, isLeadWon, isLeadLost);
+        const followUp = getFollowUpMetrics(activeLeads, isLeadWon, isLeadLost);
+        const health = getHealthScore(staleAlerts, followUp, velocity, totalLeadsCount, wonLeads.length);
 
-        // --- UTM ANALYSIS COMPLETE ---
+        // UTM
         const utmStats = activeLeads.reduce((acc, lead) => {
             if (lead.utmSource || lead.utmMedium || lead.utmCampaign) {
-                // Enhanced Key: Source / Medium / Campaign
                 const key = `${lead.utmSource || 'N/A'} / ${lead.utmMedium || 'N/A'} / ${lead.utmCampaign || 'N/A'}`;
-                if (!acc[key]) acc[key] = {
-                    name: key,
-                    source: lead.utmSource || '-',
-                    medium: lead.utmMedium || '-',
-                    campaign: lead.utmCampaign || '-',
-                    term: lead.utmTerm || '-',
-                    content: lead.utmContent || '-',
-                    size: 0
-                };
+                if (!acc[key]) acc[key] = { name: key, source: lead.utmSource || '-', medium: lead.utmMedium || '-', campaign: lead.utmCampaign || '-', term: lead.utmTerm || '-', content: lead.utmContent || '-', size: 0 };
                 acc[key].size++;
             }
             return acc;
         }, {} as Record<string, { name: string, source: string, medium: string, campaign: string, term: string, content: string, size: number }>);
-
-        const utmTreeData = Object.values(utmStats)
-            .sort((a, b) => b.size - a.size)
-            .slice(0, 20); // Top 20 UTM combinations
+        const utmTreeData = Object.values(utmStats).sort((a, b) => b.size - a.size).slice(0, 20);
 
         return {
-            interactiveLeads: activeLeads,
-            uniqueOrigins,
-            states,
+            uniqueOrigins, states,
             kpis: { revenue, pipeline, totalLeads: totalLeadsCount, conversionRate, averageTicket, avgCycle, followUpsCount },
             charts: { monthlyData, regionalData, dailyData, funnelData },
-            newMetrics,
-            salesIntelligence,
+            newMetrics: { ...processedNewMetrics, conversionData },
+            intelligence: { staleAlerts, funnel, velocity, followUp, health },
             utmStats: utmTreeData
         };
-    }, [initialLeads, columns, dateRange, selectedOrigin, selectedState, selectedColumn, selectedCategory]);
+    }, [initialLeads, columns, dateRange, selectedOrigin, selectedState, selectedColumn]);
 
     const handleReset = () => {
         setDateRange({ from: subDays(new Date(), 90), to: new Date() });
         setSelectedOrigin('all');
         setSelectedState('all');
         setSelectedColumn(null);
-        setSelectedCategory(null);
     };
+
+    const gradeColors: Record<string, string> = { A: 'text-emerald-400', B: 'text-green-400', C: 'text-amber-400', D: 'text-orange-400', F: 'text-red-400' };
+    const gradeBg: Record<string, string> = { A: 'bg-emerald-500/20', B: 'bg-green-500/20', C: 'bg-amber-500/20', D: 'bg-orange-500/20', F: 'bg-red-500/20' };
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500 pb-4">
-            {/* Toolbar Filters */}
+            {/* Toolbar */}
             <div className="flex flex-col md:flex-row items-center gap-4 bg-slate-950 p-4 rounded-xl border border-slate-800 shadow-sm sticky top-0 z-20">
                 <div className="flex items-center gap-2">
                     <div className="bg-slate-900 rounded-md border border-slate-800">
                         <DateRangePickerWithPresets date={dateRange} setDate={setDateRange} />
                     </div>
                 </div>
-
                 <Select value={selectedOrigin} onValueChange={setSelectedOrigin}>
-                    <SelectTrigger className="w-full md:w-[180px] bg-slate-900 border-slate-800 text-slate-100 dark:hover:bg-slate-800/50">
+                    <SelectTrigger className="w-full md:w-[180px] bg-slate-900 border-slate-800 text-slate-100">
                         <SelectValue placeholder="Origem" />
                     </SelectTrigger>
                     <SelectContent className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
@@ -262,9 +218,8 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                         {uniqueOrigins.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
                     </SelectContent>
                 </Select>
-
                 <Select value={selectedState} onValueChange={setSelectedState}>
-                    <SelectTrigger className="w-full md:w-[140px] bg-slate-900 border-slate-800 text-slate-100 dark:hover:bg-slate-800/50">
+                    <SelectTrigger className="w-full md:w-[140px] bg-slate-900 border-slate-800 text-slate-100">
                         <SelectValue placeholder="Estado" />
                     </SelectTrigger>
                     <SelectContent className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
@@ -272,15 +227,14 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                         {states.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                     </SelectContent>
                 </Select>
-
-                {(selectedColumn || selectedCategory || selectedOrigin !== "all" || selectedState !== "all") && (
+                {(selectedColumn || selectedOrigin !== "all" || selectedState !== "all") && (
                     <Button variant="ghost" size="sm" onClick={handleReset} className="ml-auto text-slate-400 hover:text-white">
-                        <RotateCcw className="mr-2 h-4 w-4" /> Resetar Filtros
+                        <RotateCcw className="mr-2 h-4 w-4" /> Resetar
                     </Button>
                 )}
             </div>
 
-            {/* KPIs Grid */}
+            {/* KPIs */}
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
                 <KPI label="Receita Fechada" value={formatCurrency(kpis.revenue)} icon={Wallet} color="text-emerald-500" iconBg="bg-emerald-500/10" />
                 <KPI label="Pipeline Aberto" value={formatCurrency(kpis.pipeline)} icon={Target} color="text-blue-500" iconBg="bg-blue-500/10" />
@@ -290,6 +244,150 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                 <KPI label="Ciclo Médio" value={`${kpis.avgCycle} dias`} icon={Clock} color="text-indigo-500" iconBg="bg-indigo-500/10" />
                 <KPI label="Follow-ups" value={kpis.followUpsCount} icon={CalendarClock} color="text-purple-500" iconBg="bg-purple-500/10" />
             </div>
+
+            {/* ===== SALES INTELLIGENCE v3 ===== */}
+            <Card className="bg-slate-950 border-slate-800 shadow-xl overflow-hidden">
+                <CardHeader className="pb-4 border-b border-slate-800">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <BrainCircuit className="h-5 w-5 text-purple-400" />
+                            <div>
+                                <CardTitle className="text-white text-base">Inteligência de Vendas</CardTitle>
+                                <CardDescription className="text-[10px] text-slate-500">
+                                    Insights acionáveis baseados em dados reais do pipeline
+                                </CardDescription>
+                            </div>
+                        </div>
+                        {/* Health Score Badge */}
+                        <div className={cn("flex items-center gap-2 px-4 py-2 rounded-full", gradeBg[intelligence.health.grade])}>
+                            <Activity className={cn("h-4 w-4", gradeColors[intelligence.health.grade])} />
+                            <span className={cn("text-lg font-bold", gradeColors[intelligence.health.grade])}>
+                                {intelligence.health.score}
+                            </span>
+                            <span className={cn("text-xs font-bold", gradeColors[intelligence.health.grade])}>
+                                / 100
+                            </span>
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                    {/* Health Factors */}
+                    <div className="px-6 py-4 border-b border-slate-800/50 bg-slate-900/30">
+                        <div className="flex flex-wrap gap-3">
+                            {intelligence.health.factors.map((f, i) => (
+                                <div key={i} className={cn(
+                                    "flex items-center gap-2 text-[11px] px-3 py-1.5 rounded-full",
+                                    f.status === 'positive' && "bg-emerald-500/10 text-emerald-400",
+                                    f.status === 'warning' && "bg-amber-500/10 text-amber-400",
+                                    f.status === 'critical' && "bg-red-500/10 text-red-400",
+                                )}>
+                                    {f.status === 'positive' && <CheckCircle2 className="h-3 w-3" />}
+                                    {f.status === 'warning' && <AlertTriangle className="h-3 w-3" />}
+                                    {f.status === 'critical' && <XCircle className="h-3 w-3" />}
+                                    {f.label}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-800">
+                        {/* Stale Alerts */}
+                        <div className="p-5 space-y-3">
+                            <div className="flex items-center gap-2">
+                                <AlertTriangle className="h-4 w-4 text-amber-400" />
+                                <h4 className="text-xs font-bold text-white uppercase tracking-widest">Leads Parados</h4>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2 text-center">
+                                <div className="bg-red-500/10 rounded-lg p-2">
+                                    <div className="text-xl font-bold text-red-400">{intelligence.staleAlerts.critical.length}</div>
+                                    <div className="text-[9px] text-red-400/70">+15 dias</div>
+                                </div>
+                                <div className="bg-amber-500/10 rounded-lg p-2">
+                                    <div className="text-xl font-bold text-amber-400">{intelligence.staleAlerts.warning.length}</div>
+                                    <div className="text-[9px] text-amber-400/70">7-15 dias</div>
+                                </div>
+                                <div className="bg-emerald-500/10 rounded-lg p-2">
+                                    <div className="text-xl font-bold text-emerald-400">{intelligence.staleAlerts.healthy}</div>
+                                    <div className="text-[9px] text-emerald-400/70">Ativos</div>
+                                </div>
+                            </div>
+                            {intelligence.staleAlerts.critical.length > 0 && (
+                                <div className="space-y-1.5 max-h-[120px] overflow-y-auto">
+                                    {intelligence.staleAlerts.critical.slice(0, 5).map(l => (
+                                        <div key={l.id} className="flex items-center justify-between text-[10px] bg-red-500/5 rounded px-2 py-1.5">
+                                            <span className="text-slate-300 truncate max-w-[140px]">{l.name}</span>
+                                            <Badge variant="outline" className="text-[9px] border-red-500/30 text-red-400">{l.daysStale}d · {l.stageName}</Badge>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Velocity */}
+                        <div className="p-5 space-y-3">
+                            <div className="flex items-center gap-2">
+                                <Zap className="h-4 w-4 text-blue-400" />
+                                <h4 className="text-xs font-bold text-white uppercase tracking-widest">Velocidade</h4>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                                <div className="bg-slate-800/50 rounded-lg p-3 text-center">
+                                    <div className="text-lg font-bold text-blue-400">{intelligence.velocity.avgDaysToClose || '—'}</div>
+                                    <div className="text-[9px] text-slate-500">dias p/ fechar</div>
+                                </div>
+                                <div className="bg-slate-800/50 rounded-lg p-3 text-center">
+                                    <div className="text-lg font-bold text-rose-400">{intelligence.velocity.avgDaysToLose || '—'}</div>
+                                    <div className="text-[9px] text-slate-500">dias p/ perder</div>
+                                </div>
+                            </div>
+                            {intelligence.velocity.avgDaysByStage.length > 0 && (
+                                <div className="space-y-1">
+                                    <div className="text-[9px] text-slate-500 uppercase tracking-wider">Tempo médio por etapa</div>
+                                    {intelligence.velocity.avgDaysByStage.slice(0, 4).map(s => (
+                                        <div key={s.stage} className="flex items-center justify-between text-[10px]">
+                                            <span className="text-slate-400 truncate max-w-[120px]">{s.stage}</span>
+                                            <span className={cn("font-mono font-bold", s.avgDays > 15 ? 'text-red-400' : s.avgDays > 7 ? 'text-amber-400' : 'text-emerald-400')}>{s.avgDays}d</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Follow-up */}
+                        <div className="p-5 space-y-3">
+                            <div className="flex items-center gap-2">
+                                <Bell className="h-4 w-4 text-purple-400" />
+                                <h4 className="text-xs font-bold text-white uppercase tracking-widest">Follow-ups</h4>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                                <div className={cn("rounded-lg p-3 text-center", intelligence.followUp.overdueLeads.length > 0 ? "bg-red-500/10" : "bg-emerald-500/10")}>
+                                    <div className={cn("text-lg font-bold", intelligence.followUp.overdueLeads.length > 0 ? "text-red-400" : "text-emerald-400")}>
+                                        {intelligence.followUp.overdueLeads.length}
+                                    </div>
+                                    <div className="text-[9px] text-slate-500">vencidos</div>
+                                </div>
+                                <div className="bg-slate-800/50 rounded-lg p-3 text-center">
+                                    <div className="text-lg font-bold text-purple-400">{intelligence.followUp.complianceRate}%</div>
+                                    <div className="text-[9px] text-slate-500">em dia</div>
+                                </div>
+                            </div>
+                            {intelligence.followUp.overdueLeads.length > 0 && (
+                                <div className="space-y-1.5 max-h-[120px] overflow-y-auto">
+                                    <div className="text-[9px] text-red-400/70 uppercase tracking-wider">⚠ Precisam de ação</div>
+                                    {intelligence.followUp.overdueLeads.slice(0, 5).map(l => (
+                                        <div key={l.id} className="flex items-center justify-between text-[10px] bg-red-500/5 rounded px-2 py-1.5">
+                                            <span className="text-slate-300 truncate max-w-[140px]">{l.name}</span>
+                                            <Badge variant="outline" className="text-[9px] border-red-500/30 text-red-400">{l.daysOverdue}d atraso</Badge>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            {intelligence.followUp.overdueLeads.length === 0 && intelligence.followUp.totalWithFollowUp === 0 && (
+                                <p className="text-[10px] text-slate-500 text-center py-2">Nenhum follow-up agendado</p>
+                            )}
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
 
             {/* Charts Row 1 */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -336,69 +434,14 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                 </Card>
             </div>
 
-            {/* Sales Intelligence (Categories) */}
-            <Card className="bg-slate-950 border-slate-800 shadow-xl">
-                <CardHeader className="pb-4 border-b border-slate-900">
-                    <div className="flex items-center gap-2">
-                        <BrainCircuit className="h-5 w-5 text-purple-400" />
-                        <div>
-                            <CardTitle className="text-white text-base">Inteligência de Vendas (Categorias)</CardTitle>
-                            <CardDescription className="text-[10px] text-slate-500">
-                                Motivos de ganho e perda baseados no conteúdo das anotações (Ex: Financeiro, Timing, Concorrência)
-                            </CardDescription>
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent className="p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Why we Lose Chart */}
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-2 mb-2">
-                                <Frown className="w-4 h-4 text-rose-400" />
-                                <h4 className="text-xs font-bold text-rose-400 uppercase tracking-widest">Principais Motivos de Perda</h4>
-                            </div>
-                            <div className="h-[200px] w-full">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart layout="vertical" data={salesIntelligence.lost.slice(0, 5)}>
-                                        <XAxis type="number" hide />
-                                        <YAxis dataKey="word" type="category" width={100} tick={{ fontSize: 11, fill: '#fda4af' }} />
-                                        <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '8px', color: '#fff' }} />
-                                        <Bar dataKey="count" fill="#f43f5e" radius={[0, 4, 4, 0]} barSize={20} />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </div>
-
-                        {/* Active Topics Chart */}
-                        <div className="space-y-4 border-l border-slate-900 pl-6">
-                            <div className="flex items-center gap-2 mb-2">
-                                <Briefcase className="w-4 h-4 text-emerald-400" />
-                                <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-widest">Contexto dos Leads Ativos</h4>
-                            </div>
-                            <div className="h-[200px] w-full">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart layout="vertical" data={salesIntelligence.active.slice(0, 5)}>
-                                        <XAxis type="number" hide />
-                                        <YAxis dataKey="word" type="category" width={100} tick={{ fontSize: 11, fill: '#fff' }} />
-                                        <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '8px', color: '#fff' }} />
-                                        <Bar dataKey="count" fill="#10b981" radius={[0, 4, 4, 0]} barSize={20} />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* UTM Performance Grid (Enhanced) */}
+            {/* UTM Grid */}
             {utmStats.length > 0 && (
                 <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
                     <CardHeader>
                         <CardTitle className="text-sm font-bold flex items-center gap-2">
                             <Link2 className="w-4 h-4 text-blue-500" />
-                            Performance de UTMs Completa
+                            Performance de UTMs
                         </CardTitle>
-                        <CardDescription className="text-[10px]">Análise detalhada por Source / Medium / Campaign</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="rounded-md border border-slate-200 dark:border-slate-800 overflow-hidden">
@@ -427,31 +470,19 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
 
             {/* Traffic & Origin */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Source Pie */}
                 <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
                     <CardHeader>
                         <CardTitle className="text-sm font-bold flex items-center gap-2">
-                            <MousePointerClick className="w-4 h-4 text-purple-500" />
-                            Leads por Origem
+                            <MousePointerClick className="w-4 h-4 text-purple-500" /> Leads por Origem
                         </CardTitle>
-                        <CardDescription className="text-[10px]">Distribuição por canal (UTM + Manual)</CardDescription>
                     </CardHeader>
                     <CardContent className="h-[300px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
-                                <Pie
-                                    data={newMetrics.sourceData}
-                                    cx="50%"
-                                    cy="50%"
-                                    labelLine={false}
+                                <Pie data={newMetrics.sourceData} cx="50%" cy="50%" labelLine={false}
                                     label={({ name, percent }: any) => `${name} ${(percent ? (percent * 100) : 0).toFixed(0)}%`}
-                                    outerRadius={80}
-                                    fill="#8884d8"
-                                    dataKey="value"
-                                >
-                                    {newMetrics.sourceData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
+                                    outerRadius={80} fill="#8884d8" dataKey="value">
+                                    {newMetrics.sourceData.map((_, index) => <Cell key={index} fill={COLORS[index % COLORS.length]} />)}
                                 </Pie>
                                 <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '8px', color: '#fff' }} />
                                 <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{ fontSize: '10px' }} />
@@ -460,30 +491,22 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                     </CardContent>
                 </Card>
 
-                {/* Conversion Bar */}
                 <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
                     <CardHeader>
                         <CardTitle className="text-sm font-bold flex items-center gap-2">
-                            <Target className="w-4 h-4 text-emerald-500" />
-                            Conversão por Origem
+                            <Target className="w-4 h-4 text-emerald-500" /> Conversão por Origem
                         </CardTitle>
-                        <CardDescription className="text-[10px]">Quem fecha mais negócios?</CardDescription>
                     </CardHeader>
                     <CardContent className="h-[300px]">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart
-                                layout="vertical"
-                                data={newMetrics.conversionData.slice(0, 8)} // Top 8 sources
-                                margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
-                            >
+                            <BarChart layout="vertical" data={newMetrics.conversionData.slice(0, 8)} margin={{ left: 40 }}>
                                 <CartesianGrid strokeDasharray="3 3" horizontal={false} opacity={0.1} />
                                 <XAxis type="number" unit="%" domain={[0, 100]} tick={{ fontSize: 10, fill: '#64748b' }} />
                                 <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 10, fill: '#64748b' }} />
                                 <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '8px', color: '#fff' }} />
-                                <Legend wrapperStyle={{ fontSize: '10px' }} />
-                                <Bar dataKey="rate" name="Taxa de Conversão (%)" fill="#82ca9d" radius={[0, 4, 4, 0]} barSize={16}>
+                                <Bar dataKey="rate" name="Conversão (%)" fill="#82ca9d" radius={[0, 4, 4, 0]} barSize={16}>
                                     {newMetrics.conversionData.map((entry, index) => (
-                                        <Cell key={`cell-conv-${index}`} fill={entry.rate > 20 ? '#10b981' : '#f59e0b'} />
+                                        <Cell key={index} fill={entry.rate > 20 ? '#10b981' : '#f59e0b'} />
                                     ))}
                                 </Bar>
                             </BarChart>
@@ -492,67 +515,9 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                 </Card>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
-                    <CardHeader>
-                        <CardTitle className="text-sm font-bold flex items-center gap-2">
-                            <TrendingUp className="w-4 h-4 text-indigo-500" />
-                            Top Campanhas (Source / Medium)
-                        </CardTitle>
-                        <CardDescription className="text-[10px]">Volume por utm_campaign</CardDescription>
-                    </CardHeader>
-                    <CardContent className="h-[300px]">
-                        {newMetrics.campaignData.length > 0 ? (
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={newMetrics.campaignData}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} />
-                                    <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#64748b' }} interval={0} angle={-15} textAnchor="end" height={60} />
-                                    <YAxis allowDecimals={false} tick={{ fontSize: 10, fill: '#64748b' }} />
-                                    <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '8px', color: '#fff' }} />
-                                    <Bar dataKey="leads" name="Leads" fill="#8884d8" radius={[4, 4, 0, 0]} barSize={32} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        ) : (
-                            <div className="h-full flex items-center justify-center text-muted-foreground text-xs">
-                                Nenhuma campanha identificada.
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-
-                <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
-                    <CardHeader>
-                        <CardTitle className="text-sm font-bold flex items-center gap-2">
-                            <FileText className="w-4 h-4 text-blue-500" />
-                            Top Páginas
-                        </CardTitle>
-                        <CardDescription className="text-[10px]">Conversão por Page Path</CardDescription>
-                    </CardHeader>
-                    <CardContent className="h-[300px]">
-                        {newMetrics.pageData.length > 0 ? (
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart layout="vertical" data={newMetrics.pageData}>
-                                    <CartesianGrid strokeDasharray="3 3" horizontal={false} opacity={0.1} />
-                                    <XAxis type="number" allowDecimals={false} tick={{ fontSize: 10, fill: '#64748b' }} />
-                                    <YAxis dataKey="name" type="category" width={150} tick={{ fontSize: 10, fill: '#64748b' }} />
-                                    <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '8px', color: '#fff' }} />
-                                    <Bar dataKey="leads" name="Leads" fill="#0088FE" radius={[0, 4, 4, 0]} barSize={16} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        ) : (
-                            <div className="h-full flex items-center justify-center text-muted-foreground text-xs">
-                                Nenhuma página identificada.
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-            </div>
-
+            {/* Daily + Pipeline */}
             <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-                <CardHeader>
-                    <CardTitle className="text-sm font-bold">Leads Diários</CardTitle>
-                    <CardDescription className="text-[10px]">Volume de leads por dia no período selecionado</CardDescription>
-                </CardHeader>
+                <CardHeader><CardTitle className="text-sm font-bold">Leads Diários</CardTitle></CardHeader>
                 <CardContent className="h-[250px]">
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={charts.dailyData}>
@@ -571,7 +536,6 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                         Temperatura do Pipeline
                         {selectedColumn && <Badge variant="secondary" onClick={() => setSelectedColumn(null)} className="cursor-pointer text-[10px]">✕ {selectedColumn}</Badge>}
                     </CardTitle>
-                    <CardDescription className="text-[10px]">Clique em uma etapa para ver os leads</CardDescription>
                 </CardHeader>
                 <CardContent className="h-[300px]">
                     <ResponsiveContainer width="100%" height="100%">
