@@ -108,3 +108,45 @@ export function calculateConversionBySource(leads: Lead[], isWon: (lead: Lead) =
         }))
         .sort((a, b) => b.rate - a.rate);
 }
+
+// Stop words list for PT-BR
+const STOP_WORDS = new Set([
+    "de", "a", "o", "que", "e", "do", "da", "em", "um", "para", "é", "com", "não", "uma", "os", "no", "se", "na", "por", "mais", "as", "dos", "como", "mas", "foi", "ao", "ele", "das", "tem", "à", "seu", "sua", "ou", "ser", "quando", "muito", "há", "nos", "já", "está", "eu", "também", "só", "pelo", "pela", "até", "isso", "ela", "entre", "era", "depois", "sem", "mesmo", "aos", "ter", "seus", "quem", "nas", "me", "esse", "eles", "estão", "você", "tinha", "foram", "essa", "num", "nem", "suas", "meu", "às", "minha", "têm", "numa", "pelos", "elas", "havia", "seja", "qual", "será", "nós", "tenho", "lhe", "deles", "essas", "esses", "pelas", "este", "fosse", "dele", "tu", "te", "vcs", "cliente", "lead", "contato", "sobre", "falar", "hoje", "agora", "bom", "dia", "tarde", "noite", "ola", "olá", "oi", "tudo", "bem", "fala"
+]);
+
+export function analyzeKeywords(leads: Lead[], isWon: (l: Lead) => boolean, isLost: (l: Lead) => boolean) {
+    const processText = (text: string) => {
+        return text.toLowerCase()
+            .replace(/[^\w\sà-ú]/g, '') // Remove punctuation but keep accents
+            .split(/\s+/)
+            .filter(w => w.length > 2 && !STOP_WORDS.has(w));
+    };
+
+    const wonWords: Record<string, number> = {};
+    const lostWords: Record<string, number> = {};
+    const activeWords: Record<string, number> = {};
+
+    leads.forEach(lead => {
+        if (!lead.notes) return;
+        const words = processText(lead.notes);
+
+        if (isWon(lead)) {
+            words.forEach(w => wonWords[w] = (wonWords[w] || 0) + 1);
+        } else if (isLost(lead)) {
+            words.forEach(w => lostWords[w] = (lostWords[w] || 0) + 1);
+        } else {
+            words.forEach(w => activeWords[w] = (activeWords[w] || 1) + 1);
+        }
+    });
+
+    const getTop = (map: Record<string, number>) => Object.entries(map)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 8)
+        .map(([word, count]) => ({ word, count }));
+
+    return {
+        won: getTop(wonWords),
+        lost: getTop(lostWords),
+        active: getTop(activeWords)
+    };
+}

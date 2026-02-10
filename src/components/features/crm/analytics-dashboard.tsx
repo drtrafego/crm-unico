@@ -10,8 +10,8 @@ import {
 import { format, subDays, startOfDay, endOfDay, isWithinInterval, eachDayOfInterval, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-    Wallet, TrendingUp, Users, Target, AlertOctagon, Clock, CalendarClock,
-    RotateCcw, Smile, Frown, Flame, FileText, BarChart3, MousePointerClick
+    Wallet, TrendingUp, Users, Target, Clock, CalendarClock,
+    RotateCcw, Smile, Frown, Flame, FileText, BarChart3, MousePointerClick, Gem, BrainCircuit
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -19,7 +19,8 @@ import { Badge } from "@/components/ui/badge";
 import { DateRangePickerWithPresets } from "./date-range-picker";
 import { DateRange } from "react-day-picker";
 import { KPI, InsightStat, ActionTag, PeriodSummary } from "./analytics-components";
-import { processAnalyticsData, calculateConversionBySource } from "@/lib/analytics-helper";
+import { processAnalyticsData, calculateConversionBySource, analyzeKeywords } from "@/lib/analytics-helper";
+import { cn } from "@/lib/utils";
 
 // --- Colors & Helpers ---
 const PIPELINE_COLORS = ["#6366f1", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#0ea5e9"];
@@ -70,8 +71,29 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
     const [selectedKeyword, setSelectedKeyword] = useState<string | null>(null);
 
     // --- Key Identification ---
-    const fechadoColumn = columns.find(c => /fechado|won|ganho|vendido/i.test(c.title));
-    const perdidoColumn = columns.find(c => /perdido|lost|arquivado/i.test(c.title));
+    // More robust identification
+    const isFechado = (col: Column) => /fechado|won|ganho|vendido|contrato/i.test(col.title);
+    const isPerdido = (col: Column) => /perdido|lost|arquivado|desqualificado/i.test(col.title);
+
+    const fechadoColumn = columns.find(isFechado);
+    const perdidoColumn = columns.find(isPerdido);
+
+    // Robust checker for leads
+    const isLeadWon = (lead: Lead) => {
+        if (!lead.columnId) return false;
+        if (fechadoColumn && lead.columnId === fechadoColumn.id) return true;
+        // Fallback: Check title directly if ID mismatch (unlikely but safe)
+        const col = columns.find(c => c.id === lead.columnId);
+        return col ? isFechado(col) : false;
+    };
+
+    const isLeadLost = (lead: Lead) => {
+        if (!lead.columnId) return false;
+        if (perdidoColumn && lead.columnId === perdidoColumn.id) return true;
+        const col = columns.find(c => c.id === lead.columnId);
+        return col ? isPerdido(col) : false;
+    };
+
 
     // --- Data Processing & Metrics ---
     const {
@@ -83,7 +105,8 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
         states,
         periodStats,
         keywordData,
-        newMetrics // Added new metrics
+        newMetrics,
+        salesIntelligence // New Intelligence Object
     } = useMemo(() => {
         // 1. Base Filter (Toolbar)
         const filtered = initialLeads.filter(lead => {
@@ -101,16 +124,9 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
         // 2. Interactive Filter (Click Selection)
         const activeLeads = filtered.filter(lead => {
             if (selectedColumn && lead.columnId !== columns.find(c => c.title === selectedColumn)?.id) return false;
+            // Legacy Keyword Filter logic (Can be enhanced later)
             if (selectedKeyword) {
-                const notes = (lead.notes || "").toLowerCase();
-                const patterns: Record<string, RegExp> = {
-                    "Interessados": /interesse|preço|valor|cotação/i,
-                    "Sem Resposta": /sem resposta|vácuo|sumiu/i,
-                    "Reunião": /reunião|call|agendar|visita/i,
-                    "Whatsapp": /whatsapp|zap|whats/i,
-                    "Email": /email|e-mail|enviado/i
-                };
-                if (patterns[selectedKeyword] && !patterns[selectedKeyword].test(notes)) return false;
+                return (lead.notes || "").toLowerCase().includes(selectedKeyword.toLowerCase());
             }
             return true;
         });
@@ -121,14 +137,15 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
 
         // 4. KPIs
         const totalLeadsCount = activeLeads.length;
-        const wonLeads = activeLeads.filter(l => l.columnId && fechadoColumn && l.columnId === fechadoColumn.id);
-        const lostLeads = activeLeads.filter(l => l.columnId && perdidoColumn && l.columnId === perdidoColumn.id);
-        const openLeads = activeLeads.filter(l => l.columnId && (!fechadoColumn || l.columnId !== fechadoColumn.id) && (!perdidoColumn || l.columnId !== perdidoColumn.id));
+        const wonLeads = activeLeads.filter(isLeadWon);
+        const lostLeads = activeLeads.filter(isLeadLost);
+        const openLeads = activeLeads.filter(l => !isLeadWon(l) && !isLeadLost(l));
 
         const revenue = wonLeads.reduce((acc, l) => acc + parseValue(l.value), 0);
         const pipeline = openLeads.reduce((acc, l) => acc + parseValue(l.value), 0);
         const conversionRate = totalLeadsCount ? (wonLeads.length / totalLeadsCount) * 100 : 0;
         const lossRate = totalLeadsCount ? (lostLeads.length / totalLeadsCount) * 100 : 0;
+        const averageTicket = wonLeads.length ? revenue / wonLeads.length : 0; // New KPI
 
         const avgCycle = wonLeads.length
             ? Math.round(wonLeads.reduce((acc, l) => acc + differenceInDays(new Date(), l.createdAt ? new Date(l.createdAt) : new Date()), 0) / wonLeads.length)
@@ -145,7 +162,7 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
             const m = format(date, 'MMM/yy', { locale: ptBR });
             if (!monthlyDataMap[m]) monthlyDataMap[m] = { month: m, leads: 0, revenue: 0, sortDate: startOfDay(date) };
             monthlyDataMap[m].leads++;
-            if (fechadoColumn && l.columnId === fechadoColumn.id) monthlyDataMap[m].revenue += parseValue(l.value);
+            if (isLeadWon(l)) monthlyDataMap[m].revenue += parseValue(l.value);
         });
         const monthlyData = Object.values(monthlyDataMap).sort((a, b) => a.sortDate.getTime() - b.sortDate.getTime());
 
@@ -176,7 +193,7 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
             fill: PIPELINE_COLORS[columns.indexOf(col) % PIPELINE_COLORS.length]
         })).filter(d => d.value > 0);
 
-        // 6. Insights logic
+        // 6. Insights logic (Legacy + New)
         const sentimentStats = { positive: 0, negative: 0, urgent: 0, avgChars: 0, charCount: 0, notesCount: 0 };
         const actionItems = { interested: 0, talking: 0, waiting: 0, proposal: 0, meeting: 0 };
 
@@ -189,75 +206,47 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
             if (/(interess|gostou|top|fech|aprov|sim)/.test(text)) sentimentStats.positive++;
             if (/(desinter|caro|cancel|ruim|não)/.test(text)) sentimentStats.negative++;
             if (/(urge|press|hoje|agora)/.test(text)) sentimentStats.urgent++;
-
-            if (/(interess)/.test(text)) actionItems.interested++;
-            if (/(faland|contato|whatsapp)/.test(text)) actionItems.talking++;
-            if (/(aguard|retorno|espera)/.test(text)) actionItems.waiting++;
-            if (/(proposta|orçament|preço)/.test(text)) actionItems.proposal++;
-            if (/(reuni|visit|presencial)/.test(text)) actionItems.meeting++;
         });
         sentimentStats.avgChars = sentimentStats.notesCount ? Math.round(sentimentStats.charCount / sentimentStats.notesCount) : 0;
 
-        // Keywords
-        const tagCounts: Record<string, number> = {};
-        filtered.forEach(l => {
-            const text = (l.notes || "").toLowerCase();
-            if (/(interess)/.test(text)) tagCounts["Interessados"] = (tagCounts["Interessados"] || 0) + 1;
-            if (/(sem resposta|vácuo)/.test(text)) tagCounts["Sem Resposta"] = (tagCounts["Sem Resposta"] || 0) + 1;
-            if (/(reuni|visit)/.test(text)) tagCounts["Reunião"] = (tagCounts["Reunião"] || 0) + 1;
-            if (/(whatsapp|zap)/.test(text)) tagCounts["Whatsapp"] = (tagCounts["Whatsapp"] || 0) + 1;
-        });
+        // --- NEW METRICS INTEGRATION ---
+        const processedNewMetrics = processAnalyticsData(activeLeads);
+        const conversionData = calculateConversionBySource(activeLeads, isLeadWon);
+        const newMetrics = {
+            ...processedNewMetrics,
+            conversionData
+        };
 
-        const keywordData = Object.entries(tagCounts).map(([keyword, count]) => {
-            const colors: Record<string, string> = {
-                "Interessados": "text-emerald-400",
-                "Sem Resposta": "text-slate-500",
-                "Reunião": "text-amber-400",
-                "Whatsapp": "text-green-400"
-            };
-            return { keyword, count, color: colors[keyword] || "text-slate-400" };
-        });
+        // --- SALES INTELLIGENCE (KEYWORDS) ---
+        const salesIntelligence = analyzeKeywords(activeLeads, isLeadWon, isLeadLost);
 
+        // Determine keywords for interactive filter from Intelligence
+        const topKeywords = salesIntelligence.active.slice(0, 5).map(k => ({ keyword: k.word, count: k.count, color: "text-slate-400" }));
+
+        // Period Stats (Keep existing logic)
         const now = new Date();
         const l7 = activeLeads.filter(l => l.createdAt && new Date(l.createdAt) >= subDays(now, 7));
         const l30 = activeLeads.filter(l => l.createdAt && new Date(l.createdAt) >= subDays(now, 30));
-        const getSalesCount = (ls: Lead[]) => ls.filter(l => l.columnId && fechadoColumn && l.columnId === fechadoColumn.id).length;
+        const getSalesCount = (ls: Lead[]) => ls.filter(isLeadWon).length;
 
         const periodStats = {
             l7: { count: l7.length, sales: getSalesCount(l7) },
             l30: { count: l30.length, sales: getSalesCount(l30) }
         };
 
-        // --- NEW METRICS INTEGRATION ---
-        const isWon = (lead: Lead) => {
-            if (fechadoColumn && lead.columnId === fechadoColumn.id) return true;
-            // Fallback to title check if needed, but we have fechadoColumn already
-            if (lead.columnId) {
-                const col = columns.find(c => c.id === lead.columnId);
-                if (col && /fechado|won|ganho/i.test(col.title)) return true;
-            }
-            return false;
-        };
-        const processedNewMetrics = processAnalyticsData(activeLeads);
-        const conversionData = calculateConversionBySource(activeLeads, isWon);
-        const newMetrics = {
-            ...processedNewMetrics,
-            conversionData
-        };
-        // -------------------------------
-
         return {
             interactiveLeads: activeLeads,
             uniqueOrigins,
             states,
-            kpis: { revenue, pipeline, totalLeads: totalLeadsCount, conversionRate, lossRate, avgCycle, followUpsCount },
+            kpis: { revenue, pipeline, totalLeads: totalLeadsCount, conversionRate, averageTicket, avgCycle, followUpsCount },
             charts: { monthlyData, regionalData, dailyData, funnelData },
             insights: { sentimentStats, actionItems },
             periodStats,
-            keywordData,
-            newMetrics
+            keywordData: topKeywords, // Use new keywords
+            newMetrics,
+            salesIntelligence
         };
-    }, [initialLeads, columns, dateRange, selectedOrigin, selectedState, selectedColumn, selectedKeyword, fechadoColumn, perdidoColumn]);
+    }, [initialLeads, columns, dateRange, selectedOrigin, selectedState, selectedColumn, selectedKeyword]);
 
     const handleReset = () => {
         setDateRange({ from: subDays(new Date(), 90), to: new Date() });
@@ -310,9 +299,10 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                 <KPI label="Pipeline Aberto" value={formatCurrency(kpis.pipeline)} icon={Target} color="text-blue-500" iconBg="bg-blue-500/10" />
                 <KPI label="Total de Leads" value={kpis.totalLeads} icon={Users} color="text-slate-900 dark:text-white" />
                 <KPI label="Taxa de Conversão" value={kpis.conversionRate.toFixed(1) + "%"} icon={TrendingUp} color="text-emerald-500" iconBg="bg-emerald-500/10" />
-                <KPI label="Taxa de Perda" value={kpis.lossRate.toFixed(1) + "%"} icon={AlertOctagon} color="text-rose-500" iconBg="bg-rose-500/10" />
-                <KPI label="Ciclo Médio" value={`${kpis.avgCycle} dias`} icon={Clock} color="text-amber-500" iconBg="bg-amber-500/10" />
-                <KPI label="Follow-ups" value={kpis.followUpsCount} icon={CalendarClock} color="text-indigo-500" iconBg="bg-indigo-500/10" />
+                {/* REPLACED: Taxa de Perda -> Ticket Médio */}
+                <KPI label="Ticket Médio" value={formatCurrency(kpis.averageTicket)} icon={Gem} color="text-amber-500" iconBg="bg-amber-500/10" />
+                <KPI label="Ciclo Médio" value={`${kpis.avgCycle} dias`} icon={Clock} color="text-indigo-500" iconBg="bg-indigo-500/10" />
+                <KPI label="Follow-ups" value={kpis.followUpsCount} icon={CalendarClock} color="text-purple-500" iconBg="bg-purple-500/10" />
             </div>
 
             {/* Charts Row 1 */}
@@ -360,8 +350,96 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                 </Card>
             </div>
 
+            {/* NEW SECTION: Sales Intelligence (Notes & Keywords) */}
+            <Card className="bg-slate-950 border-slate-800 shadow-xl">
+                <CardHeader className="pb-4 border-b border-slate-900">
+                    <div className="flex items-center gap-2">
+                        <BrainCircuit className="h-5 w-5 text-purple-400" />
+                        <div>
+                            <CardTitle className="text-white text-base">Inteligência de Vendas</CardTitle>
+                            <CardDescription className="text-[10px] text-slate-500">
+                                Análise semântica das anotações para entender Ganhos e Perdas
+                            </CardDescription>
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent className="p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {/* Why we Win */}
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Smile className="w-4 h-4 text-emerald-400" />
+                                <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-widest">Por que Ganhamos?</h4>
+                            </div>
+                            <div className="space-y-2">
+                                {salesIntelligence.won.length > 0 ? salesIntelligence.won.map((item, idx) => (
+                                    <div key={idx} className="flex justify-between items-center text-xs group cursor-pointer hover:bg-slate-900/50 p-1 rounded" onClick={() => setSelectedKeyword(selectedKeyword === item.word ? null : item.word)}>
+                                        <span className={cn("font-medium", selectedKeyword === item.word ? "text-emerald-400" : "text-slate-300")}>{item.word}</span>
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-16 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                                                <div className="h-full bg-emerald-500" style={{ width: `${Math.min((item.count / 10) * 100, 100)}%` }} />
+                                            </div>
+                                            <span className="text-slate-500 w-4 text-right">{item.count}</span>
+                                        </div>
+                                    </div>
+                                )) : (
+                                    <p className="text-[10px] text-slate-500 italic">Poucos dados de ganhos com anotações.</p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Why we Lose */}
+                        <div className="space-y-4 border-l border-slate-900 pl-6">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Frown className="w-4 h-4 text-rose-400" />
+                                <h4 className="text-xs font-bold text-rose-400 uppercase tracking-widest">Por que Perdemos?</h4>
+                            </div>
+                            <div className="space-y-2">
+                                {salesIntelligence.lost.length > 0 ? salesIntelligence.lost.map((item, idx) => (
+                                    <div key={idx} className="flex justify-between items-center text-xs group cursor-pointer hover:bg-slate-900/50 p-1 rounded" onClick={() => setSelectedKeyword(selectedKeyword === item.word ? null : item.word)}>
+                                        <span className={cn("font-medium", selectedKeyword === item.word ? "text-rose-400" : "text-slate-300")}>{item.word}</span>
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-16 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                                                <div className="h-full bg-rose-500" style={{ width: `${Math.min((item.count / 10) * 100, 100)}%` }} />
+                                            </div>
+                                            <span className="text-slate-500 w-4 text-right">{item.count}</span>
+                                        </div>
+                                    </div>
+                                )) : (
+                                    <p className="text-[10px] text-slate-500 italic">Poucos dados de perdas com anotações.</p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Active Topics */}
+                        <div className="space-y-4 border-l border-slate-900 pl-6">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Flame className="w-4 h-4 text-amber-400" />
+                                <h4 className="text-xs font-bold text-amber-400 uppercase tracking-widest">Em Negociação</h4>
+                            </div>
+                            <div className="space-y-2">
+                                {salesIntelligence.active.length > 0 ? salesIntelligence.active.map((item, idx) => (
+                                    <div key={idx} className="flex justify-between items-center text-xs group cursor-pointer hover:bg-slate-900/50 p-1 rounded" onClick={() => setSelectedKeyword(selectedKeyword === item.word ? null : item.word)}>
+                                        <span className={cn("font-medium", selectedKeyword === item.word ? "text-amber-400" : "text-slate-300")}>{item.word}</span>
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-16 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                                                <div className="h-full bg-amber-500" style={{ width: `${Math.min((item.count / 10) * 100, 100)}%` }} />
+                                            </div>
+                                            <span className="text-slate-500 w-4 text-right">{item.count}</span>
+                                        </div>
+                                    </div>
+                                )) : (
+                                    <p className="text-[10px] text-slate-500 italic">Poucos dados ativos com anotações.</p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
             {/* NEW SECTION: Traffic & Origin */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Source Pie */}
                 <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
                     <CardHeader>
                         <CardTitle className="text-sm font-bold flex items-center gap-2">
@@ -394,6 +472,7 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                     </CardContent>
                 </Card>
 
+                {/* Conversion Bar */}
                 <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
                     <CardHeader>
                         <CardTitle className="text-sm font-bold flex items-center gap-2">
@@ -406,7 +485,7 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart
                                 layout="vertical"
-                                data={newMetrics.conversionData.slice(0, 8)}
+                                data={newMetrics.conversionData.slice(0, 8)} // Top 8 sources
                                 margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
                             >
                                 <CartesianGrid strokeDasharray="3 3" horizontal={false} opacity={0.1} />
@@ -520,79 +599,6 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                             </Bar>
                         </BarChart>
                     </ResponsiveContainer>
-                </CardContent>
-            </Card>
-
-            {/* Insights Section */}
-            <Card className="bg-slate-950 border-slate-800 shadow-xl">
-                <CardHeader className="pb-4 border-b border-slate-900">
-                    <div className="flex flex-col gap-4">
-                        <div className="flex items-center gap-2">
-                            <BarChart3 className="h-5 w-5 text-indigo-400" />
-                            <div>
-                                <CardTitle className="text-white text-base">Insights das Observações</CardTitle>
-                                <CardDescription className="text-[10px] text-slate-500 space-x-1">Análise automática das anotações dos leads</CardDescription>
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                            <InsightStat label="Positivos" value={insights.sentimentStats.positive} sublabel="Potenciais clientes" color="text-emerald-400" icon={Smile} />
-                            <InsightStat label="Negativos" value={insights.sentimentStats.negative} sublabel="Sem interesse no momento" color="text-rose-400" icon={Frown} />
-                            <InsightStat label="Urgentes" value={insights.sentimentStats.urgent} sublabel="Atendimento imediato" color="text-amber-400" icon={Flame} />
-                            <InsightStat label="Engajamento" value={insights.sentimentStats.avgChars} sublabel="Tamanho médio das notas" color="text-blue-400" icon={FileText} />
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent className="p-6">
-                    <div className="space-y-6">
-                        <div>
-                            <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Ações Mencionadas</h4>
-                            <div className="flex flex-wrap gap-3">
-                                {keywordData.map((item, idx) => (
-                                    <ActionTag key={idx} label={item.keyword} count={item.count} color={item.color} icon={FileText} selected={selectedKeyword === item.keyword} onClick={() => setSelectedKeyword(selectedKeyword === item.keyword ? null : item.keyword)} />
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                            <div>
-                                <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Últimas Observações</h4>
-                                <div className="space-y-3 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
-                                    {interactiveLeads.filter(l => l.notes).slice(0, 10).map(lead => (
-                                        <div key={lead.id} className="p-3 rounded-lg bg-slate-900/50 border border-slate-800/50 hover:border-slate-700 transition-colors">
-                                            <div className="flex justify-between items-start mb-1">
-                                                <span className="text-slate-200 font-bold text-xs">{lead.name}</span>
-                                                <span className="text-[9px] text-slate-500">{lead.createdAt ? format(new Date(lead.createdAt), 'dd/MM') : '--/--'}</span>
-                                            </div>
-                                            <p className="text-[10px] text-slate-400 line-clamp-2 leading-relaxed italic">
-                                                {lead.notes}
-                                            </p>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                            <div className="flex flex-col justify-between">
-                                <div>
-                                    <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4 text-center">Resumo por Período</h4>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <PeriodSummary title="Últimos 7 dias" leads={periodStats.l7.count} sales={periodStats.l7.sales} color="text-indigo-400" />
-                                        <PeriodSummary title="Últimos 30 dias" leads={periodStats.l30.count} sales={periodStats.l30.sales} color="text-purple-400" />
-                                    </div>
-                                </div>
-                                <div className="mt-auto pt-6 flex flex-col gap-2">
-                                    <div className="flex justify-between items-center mb-1">
-                                        <span className="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">Taxa de Anotação</span>
-                                        <span className="text-white font-black text-xs px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-400 border border-indigo-500/20">
-                                            {Math.round((insights.sentimentStats.notesCount / (kpis.totalLeads || 1)) * 100)}%
-                                        </span>
-                                    </div>
-                                    <div className="h-2 w-full bg-slate-900/50 rounded-full border border-slate-800 overflow-hidden p-[2px]">
-                                        <div className="h-full bg-indigo-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)]" style={{ width: `${(insights.sentimentStats.notesCount / (kpis.totalLeads || 1)) * 100}%` }} />
-                                    </div>
-                                    <p className="text-[9px] text-slate-500 italic mt-1 text-center">Leads com observações registradas</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </CardContent>
             </Card>
         </div>
