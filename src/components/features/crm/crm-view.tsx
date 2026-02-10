@@ -313,7 +313,7 @@ export function CrmView({ initialLeads, columns, companyName, initialViewMode, o
             <LeadsList leads={filteredLeads} columns={columns} orgId={orgId} overrides={overrides} />
           </div>
         ) : (
-          <AnalyticsDashboard leads={filteredLeads} columns={columns} />
+          <AnalyticsDashboard initialLeads={filteredLeads} columns={columns} />
         )}
       </div>
     </div>
