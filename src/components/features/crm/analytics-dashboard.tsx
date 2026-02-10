@@ -5,13 +5,13 @@ import { Lead, Column } from "@/server/db/schema";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart, Line, Cell,
-    PieChart, Pie, Legend
+    PieChart, Pie, Legend, Treemap
 } from "recharts";
 import { format, subDays, startOfDay, endOfDay, isWithinInterval, eachDayOfInterval, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
     Wallet, TrendingUp, Users, Target, Clock, CalendarClock,
-    RotateCcw, Smile, Frown, Flame, FileText, BarChart3, MousePointerClick, Gem, BrainCircuit
+    RotateCcw, Smile, Frown, Flame, FileText, BarChart3, MousePointerClick, Gem, BrainCircuit, Link2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -70,43 +70,38 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
     const [selectedColumn, setSelectedColumn] = useState<string | null>(null);
     const [selectedKeyword, setSelectedKeyword] = useState<string | null>(null);
 
-    // --- Key Identification ---
-    // More robust identification
-    const isFechado = (col: Column) => /fechado|won|ganho|vendido|contrato/i.test(col.title);
-    const isPerdido = (col: Column) => /perdido|lost|arquivado|desqualificado/i.test(col.title);
+    // --- Identification Functions (Robust) ---
+    // Check titles in a case-insensitive way
+    const checkStatus = (title: string, type: 'won' | 'lost') => {
+        const t = title.toLowerCase();
+        if (type === 'won') return /(fechado|won|ganho|vendido|contrato|sucesso)/.test(t) && !t.includes('não');
+        if (type === 'lost') return /(perdido|lost|arquivado|desqualificado|cancelado|não|sem retorno)/.test(t);
+        return false;
+    };
 
-    const fechadoColumn = columns.find(isFechado);
-    const perdidoColumn = columns.find(isPerdido);
-
-    // Robust checker for leads
     const isLeadWon = (lead: Lead) => {
         if (!lead.columnId) return false;
-        if (fechadoColumn && lead.columnId === fechadoColumn.id) return true;
-        // Fallback: Check title directly if ID mismatch (unlikely but safe)
         const col = columns.find(c => c.id === lead.columnId);
-        return col ? isFechado(col) : false;
+        return col ? checkStatus(col.title, 'won') : false;
     };
 
     const isLeadLost = (lead: Lead) => {
         if (!lead.columnId) return false;
-        if (perdidoColumn && lead.columnId === perdidoColumn.id) return true;
         const col = columns.find(c => c.id === lead.columnId);
-        return col ? isPerdido(col) : false;
+        return col ? checkStatus(col.title, 'lost') : false;
     };
-
 
     // --- Data Processing & Metrics ---
     const {
         interactiveLeads,
         kpis,
         charts,
-        insights,
         uniqueOrigins,
         states,
-        periodStats,
         keywordData,
         newMetrics,
-        salesIntelligence // New Intelligence Object
+        salesIntelligence,
+        utmStats
     } = useMemo(() => {
         // 1. Base Filter (Toolbar)
         const filtered = initialLeads.filter(lead => {
@@ -124,7 +119,6 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
         // 2. Interactive Filter (Click Selection)
         const activeLeads = filtered.filter(lead => {
             if (selectedColumn && lead.columnId !== columns.find(c => c.title === selectedColumn)?.id) return false;
-            // Legacy Keyword Filter logic (Can be enhanced later)
             if (selectedKeyword) {
                 return (lead.notes || "").toLowerCase().includes(selectedKeyword.toLowerCase());
             }
@@ -144,8 +138,7 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
         const revenue = wonLeads.reduce((acc, l) => acc + parseValue(l.value), 0);
         const pipeline = openLeads.reduce((acc, l) => acc + parseValue(l.value), 0);
         const conversionRate = totalLeadsCount ? (wonLeads.length / totalLeadsCount) * 100 : 0;
-        const lossRate = totalLeadsCount ? (lostLeads.length / totalLeadsCount) * 100 : 0;
-        const averageTicket = wonLeads.length ? revenue / wonLeads.length : 0; // New KPI
+        const averageTicket = wonLeads.length ? revenue / wonLeads.length : 0;
 
         const avgCycle = wonLeads.length
             ? Math.round(wonLeads.reduce((acc, l) => acc + differenceInDays(new Date(), l.createdAt ? new Date(l.createdAt) : new Date()), 0) / wonLeads.length)
@@ -193,23 +186,7 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
             fill: PIPELINE_COLORS[columns.indexOf(col) % PIPELINE_COLORS.length]
         })).filter(d => d.value > 0);
 
-        // 6. Insights logic (Legacy + New)
-        const sentimentStats = { positive: 0, negative: 0, urgent: 0, avgChars: 0, charCount: 0, notesCount: 0 };
-        const actionItems = { interested: 0, talking: 0, waiting: 0, proposal: 0, meeting: 0 };
-
-        activeLeads.forEach(l => {
-            if (!l.notes) return;
-            const text = l.notes.toLowerCase();
-            sentimentStats.notesCount++;
-            sentimentStats.charCount += text.length;
-
-            if (/(interess|gostou|top|fech|aprov|sim)/.test(text)) sentimentStats.positive++;
-            if (/(desinter|caro|cancel|ruim|não)/.test(text)) sentimentStats.negative++;
-            if (/(urge|press|hoje|agora)/.test(text)) sentimentStats.urgent++;
-        });
-        sentimentStats.avgChars = sentimentStats.notesCount ? Math.round(sentimentStats.charCount / sentimentStats.notesCount) : 0;
-
-        // --- NEW METRICS INTEGRATION ---
+        // --- NEW METRICS ---
         const processedNewMetrics = processAnalyticsData(activeLeads);
         const conversionData = calculateConversionBySource(activeLeads, isLeadWon);
         const newMetrics = {
@@ -219,20 +196,21 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
 
         // --- SALES INTELLIGENCE (KEYWORDS) ---
         const salesIntelligence = analyzeKeywords(activeLeads, isLeadWon, isLeadLost);
+        const topKeywords = salesIntelligence.active.slice(0, 5).map(k => ({ keyword: k.word, count: k.count, color: "text-amber-500" }));
 
-        // Determine keywords for interactive filter from Intelligence
-        const topKeywords = salesIntelligence.active.slice(0, 5).map(k => ({ keyword: k.word, count: k.count, color: "text-slate-400" }));
+        // --- UTM ANALYSIS ---
+        // Collect existing UTM data
+        const utmStats = activeLeads.reduce((acc, lead) => {
+            if (lead.utmSource || lead.utmMedium || lead.utmCampaign) {
+                const key = `${lead.utmSource || 'N/A'} / ${lead.utmMedium || 'N/A'}`;
+                if (!acc[key]) acc[key] = { name: key, size: 0, campaigns: new Set() };
+                acc[key].size++;
+                if (lead.utmCampaign) acc[key].campaigns.add(lead.utmCampaign);
+            }
+            return acc;
+        }, {} as Record<string, { name: string, size: number, campaigns: Set<string> }>);
 
-        // Period Stats (Keep existing logic)
-        const now = new Date();
-        const l7 = activeLeads.filter(l => l.createdAt && new Date(l.createdAt) >= subDays(now, 7));
-        const l30 = activeLeads.filter(l => l.createdAt && new Date(l.createdAt) >= subDays(now, 30));
-        const getSalesCount = (ls: Lead[]) => ls.filter(isLeadWon).length;
-
-        const periodStats = {
-            l7: { count: l7.length, sales: getSalesCount(l7) },
-            l30: { count: l30.length, sales: getSalesCount(l30) }
-        };
+        const utmTreeData = Object.values(utmStats).map(s => ({ ...s, campaigns: Array.from(s.campaigns).join(', ') })).sort((a, b) => b.size - a.size).slice(0, 10);
 
         return {
             interactiveLeads: activeLeads,
@@ -240,11 +218,10 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
             states,
             kpis: { revenue, pipeline, totalLeads: totalLeadsCount, conversionRate, averageTicket, avgCycle, followUpsCount },
             charts: { monthlyData, regionalData, dailyData, funnelData },
-            insights: { sentimentStats, actionItems },
-            periodStats,
-            keywordData: topKeywords, // Use new keywords
+            keywordData: topKeywords,
             newMetrics,
-            salesIntelligence
+            salesIntelligence,
+            utmStats: utmTreeData
         };
     }, [initialLeads, columns, dateRange, selectedOrigin, selectedState, selectedColumn, selectedKeyword]);
 
@@ -299,7 +276,6 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                 <KPI label="Pipeline Aberto" value={formatCurrency(kpis.pipeline)} icon={Target} color="text-blue-500" iconBg="bg-blue-500/10" />
                 <KPI label="Total de Leads" value={kpis.totalLeads} icon={Users} color="text-slate-900 dark:text-white" />
                 <KPI label="Taxa de Conversão" value={kpis.conversionRate.toFixed(1) + "%"} icon={TrendingUp} color="text-emerald-500" iconBg="bg-emerald-500/10" />
-                {/* REPLACED: Taxa de Perda -> Ticket Médio */}
                 <KPI label="Ticket Médio" value={formatCurrency(kpis.averageTicket)} icon={Gem} color="text-amber-500" iconBg="bg-amber-500/10" />
                 <KPI label="Ciclo Médio" value={`${kpis.avgCycle} dias`} icon={Clock} color="text-indigo-500" iconBg="bg-indigo-500/10" />
                 <KPI label="Follow-ups" value={kpis.followUpsCount} icon={CalendarClock} color="text-purple-500" iconBg="bg-purple-500/10" />
@@ -350,7 +326,7 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                 </Card>
             </div>
 
-            {/* NEW SECTION: Sales Intelligence (Notes & Keywords) */}
+            {/* Sales Intelligence (Notes & Keywords) */}
             <Card className="bg-slate-950 border-slate-800 shadow-xl">
                 <CardHeader className="pb-4 border-b border-slate-900">
                     <div className="flex items-center gap-2">
@@ -358,7 +334,7 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                         <div>
                             <CardTitle className="text-white text-base">Inteligência de Vendas</CardTitle>
                             <CardDescription className="text-[10px] text-slate-500">
-                                Análise semântica das anotações para entender Ganhos e Perdas
+                                Análise semântica das anotações (Bigrams & Keywords)
                             </CardDescription>
                         </div>
                     </div>
@@ -369,21 +345,16 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                         <div className="space-y-4">
                             <div className="flex items-center gap-2 mb-2">
                                 <Smile className="w-4 h-4 text-emerald-400" />
-                                <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-widest">Por que Ganhamos?</h4>
+                                <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-widest">Motivos de Ganho</h4>
                             </div>
                             <div className="space-y-2">
                                 {salesIntelligence.won.length > 0 ? salesIntelligence.won.map((item, idx) => (
                                     <div key={idx} className="flex justify-between items-center text-xs group cursor-pointer hover:bg-slate-900/50 p-1 rounded" onClick={() => setSelectedKeyword(selectedKeyword === item.word ? null : item.word)}>
                                         <span className={cn("font-medium", selectedKeyword === item.word ? "text-emerald-400" : "text-slate-300")}>{item.word}</span>
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-16 h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                                                <div className="h-full bg-emerald-500" style={{ width: `${Math.min((item.count / 10) * 100, 100)}%` }} />
-                                            </div>
-                                            <span className="text-slate-500 w-4 text-right">{item.count}</span>
-                                        </div>
+                                        <Badge variant="outline" className="text-[10px] border-slate-800 text-slate-500">{item.count}</Badge>
                                     </div>
                                 )) : (
-                                    <p className="text-[10px] text-slate-500 italic">Poucos dados de ganhos com anotações.</p>
+                                    <p className="text-[10px] text-slate-500 italic">Poucos dados.</p>
                                 )}
                             </div>
                         </div>
@@ -392,21 +363,16 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                         <div className="space-y-4 border-l border-slate-900 pl-6">
                             <div className="flex items-center gap-2 mb-2">
                                 <Frown className="w-4 h-4 text-rose-400" />
-                                <h4 className="text-xs font-bold text-rose-400 uppercase tracking-widest">Por que Perdemos?</h4>
+                                <h4 className="text-xs font-bold text-rose-400 uppercase tracking-widest">Motivos da Perda</h4>
                             </div>
                             <div className="space-y-2">
                                 {salesIntelligence.lost.length > 0 ? salesIntelligence.lost.map((item, idx) => (
                                     <div key={idx} className="flex justify-between items-center text-xs group cursor-pointer hover:bg-slate-900/50 p-1 rounded" onClick={() => setSelectedKeyword(selectedKeyword === item.word ? null : item.word)}>
                                         <span className={cn("font-medium", selectedKeyword === item.word ? "text-rose-400" : "text-slate-300")}>{item.word}</span>
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-16 h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                                                <div className="h-full bg-rose-500" style={{ width: `${Math.min((item.count / 10) * 100, 100)}%` }} />
-                                            </div>
-                                            <span className="text-slate-500 w-4 text-right">{item.count}</span>
-                                        </div>
+                                        <Badge variant="outline" className="text-[10px] border-slate-800 text-slate-500">{item.count}</Badge>
                                     </div>
                                 )) : (
-                                    <p className="text-[10px] text-slate-500 italic">Poucos dados de perdas com anotações.</p>
+                                    <p className="text-[10px] text-slate-500 italic">Poucos dados.</p>
                                 )}
                             </div>
                         </div>
@@ -415,21 +381,16 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                         <div className="space-y-4 border-l border-slate-900 pl-6">
                             <div className="flex items-center gap-2 mb-2">
                                 <Flame className="w-4 h-4 text-amber-400" />
-                                <h4 className="text-xs font-bold text-amber-400 uppercase tracking-widest">Em Negociação</h4>
+                                <h4 className="text-xs font-bold text-amber-400 uppercase tracking-widest">Em Pauta</h4>
                             </div>
                             <div className="space-y-2">
                                 {salesIntelligence.active.length > 0 ? salesIntelligence.active.map((item, idx) => (
                                     <div key={idx} className="flex justify-between items-center text-xs group cursor-pointer hover:bg-slate-900/50 p-1 rounded" onClick={() => setSelectedKeyword(selectedKeyword === item.word ? null : item.word)}>
                                         <span className={cn("font-medium", selectedKeyword === item.word ? "text-amber-400" : "text-slate-300")}>{item.word}</span>
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-16 h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                                                <div className="h-full bg-amber-500" style={{ width: `${Math.min((item.count / 10) * 100, 100)}%` }} />
-                                            </div>
-                                            <span className="text-slate-500 w-4 text-right">{item.count}</span>
-                                        </div>
+                                        <Badge variant="outline" className="text-[10px] border-slate-800 text-slate-500">{item.count}</Badge>
                                     </div>
                                 )) : (
-                                    <p className="text-[10px] text-slate-500 italic">Poucos dados ativos com anotações.</p>
+                                    <p className="text-[10px] text-slate-500 italic">Poucos dados.</p>
                                 )}
                             </div>
                         </div>
@@ -437,7 +398,35 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                 </CardContent>
             </Card>
 
-            {/* NEW SECTION: Traffic & Origin */}
+            {/* UTM Performance Grid (New) */}
+            {utmStats.length > 0 && (
+                <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
+                    <CardHeader>
+                        <CardTitle className="text-sm font-bold flex items-center gap-2">
+                            <Link2 className="w-4 h-4 text-blue-500" />
+                            Performance de UTMs
+                        </CardTitle>
+                        <CardDescription className="text-[10px]">Origem / Mídia e suas Campanhas</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {utmStats.map((utm, idx) => (
+                                <div key={idx} className="p-3 border rounded-lg bg-slate-50 dark:bg-slate-950/50 border-slate-200 dark:border-slate-800">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <h5 className="font-semibold text-xs text-slate-700 dark:text-slate-200">{utm.name}</h5>
+                                        <Badge variant="secondary">{utm.size} Leads</Badge>
+                                    </div>
+                                    <p className="text-[10px] text-slate-500 line-clamp-2">
+                                        {utm.campaigns || "Sem campanha específica"}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Traffic & Origin */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Source Pie */}
                 <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
