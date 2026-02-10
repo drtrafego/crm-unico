@@ -1,5 +1,5 @@
 
-import { Lead, Column } from "@/server/db/schema";
+import { Lead } from "@/server/db/schema";
 import { getLeadSource } from "./leads-helper";
 
 export interface AnalyticsData {
@@ -90,54 +90,58 @@ export function calculateConversionBySource(leads: Lead[], isWon: (lead: Lead) =
         .sort((a, b) => b.rate - a.rate);
 }
 
-// Stop words list refined (Removed "não", "sem" to capture negation)
+// --- Sales Intelligence 2.0: Categorization ---
+
+type Category = 'Timing' | 'Budget' | 'Competition' | 'Engagement' | 'Product' | 'Other';
+
+const CATEGORY_RULES: Record<Category, string[]> = {
+    'Timing': ['2026', 'janeiro', 'fevereiro', 'marco', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro', 'aguardando', 'momento', 'futuro', 'começar', 'semestre', 'ano que vem'],
+    'Budget': ['caro', 'orçamento', 'dinheiro', 'grana', 'investimento', 'financeiro', 'valor', 'recurso', 'custo'],
+    'Competition': ['já tenho', 'agência', 'outro faz', 'concorrente', 'parceiro', 'satisfeito', 'trocar', 'experiência ruim'],
+    'Engagement': ['não responde', 'sumiu', 'visualizou', 'vácuo', 'contato', 'liguei', 'mensagem', 'retorno'],
+    'Product': ['não serve', 'funcionalidade', 'tatuador', 'modelo', 'nicho', 'estilo', 'serviço', 'proposta'],
+    'Other': []
+};
+
 const STOP_WORDS = new Set([
     "de", "a", "o", "que", "e", "do", "da", "em", "um", "para", "é", "com", "uma", "os", "no", "se", "na", "por", "mais", "as", "dos", "como", "mas", "foi", "ao", "ele", "das", "tem", "à", "seu", "sua", "ou", "ser", "quando", "muito", "há", "nos", "já", "está", "eu", "também", "só", "pelo", "pela", "até", "isso", "ela", "entre", "era", "depois", "mesmo", "aos", "ter", "seus", "quem", "nas", "me", "esse", "eles", "estão", "você", "tinha", "foram", "essa", "num", "nem", "suas", "meu", "às", "minha", "têm", "numa", "pelos", "elas", "havia", "seja", "qual", "será", "nós", "tenho", "lhe", "deles", "essas", "esses", "pelas", "este", "fosse", "dele", "tu", "te", "vcs", "cliente", "lead", "contato", "sobre", "falar", "hoje", "agora", "bom", "dia", "tarde", "noite", "ola", "olá", "oi", "tudo", "bem", "fala"
 ]);
 
+
 export function analyzeKeywords(leads: Lead[], isWon: (l: Lead) => boolean, isLost: (l: Lead) => boolean) {
-    const processText = (text: string) => {
-        return text.toLowerCase()
-            .replace(/[^\w\sà-ú]/g, '')
-            .split(/\s+/)
-            .filter(w => w.length >= 2 && !STOP_WORDS.has(w));
+
+    const categorizeNote = (text: string): Category | null => {
+        const lower = text.toLowerCase();
+        // Check priority categories first
+        if (CATEGORY_RULES.Budget.some(w => lower.includes(w))) return 'Budget';
+        if (CATEGORY_RULES.Competition.some(w => lower.includes(w))) return 'Competition';
+        if (CATEGORY_RULES.Timing.some(w => lower.includes(w))) return 'Timing';
+        if (CATEGORY_RULES.Product.some(w => lower.includes(w))) return 'Product';
+        if (CATEGORY_RULES.Engagement.some(w => lower.includes(w))) return 'Engagement';
+        return null;
     };
 
-    const wonWords: Record<string, number> = {};
-    const lostWords: Record<string, number> = {};
-    const activeWords: Record<string, number> = {};
+    const wonCategories: Record<string, number> = {};
+    const lostCategories: Record<string, number> = {};
+    const activeCategories: Record<string, number> = {};
 
     leads.forEach(lead => {
         if (!lead.notes) return;
-        const words = processText(lead.notes);
+        const cat = categorizeNote(lead.notes);
+        if (!cat) return;
 
-        // Look for bigrams starting with negation
-        for (let i = 0; i < words.length; i++) {
-            const w = words[i];
-
-            // Contextual analysis: check next word if current is negation
-            if ((w === 'não' || w === 'sem') && i < words.length - 1) {
-                const bigram = `${w} ${words[i + 1]}`;
-                if (isWon(lead)) wonWords[bigram] = (wonWords[bigram] || 0) + 1;
-                else if (isLost(lead)) lostWords[bigram] = (lostWords[bigram] || 0) + 1;
-                else activeWords[bigram] = (activeWords[bigram] || 0) + 1;
-            }
-
-            // Always count individual words too (unless it's a stop word we missed)
-            if (isWon(lead)) wonWords[w] = (wonWords[w] || 0) + 1;
-            else if (isLost(lead)) lostWords[w] = (lostWords[w] || 0) + 1;
-            else activeWords[w] = (activeWords[w] || 0) + 1;
-        }
+        if (isWon(lead)) wonCategories[cat] = (wonCategories[cat] || 0) + 1;
+        else if (isLost(lead)) lostCategories[cat] = (lostCategories[cat] || 0) + 1;
+        else activeCategories[cat] = (activeCategories[cat] || 0) + 1;
     });
 
     const getTop = (map: Record<string, number>) => Object.entries(map)
         .sort((a, b) => b[1] - a[1])
-        .slice(0, 15) // Increased limit
-        .map(([word, count]) => ({ word, count }));
+        .map(([word, count]) => ({ word, count })); // "word" here is the category name
 
     return {
-        won: getTop(wonWords),
-        lost: getTop(lostWords),
-        active: getTop(activeWords)
+        won: getTop(wonCategories),
+        lost: getTop(lostCategories),
+        active: getTop(activeCategories)
     };
 }
