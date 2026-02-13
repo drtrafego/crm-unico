@@ -5,17 +5,19 @@ import { settings, members } from "@/server/db/schema";
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
-import { auth } from "@/auth";
+import { getAuthenticatedUser } from "@/lib/auth-helper";
 
 // Helper to check if user is admin or owner
 async function checkSettingsPermission(orgId: string) {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  const session = await getAuthenticatedUser();
+  if (!session?.email) {
+    return { error: "Sem permissão" };
+  }
 
   const member = await db.query.members.findFirst({
     where: and(
       eq(members.organizationId, orgId),
-      eq(members.userId, session.user.id)
+      eq(members.userId, session.id)
     )
   });
 
@@ -30,9 +32,9 @@ async function checkSettingsPermission(orgId: string) {
 }
 
 export async function getSettings(orgId: string) {
-  const session = await auth();
-  const email = session?.user?.email || "";
-  const name = session?.user?.name || "Minha Empresa";
+  const session = await getAuthenticatedUser();
+  const email = session?.email || "";
+  const name = session?.name || "Minha Empresa";
 
   const existing = await db.query.settings.findFirst({
     where: eq(settings.organizationId, orgId),

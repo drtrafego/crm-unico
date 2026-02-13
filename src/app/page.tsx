@@ -1,15 +1,17 @@
+
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { getAuthenticatedUser } from "@/lib/auth-helper";
 import { db } from "@/lib/db";
 import { members, organizations } from "@/server/db/schema";
 import { eq } from "drizzle-orm";
+import Link from "next/link";
 
 export default async function HomePage() {
-  const session = await auth();
+  const session = await getAuthenticatedUser();
 
-  if (session?.user) {
-    const userEmail = session.user.email;
-    const userId = session.user.id;
+  if (session) {
+    const userEmail = session.email;
+    const userId = session.id;
 
     // Verificar se é Super Admin
     const adminEmails = process.env.ADMIN_EMAILS?.split(",") || [];
@@ -46,20 +48,13 @@ export default async function HomePage() {
           <p className="text-lg text-slate-600 dark:text-slate-400">
             Sua conta ainda não está vinculada a nenhuma organização. Entre em contato com o administrador para receber um convite.
           </p>
-          <form
-            action={async () => {
-              "use server"
-              const { signOut } = await import("@/auth")
-              await signOut({ redirectTo: "/" })
-            }}
+
+          <Link
+            href="/handler/sign-out"
+            className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-slate-200 text-slate-900 hover:bg-slate-300 h-11 px-8 py-2 w-full"
           >
-            <button
-              type="submit"
-              className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-slate-200 text-slate-900 hover:bg-slate-300 h-11 px-8 py-2 w-full"
-            >
-              Sair
-            </button>
-          </form>
+            Sair
+          </Link>
         </div>
       </div>
     );
@@ -76,20 +71,12 @@ export default async function HomePage() {
           Gerencie seus leads e oportunidades com inteligência artificial.
         </p>
 
-        <form
-          action={async () => {
-            "use server"
-            const { signIn } = await import("@/auth")
-            await signIn("google", { redirectTo: "/adm/dashboard" })
-          }}
+        <Link
+          href="/handler/sign-in"
+          className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-indigo-600 text-white hover:bg-indigo-700 h-11 px-8 py-2 w-full shadow-lg"
         >
-          <button
-            type="submit"
-            className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-indigo-600 text-white hover:bg-indigo-700 h-11 px-8 py-2 w-full shadow-lg"
-          >
-            Entrar com Google
-          </button>
-        </form>
+          Entrar
+        </Link>
       </div>
     </div>
   );

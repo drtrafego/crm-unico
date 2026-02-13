@@ -1,10 +1,13 @@
+
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import { SessionProvider } from "@/components/providers/session-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
-import { auth } from "@/auth";
+import { StackProvider, StackTheme } from "@stack-frame/stack";
+import { stackServerApp } from "@/stack";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -22,27 +25,34 @@ export const metadata: Metadata = {
   description: "Gerencie seus leads com IA",
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await auth();
-
   return (
     <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <SessionProvider session={session}>
-            <TooltipProvider>
-              {children}
-              <SpeedInsights />
-            </TooltipProvider>
-          </SessionProvider>
-        </ThemeProvider>
+        <StackProvider app={stackServerApp}>
+          <StackTheme>
+            <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+              <div className="w-full bg-slate-950 text-slate-400 text-xs py-1 px-4 border-b border-slate-800 flex justify-center hover:bg-slate-900 transition-colors">
+                <Link href="https://clientes.casaldotrafego.com/hub" className="flex items-center gap-2 hover:text-white transition-colors">
+                  <ArrowLeft className="w-3 h-3" />
+                  Voltar para o Painel Principal
+                </Link>
+              </div>
+              <TooltipProvider>
+                {children}
+                <SpeedInsights />
+              </TooltipProvider>
+            </ThemeProvider>
+          </StackTheme>
+        </StackProvider>
       </body>
     </html>
   );
 }
+

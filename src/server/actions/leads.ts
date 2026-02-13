@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { leads, columns, leadHistory, members, organizations, users } from "@/server/db/schema";
 import { eq, asc, desc, and, ne, lt, gt, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
+import { getAuthenticatedUser } from "@/lib/auth-helper";
 
 // Helper to determine which OrgID to use (Simplified: always use the provided orgId)
 async function getContext(orgId: string) {
@@ -21,14 +21,15 @@ async function getContext(orgId: string) {
     };
 }
 
+
 async function checkPermissions(orgId: string) {
-    const session = await auth();
-    if (!session?.user?.id) throw new Error("Unauthorized");
+    const session = await getAuthenticatedUser();
+    if (!session?.id) throw new Error("Unauthorized");
 
     const member = await db.query.members.findFirst({
         where: and(
             eq(members.organizationId, orgId),
-            eq(members.userId, session.user.id)
+            eq(members.userId, session.id)
         )
     });
 
@@ -39,10 +40,10 @@ async function checkPermissions(orgId: string) {
 }
 
 async function logHistory(leadId: string, action: 'create' | 'move' | 'update', details: string, fromColumn?: string, toColumn?: string) {
-    const session = await auth();
+    const session = await getAuthenticatedUser();
     try {
         await db.insert(leadHistory).values({
-            leadId, action, details, fromColumn, toColumn, userId: session?.user?.id
+            leadId, action, details, fromColumn, toColumn, userId: session?.id
         });
     } catch (error) {
         console.error("Failed to log history:", error);

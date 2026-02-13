@@ -4,13 +4,16 @@ import { adminDb } from "@/lib/db";
 import { leads, columns, leadHistory, settings } from "@/server/db/schema";
 import { eq, asc, desc, and, ne, lt, gt } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
+import { getAuthenticatedUser } from "@/lib/auth-helper";
 
 const SUPER_ADMIN_ORG_ID = "super-admin-personal";
 
 async function checkAdminPermissions() {
-    const session = await auth();
-    const userEmail = session?.user?.email;
+    const session = await getAuthenticatedUser();
+    if (!session) {
+        throw new Error("Unauthorized: No active session");
+    }
+    const userEmail = session?.email;
     const adminEmails = process.env.ADMIN_EMAILS?.split(",") || [];
 
     if (!userEmail || !adminEmails.includes(userEmail)) {
@@ -27,8 +30,8 @@ async function logHistory(
     fromColumn?: string,
     toColumn?: string
 ) {
-    const session = await auth();
-    const userId = session?.user?.id; // Note: This userId refers to the main auth DB, which is fine for logging text
+    const session = await getAuthenticatedUser();
+    const userId = session?.id; // Note: This userId refers to the main auth DB, which is fine for logging text
 
     await adminDb.insert(leadHistory).values({
         leadId,

@@ -3,13 +3,15 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { LayoutDashboard, LogOut } from "lucide-react";
-import { signOut } from "next-auth/react";
+import { useUser } from "@stack-frame/stack";
 
 export default function AdminLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
+    const user = useUser();
+
     return (
         <div className="flex flex-col h-screen bg-slate-50 dark:bg-slate-950">
             <header className="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-6 py-3 flex items-center justify-between sticky top-0 z-30 shadow-sm">
@@ -29,7 +31,7 @@ export default function AdminLayout({
                     variant="ghost"
                     size="sm"
                     className="gap-2 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10"
-                    onClick={() => signOut()}
+                    onClick={() => user.signOut()}
                 >
                     <LogOut className="h-4 w-4" />
                     Sair

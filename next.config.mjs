@@ -13,6 +13,23 @@ const nextConfig = {
       },
     ],
   },
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: "frame-ancestors 'self' https://clientes.casaldotrafego.com",
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'ALLOW-FROM https://clientes.casaldotrafego.com',
+          },
+        ],
+      },
+    ];
+  },
   turbopack: {
     root: __dirname,
   },

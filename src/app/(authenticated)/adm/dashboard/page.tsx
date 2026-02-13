@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { getAuthenticatedUser } from "@/lib/auth-helper";
 import { db } from "@/lib/db";
 import { organizations, leads } from "@/server/db/schema";
 import { redirect } from "next/navigation";
@@ -9,8 +9,8 @@ import { CreateOrgDialog } from "./create-org-dialog";
 export const dynamic = 'force-dynamic';
 
 export default async function AdminDashboard() {
-  const session = await auth();
-  const userEmail = session?.user?.email;
+  const session = await getAuthenticatedUser();
+  const userEmail = session?.email;
 
   const adminEmails = process.env.ADMIN_EMAILS?.split(",") || [];
 

@@ -4,12 +4,12 @@ import { db } from "@/lib/db";
 import { organizations, columns, members } from "@/server/db/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
+import { getAuthenticatedUser } from "@/lib/auth-helper";
 
 export async function createOrganization(name: string) {
-    const session = await auth();
-    if (!session?.user?.id) {
-        throw new Error("Unauthorized");
+    const session = await getAuthenticatedUser();
+    if (!session?.id) {
+        throw new Error("Não autenticado");
     }
 
     // Generate slug
@@ -35,7 +35,7 @@ export async function createOrganization(name: string) {
 
     // Add Creator as Owner
     await db.insert(members).values({
-        userId: session.user.id,
+        userId: session.id,
         organizationId: newOrg.id,
         role: 'owner'
     });

@@ -4,11 +4,11 @@ import { db } from "@/lib/db";
 import { members, users, organizations, invitations } from "@/server/db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
+import { getAuthenticatedUser } from "@/lib/auth-helper";
 
 export async function addMember(email: string, orgId: string, role: 'admin' | 'editor' | 'viewer' = 'viewer') {
-    const session = await auth();
-    if (!session?.user?.email) {
+    const session = await getAuthenticatedUser();
+    if (!session?.email) {
         throw new Error("Unauthorized");
     }
 
@@ -16,13 +16,13 @@ export async function addMember(email: string, orgId: string, role: 'admin' | 'e
     const requester = await db.query.members.findFirst({
         where: and(
             eq(members.organizationId, orgId),
-            eq(members.userId, session.user.id!)
+            eq(members.userId, session.id!)
         )
     });
 
     // Also allow Super Admins (from env) to add members
     const adminEmails = process.env.ADMIN_EMAILS?.split(",") || [];
-    const isSuperAdmin = adminEmails.includes(session.user.email);
+    const isSuperAdmin = adminEmails.includes(session.email);
 
     if (!requester && !isSuperAdmin) {
         throw new Error("Permission denied");
@@ -82,8 +82,8 @@ export async function addMember(email: string, orgId: string, role: 'admin' | 'e
 }
 
 export async function removeMember(memberId: string, orgId: string) {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const session = await getAuthenticatedUser();
+    if (!session?.id) {
         throw new Error("Unauthorized");
     }
 
@@ -91,12 +91,12 @@ export async function removeMember(memberId: string, orgId: string) {
     const requester = await db.query.members.findFirst({
         where: and(
             eq(members.organizationId, orgId),
-            eq(members.userId, session.user.id)
+            eq(members.userId, session.id)
         )
     });
 
     const adminEmails = process.env.ADMIN_EMAILS?.split(",") || [];
-    const isSuperAdmin = adminEmails.includes(session.user?.email || '');
+    const isSuperAdmin = adminEmails.includes(session.email || '');
 
     if ((!requester || (requester.role !== 'owner' && requester.role !== 'admin')) && !isSuperAdmin) {
         throw new Error("Permission denied");
@@ -152,8 +152,8 @@ export async function getMembers(orgId: string) {
 }
 
 export async function updateMemberRole(memberId: string, orgId: string, newRole: 'admin' | 'editor' | 'viewer' | 'owner') {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const session = await getAuthenticatedUser();
+    if (!session?.id) {
         throw new Error("Unauthorized");
     }
 
@@ -161,12 +161,12 @@ export async function updateMemberRole(memberId: string, orgId: string, newRole:
     const requester = await db.query.members.findFirst({
         where: and(
             eq(members.organizationId, orgId),
-            eq(members.userId, session.user.id)
+            eq(members.userId, session.id)
         )
     });
 
     const adminEmails = process.env.ADMIN_EMAILS?.split(",") || [];
-    const isSuperAdmin = adminEmails.includes(session.user?.email || '');
+    const isSuperAdmin = adminEmails.includes(session.email || '');
 
     if ((!requester || (requester.role !== 'owner' && requester.role !== 'admin')) && !isSuperAdmin) {
         throw new Error("Permission denied");

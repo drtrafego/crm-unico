@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { auth } from "@/auth";
+import { getAuthenticatedUser } from "@/lib/auth-helper";
 import { db } from "@/lib/db";
 import { organizations, members } from "@/server/db/schema";
 import { eq, and } from "drizzle-orm";
@@ -20,8 +20,8 @@ export default async function SettingsPage({
 }: {
   params: Promise<{ orgSlug: string }>;
 }) {
-  const session = await auth();
-  const user = session?.user;
+  const session = await getAuthenticatedUser();
+  const user = session;
   const { orgSlug } = await params;
 
   const org = await db.query.organizations.findFirst({

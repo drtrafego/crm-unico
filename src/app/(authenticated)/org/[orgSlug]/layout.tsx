@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { organizations, members } from "@/server/db/schema";
 import { eq, and } from "drizzle-orm";
-import { auth } from "@/auth"; // Assuming NextAuth v5 setup
+import { getAuthenticatedUser } from "@/lib/auth-helper";
 
 export default async function OrgLayout({
   children,
@@ -11,11 +11,11 @@ export default async function OrgLayout({
   children: React.ReactNode;
   params: Promise<{ orgSlug: string }>;
 }) {
-  const session = await auth();
+  const session = await getAuthenticatedUser();
   const { orgSlug } = await params;
 
-  if (!session?.user?.id) {
-    redirect("/login"); // Or your login route
+  if (!session?.id) {
+    redirect("/handler/sign-in"); // Redirect to Stack Auth
   }
 
   // 1. Get Organization by Slug
@@ -28,11 +28,11 @@ export default async function OrgLayout({
   }
 
   // 2. Check Membership
-  // Note: We need to make sure session.user.id matches the userId stored in members table (string vs string)
+  // Note: We need to make sure session.id matches the userId stored in members table (string vs string)
   const membership = await db.query.members.findFirst({
     where: and(
       eq(members.organizationId, org.id),
-      eq(members.userId, session.user.id)
+      eq(members.userId, session.id)
     ),
   });
 
