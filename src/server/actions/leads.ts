@@ -258,7 +258,7 @@ export async function updateLeadContent(id: string, data: Partial<typeof leads.$
 
     const allowedFields: (keyof typeof leads.$inferInsert)[] = [
         'name', 'company', 'email', 'whatsapp', 'notes', 'value',
-        'campaignSource', 'followUpDate', 'followUpNote'
+        'campaignSource', 'followUpDate', 'followUpNote', 'pagePath', 'utmTerm'
     ];
     const payload: any = {};
     allowedFields.forEach(k => { if (data[k] !== undefined) payload[k] = data[k]; });
@@ -300,6 +300,12 @@ export async function updateLeadContent(id: string, data: Partial<typeof leads.$
             }
             if (payload.campaignSource !== undefined && payload.campaignSource !== currentLead.campaignSource) {
                 changes.push(`Origem alterada de ${currentLead.campaignSource || 'N/A'} para ${payload.campaignSource}`);
+            }
+            if (payload.pagePath !== undefined && payload.pagePath !== currentLead.pagePath) {
+                changes.push(`Página alterada de "${currentLead.pagePath || 'N/A'}" para "${payload.pagePath}"`);
+            }
+            if (payload.utmTerm !== undefined && payload.utmTerm !== currentLead.utmTerm) {
+                changes.push(`Palavra-chave alterada de "${currentLead.utmTerm || 'N/A'}" para "${payload.utmTerm}"`);
             }
             if (payload.followUpDate !== undefined) {
                 const oldDate = currentLead.followUpDate ? new Date(currentLead.followUpDate).toISOString().split('T')[0] : 'N/A';

@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { updateLeadContent, getLeadHistory } from "@/server/actions/leads";
 import { Lead } from "@/server/db/schema";
-import { User, Phone, Mail, Building2, FileText, Save, X, DollarSign, Trash2, History, Clock } from "lucide-react";
+import { User, Phone, Mail, Building2, FileText, Save, X, DollarSign, Trash2, History, Clock, Globe, Search } from "lucide-react";
 import { deleteLead } from "@/server/actions/leads";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
@@ -70,6 +70,8 @@ export function EditLeadDialog({ lead, open, onOpenChange, orgId, overrides }: E
       notes: formData.get("notes") as string,
       value: formData.get("value") as string,
       campaignSource: formData.get("campaignSource") as string,
+      pagePath: formData.get("pagePath") as string,
+      utmTerm: formData.get("utmTerm") as string,
       followUpDate: followUpDateStr ? new Date(followUpDateStr) : null,
       followUpNote: formData.get("followUpNote") as string,
       columnId: lead.columnId,
@@ -220,6 +222,33 @@ export function EditLeadDialog({ lead, open, onOpenChange, orgId, overrides }: E
                       <option value="Direto">Direto</option>
                       <option value="Indicação">Indicação</option>
                     </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="pagePath" className="text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                      <Globe className="h-4 w-4 text-slate-400" /> Página
+                    </Label>
+                    <Input
+                      id="pagePath"
+                      name="pagePath"
+                      defaultValue={lead.pagePath || ""}
+                      placeholder="/contato"
+                      className="bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 focus:bg-white dark:focus:bg-slate-950 transition-colors"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="utmTerm" className="text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                      <Search className="h-4 w-4 text-slate-400" /> Palavra-chave
+                    </Label>
+                    <Input
+                      id="utmTerm"
+                      name="utmTerm"
+                      defaultValue={lead.utmTerm || ""}
+                      placeholder="termo-de-busca"
+                      className="bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 focus:bg-white dark:focus:bg-slate-950 transition-colors"
+                    />
                   </div>
                 </div>
 

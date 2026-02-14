@@ -1,4 +1,0 @@
-[dotenv@17.2.3] injecting env (11) from .env.local -- tip: ÔÜÖ´©Å  suppress all logs with { quiet: true }
-Searching for organization 'Felipe'...
-Found 1 organizations
-ID: a20d05cd-ea77-4456-8feb-586eeca3cfea, Name: Felipe Matias, Slug: felipe-matias
