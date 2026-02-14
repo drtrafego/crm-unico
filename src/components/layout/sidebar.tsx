@@ -5,7 +5,7 @@ import { usePathname, useParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { LayoutDashboard, KanbanSquare, Settings, LogOut, LineChart, CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useUser } from "@stack-frame/stack";
+import { useUser } from "@stackframe/stack";
 
 interface SidebarProps {
   isCollapsed?: boolean;
