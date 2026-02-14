@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { LayoutDashboard, LogOut } from "lucide-react";
-import { useUser } from "@stack-frame/stack";
+import { useUser } from "@stackframe/stack";
 
 export default function AdminLayout({
     children,
