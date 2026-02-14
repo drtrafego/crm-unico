@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogOut, Settings } from "lucide-react";
-import { useUser } from "@stack-frame/stack";
+import { useUser } from "@stackframe/stack";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
