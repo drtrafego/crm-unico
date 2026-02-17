@@ -11,7 +11,6 @@ let serverAppInstance;
 try {
     serverAppInstance = new StackServerApp({
         tokenStore: "nextjs-cookie",
-        cookieDomain: ".casaldotrafego.com", // Force shared cookie for all subdomains
     });
 } catch (e) {
     console.error("CRITICAL: Failed to initialize StackServerApp. Check STACK_SECRET_SERVER_KEY.", e);
