@@ -5,7 +5,7 @@ import { usePathname, useParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { LayoutDashboard, KanbanSquare, Settings, LogOut, LineChart, CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useUser } from "@stackframe/stack";
+import { stackApp } from "@/stack";
 
 interface SidebarProps {
   isCollapsed?: boolean;
@@ -15,7 +15,7 @@ interface SidebarProps {
 export function Sidebar({ isCollapsed = false, toggle }: SidebarProps) {
   const pathname = usePathname();
   const params = useParams();
-  const user = useUser();
+
   const orgSlug = params?.orgSlug as string;
 
   // If we are not in an org context (e.g. root or admin), don't show sidebar or show different one
@@ -53,7 +53,7 @@ export function Sidebar({ isCollapsed = false, toggle }: SidebarProps) {
             <Button
               variant="ghost"
               className={cn("justify-start text-red-500 hover:text-red-600 hover:bg-red-50", isCollapsed ? "justify-center px-0 w-full" : "w-full gap-2")}
-              onClick={() => user?.signOut()}
+              onClick={() => stackApp.signOut()}
               title={isCollapsed ? "Sair" : undefined}
             >
               <LogOut className="!h-6 !w-6 min-w-[24px] shrink-0" />
@@ -143,7 +143,7 @@ export function Sidebar({ isCollapsed = false, toggle }: SidebarProps) {
           <Button
             variant="ghost"
             className={cn("justify-start text-red-500 hover:text-red-600 hover:bg-red-50", isCollapsed ? "justify-center px-0 w-full" : "w-full gap-2")}
-            onClick={() => user?.signOut()}
+            onClick={() => stackApp.signOut()}
             title={isCollapsed ? "Sair" : undefined}
           >
             <LogOut className="!h-6 !w-6 min-w-[24px] shrink-0" />
