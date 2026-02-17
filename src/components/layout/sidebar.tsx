@@ -53,7 +53,7 @@ export function Sidebar({ isCollapsed = false, toggle }: SidebarProps) {
             <Button
               variant="ghost"
               className={cn("justify-start text-red-500 hover:text-red-600 hover:bg-red-50", isCollapsed ? "justify-center px-0 w-full" : "w-full gap-2")}
-              onClick={() => user.signOut()}
+              onClick={() => user?.signOut()}
               title={isCollapsed ? "Sair" : undefined}
             >
               <LogOut className="!h-6 !w-6 min-w-[24px] shrink-0" />
@@ -143,7 +143,7 @@ export function Sidebar({ isCollapsed = false, toggle }: SidebarProps) {
           <Button
             variant="ghost"
             className={cn("justify-start text-red-500 hover:text-red-600 hover:bg-red-50", isCollapsed ? "justify-center px-0 w-full" : "w-full gap-2")}
-            onClick={() => user.signOut()}
+            onClick={() => user?.signOut()}
             title={isCollapsed ? "Sair" : undefined}
           >
             <LogOut className="!h-6 !w-6 min-w-[24px] shrink-0" />
