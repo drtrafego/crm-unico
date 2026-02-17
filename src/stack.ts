@@ -2,6 +2,7 @@ import { StackServerApp, StackClientApp } from "@stackframe/stack";
 
 // Initialize Stack Client
 export const stackApp = new StackClientApp({
+    tokenStore: "nextjs-cookie", // CRÍTICO: permite ler cookies no cliente
     projectId: process.env.NEXT_PUBLIC_STACK_PROJECT_ID || "a40fb3c8-efc6-413b-b108-6f4918b528f3",
     publishableClientKey: process.env.NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY || "pck_v491sr955v9vwtmc8kt7s4n4jrcsrwt896ms06b5ww4zr",
 } as any);
