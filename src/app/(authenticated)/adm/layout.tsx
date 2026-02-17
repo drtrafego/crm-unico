@@ -4,12 +4,21 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { LayoutDashboard, LogOut } from "lucide-react";
 import { useUser } from "@stackframe/stack";
+import { Suspense } from "react";
 
 export default function AdminLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
+    return (
+        <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Carregando...</div>}>
+            <AdminLayoutContent>{children}</AdminLayoutContent>
+        </Suspense>
+    );
+}
+
+function AdminLayoutContent({ children }: { children: React.ReactNode }) {
     const user = useUser();
 
     return (
