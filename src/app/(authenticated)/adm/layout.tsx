@@ -3,23 +3,25 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { LayoutDashboard, LogOut } from "lucide-react";
-import { useUser } from "@stackframe/stack";
-import { Suspense } from "react";
+import { stackApp } from "@/stack";
+import { useEffect, useState } from "react";
 
 export default function AdminLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
-    return (
-        <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Carregando...</div>}>
-            <AdminLayoutContent>{children}</AdminLayoutContent>
-        </Suspense>
-    );
-}
+    const [mounted, setMounted] = useState(false);
 
-function AdminLayoutContent({ children }: { children: React.ReactNode }) {
-    const user = useUser();
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    const handleSignOut = () => {
+        if (mounted) {
+            stackApp.signOut();
+        }
+    };
 
     return (
         <div className="flex flex-col h-screen bg-slate-50 dark:bg-slate-950">
@@ -36,15 +38,17 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
                     </nav>
                 </div>
 
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    className="gap-2 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10"
-                    onClick={() => user?.signOut()}
-                >
-                    <LogOut className="h-4 w-4" />
-                    Sair
-                </Button>
+                {mounted && (
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="gap-2 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10"
+                        onClick={handleSignOut}
+                    >
+                        <LogOut className="h-4 w-4" />
+                        Sair
+                    </Button>
+                )}
             </header>
             <main className="flex-1 overflow-y-auto">
                 {children}
