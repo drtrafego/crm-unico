@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, ExternalLink, Users, Clock, Building2 } from "lucide-react";
+import { Search, ExternalLink, Users, Clock, Building2, Copy, Check } from "lucide-react";
 import Link from "next/link";
 import { formatDistance } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -37,6 +37,34 @@ interface Organization {
 
 interface OrganizationsListProps {
     organizations: Organization[];
+}
+
+function CopyableId({ id }: { id: string }) {
+    const [copied, setCopied] = useState(false);
+
+    const handleCopy = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        navigator.clipboard.writeText(id);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    return (
+        <div className="flex items-center gap-2 group">
+            <span className="text-xs text-slate-400 font-mono truncate max-w-[80px]" title={id}>
+                {id.substring(0, 8)}...
+            </span>
+            <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={handleCopy}
+                title="Copiar ID"
+            >
+                {copied ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3 text-slate-400" />}
+            </Button>
+        </div>
+    );
 }
 
 export function OrganizationsList({ organizations }: OrganizationsListProps) {
@@ -71,6 +99,11 @@ export function OrganizationsList({ organizations }: OrganizationsListProps) {
                     {row.getValue("slug")}
                 </span>
             ),
+        },
+        {
+            accessorKey: "id",
+            header: "ID",
+            cell: ({ row }) => <CopyableId id={row.getValue("id")} />,
         },
         {
             accessorKey: "totalLeads",
