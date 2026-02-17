@@ -1,6 +1,19 @@
 {
     "headers": [
         {
+            "source": "/(.*)",
+            "headers": [
+                {
+                    "key": "Content-Security-Policy",
+                    "value": "frame-ancestors 'self' https://cliente.casaldotrafego.com https://clientes.casaldotrafego.com"
+                },
+                {
+                    "key": "X-Frame-Options",
+                    "value": "ALLOW-FROM https://cliente.casaldotrafego.com"
+                }
+            ]
+        },
+        {
             "source": "/api/webhooks/(.*)",
             "headers": [
                 {
