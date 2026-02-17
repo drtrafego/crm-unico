@@ -31,7 +31,7 @@ export default function AdminLayout({
                     variant="ghost"
                     size="sm"
                     className="gap-2 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10"
-                    onClick={() => user.signOut()}
+                    onClick={() => user?.signOut()}
                 >
                     <LogOut className="h-4 w-4" />
                     Sair
