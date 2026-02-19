@@ -40,7 +40,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     }, []);
 
     return (
-        <div className="flex h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden">
+        <div className="flex h-full bg-slate-50 dark:bg-slate-950 overflow-hidden">
             {showSidebar && <Sidebar isCollapsed={isCollapsed} toggle={toggle} />}
             <main
                 className={cn(
