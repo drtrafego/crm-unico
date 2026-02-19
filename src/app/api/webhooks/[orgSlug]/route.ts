@@ -185,14 +185,7 @@ export async function POST(
       utmCampaign: utmCampaign
     }).returning();
 
-    if (newLead[0]) {
-      await db.insert(leadHistory).values({
-        leadId: newLead[0].id,
-        action: 'create',
-        details: `Lead criado via Webhook em ${defaultColumn?.title || 'Coluna Inicial'}`,
-        toColumn: defaultColumn?.id,
-      });
-    }
+    // History logging is handled by DB trigger
 
     console.log("[Webhook] Lead saved:", newLead[0]?.id);
 
@@ -296,14 +289,7 @@ export async function GET(
       utmCampaign: utmCampaign as string
     }).returning();
 
-    if (newLead[0]) {
-      await db.insert(leadHistory).values({
-        leadId: newLead[0].id,
-        action: 'create',
-        details: `Lead criado via Webhook (GET) em ${defaultColumn?.title || 'Coluna Inicial'}`,
-        toColumn: defaultColumn?.id,
-      });
-    }
+    // History logging is handled by DB trigger
 
     console.log("[Webhook GET] Lead saved:", newLead[0]?.id);
 

@@ -45,16 +45,7 @@ async function checkPermissions(orgId: string) {
     return member;
 }
 
-async function logHistory(leadId: string, action: 'create' | 'move' | 'update', details: string, fromColumn?: string, toColumn?: string) {
-    const session = await getAuthenticatedUser();
-    try {
-        await db.insert(leadHistory).values({
-            leadId, action, details, fromColumn, toColumn, userId: session?.id
-        });
-    } catch (error) {
-        console.error("Failed to log history:", error);
-    }
-}
+// Helper `logHistory` removed - using DB trigger
 
 export async function getLeadHistory(leadId: string) {
     const history = await db.select({
@@ -122,14 +113,7 @@ export async function updateLeadStatus(id: string, newColumnId: string, newPosit
         if (lead) {
             // Log movement if column changed
             if (newColumnId !== lead.columnId) {
-                const cols = await targetDb.query.columns.findMany({
-                    where: inArray(columns.id, [lead.columnId || '', newColumnId]),
-                    columns: { id: true, title: true }
-                });
-                const fromColTitle = cols.find(c => c.id === lead.columnId)?.title || "Unknown";
-                const toColTitle = cols.find(c => c.id === newColumnId)?.title || "Unknown";
-
-                await logHistory(lead.id, 'move', `Moveu de "${fromColTitle}" para "${toColTitle}"`, fromColTitle, toColTitle);
+                // History is now handled by DB trigger
             }
 
             if (!lead.firstContactAt && newColumnId !== lead.columnId) {
@@ -176,7 +160,7 @@ export async function createLead(formData: FormData, orgId: string) {
         position: 0,
     }).returning();
 
-    await logHistory(newLead.id, 'create', `Lead criado em ${firstColumn.title}`, undefined, firstColumn.id);
+    // History logging is handled by DB trigger
     revalidatePath(`/org/${orgId}/kanban`);
 }
 
@@ -320,7 +304,7 @@ export async function updateLeadContent(id: string, data: Partial<typeof leads.$
             }
 
             if (changes.length > 0) {
-                await logHistory(id, 'update', changes.join('; '));
+                // History logging is handled by DB trigger
             }
         }
     }

@@ -23,25 +23,7 @@ async function checkAdminPermissions() {
 }
 
 // Helper to log history
-async function logHistory(
-    leadId: string,
-    action: 'create' | 'move' | 'update',
-    details: string,
-    fromColumn?: string,
-    toColumn?: string
-) {
-    const session = await getAuthenticatedUser();
-    const userId = session?.id; // Note: This userId refers to the main auth DB, which is fine for logging text
-
-    await adminDb.insert(leadHistory).values({
-        leadId,
-        action,
-        details,
-        fromColumn,
-        toColumn,
-        userId
-    });
-}
+// Helper `logHistory` removed - using DB trigger
 
 export async function getAdminLeadHistory(leadId: string) {
     const history = await adminDb.select().from(leadHistory)
@@ -107,17 +89,7 @@ export async function updateAdminLeadStatus(id: string, newColumnId: string, new
             }
 
             if (newColumnId !== lead.columnId) {
-                const newCol = await adminDb.query.columns.findFirst({
-                    where: eq(columns.id, newColumnId)
-                });
-
-                await logHistory(
-                    id,
-                    'move',
-                    `Movido para ${newCol?.title || 'nova coluna'}`,
-                    lead.columnId || undefined,
-                    newColumnId
-                );
+                // History is now handled by DB trigger
             }
         }
 
@@ -171,7 +143,7 @@ export async function createAdminLead(formData: FormData) {
         position: 0,
     }).returning();
 
-    await logHistory(newLead.id, 'create', `Lead criado em ${firstColumn.title}`, undefined, firstColumn.id);
+    // History logging is handled by DB trigger
     revalidatePath('/adm/leads');
 }
 
@@ -311,51 +283,6 @@ export async function updateAdminLeadContent(id: string, data: Partial<typeof le
         updatePayload.position = existingLead.position;
     }
 
-    // --- Log History Logic --- 
-    const changes: string[] = [];
-
-    if (updatePayload.name !== undefined && updatePayload.name !== existingLead.name) {
-        changes.push(`Nome alterado de "${existingLead.name}" para "${updatePayload.name}"`);
-    }
-    if (updatePayload.company !== undefined && updatePayload.company !== existingLead.company) {
-        changes.push(`Empresa alterada para "${updatePayload.company}"`);
-    }
-    if (updatePayload.email !== undefined && updatePayload.email !== existingLead.email) {
-        changes.push(`Email alterado`);
-    }
-    if (updatePayload.whatsapp !== undefined && updatePayload.whatsapp !== existingLead.whatsapp) {
-        changes.push(`WhatsApp alterado`);
-    }
-
-    if (updatePayload.followUpNote !== undefined && updatePayload.followUpNote !== existingLead.followUpNote) {
-        changes.push(`Motivo de retorno atualizado`);
-    }
-
-    if (updatePayload.value !== undefined) {
-        const oldVal = existingLead.value ? Number(existingLead.value) : 0;
-        const newVal = updatePayload.value ? Number(updatePayload.value) : 0;
-        if (oldVal !== newVal) {
-            changes.push(`Valor alterado de ${oldVal} para ${newVal}`);
-        }
-    }
-
-    if (updatePayload.notes !== undefined && updatePayload.notes !== existingLead.notes) {
-        changes.push(`Observações atualizadas`);
-    }
-
-    if (updatePayload.campaignSource !== undefined && updatePayload.campaignSource !== existingLead.campaignSource) {
-        changes.push(`Origem alterada de ${existingLead.campaignSource || 'N/A'} para ${updatePayload.campaignSource}`);
-    }
-
-    if (updatePayload.followUpDate !== undefined) {
-        const oldDate = existingLead.followUpDate ? new Date(existingLead.followUpDate).toISOString().split('T')[0] : 'N/A';
-        const newDate = updatePayload.followUpDate ? new Date(updatePayload.followUpDate).toISOString().split('T')[0] : 'N/A';
-        if (oldDate !== newDate) changes.push(`Data de retorno: ${oldDate} -> ${newDate}`);
-    }
-
-    if (changes.length > 0) {
-        await logHistory(id, 'update', changes.join('; '));
-    }
     // -------------------------
 
     await adminDb.update(leads)
