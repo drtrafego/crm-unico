@@ -261,6 +261,24 @@ export function CrmView({ initialLeads, columns, companyName, initialViewMode, o
 
           {mounted && (
             <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-[10px] border-amber-500/20 text-amber-600 hover:bg-amber-50 dark:border-amber-500/30 dark:text-amber-400 dark:hover:bg-amber-950/30"
+                onClick={async () => {
+                  if (!confirm("Deseja instalar a proteção de histórico agora?")) return;
+                  try {
+                    const res = await fetch('/api/debug/setup-audit');
+                    const data = await res.json();
+                    if (data.success) alert("Sucesso! Proteção instalada: " + data.message);
+                    else alert("Erro: " + data.error);
+                  } catch (e: any) {
+                    alert("Erro ao conectar: " + e.message);
+                  }
+                }}
+              >
+                🛠️ Reparar Histórico
+              </Button>
               <DateRangePickerWithPresets date={dateRange} setDate={setDateRange} className="h-8 text-xs" />
               <NewLeadDialog orgId={orgId} overrides={overrides} />
             </div>
