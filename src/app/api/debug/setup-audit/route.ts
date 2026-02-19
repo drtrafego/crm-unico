@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 export async function GET() {
     try {
         // 1. Create the function
+        console.log("Criando função de log...");
         await db.execute(sql`
       CREATE OR REPLACE FUNCTION log_lead_changes()
       RETURNS TRIGGER AS $$
@@ -68,9 +69,13 @@ export async function GET() {
       $$ LANGUAGE plpgsql;
     `);
 
-        // 2. Create the trigger
+        // 2. Drop existing trigger
+        console.log("Removendo trigger antigo...");
+        await db.execute(sql`DROP TRIGGER IF EXISTS audit_leads_trigger ON leads;`);
+
+        // 3. Create the trigger
+        console.log("Criando novo trigger...");
         await db.execute(sql`
-      DROP TRIGGER IF EXISTS audit_leads_trigger ON leads;
       CREATE TRIGGER audit_leads_trigger
       AFTER INSERT OR UPDATE ON leads
       FOR EACH ROW
@@ -80,6 +85,10 @@ export async function GET() {
         return NextResponse.json({ success: true, message: "Trigger de auditoria instalado com sucesso!" });
     } catch (error: any) {
         console.error("Failed to setup trigger:", error);
-        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+        return NextResponse.json({
+            success: false,
+            error: error.message || String(error),
+            details: error.routine ? `Postgres Error: ${error.routine}` : undefined
+        }, { status: 500 });
     }
 }
