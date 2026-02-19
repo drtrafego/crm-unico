@@ -74,7 +74,7 @@ export function Column({ column, leads, index, orgId, overrides }: ColumnProps) 
           ref={provided.innerRef}
           {...provided.draggableProps}
           className={cn(
-            "w-[300px] min-w-[300px] flex flex-col bg-slate-100/80 dark:bg-slate-800/50 rounded-xl border border-slate-200/60 dark:border-slate-700/50 transition-colors max-h-full",
+            "w-[300px] min-w-[300px] flex flex-col bg-slate-100/80 dark:bg-slate-800/50 rounded-xl border border-slate-200/60 dark:border-slate-700/50 transition-colors",
             isDeleting && "opacity-50 pointer-events-none",
             snapshot.isDragging && "opacity-80 rotate-2 shadow-xl ring-2 ring-indigo-500/20"
           )}
@@ -149,7 +149,7 @@ export function Column({ column, leads, index, orgId, overrides }: ColumnProps) 
                 ref={provided.innerRef}
                 {...provided.droppableProps}
                 className={cn(
-                  "p-2 flex-1 min-h-[100px] transition-colors overflow-y-auto custom-scrollbar",
+                  "p-2 flex-1 min-h-[100px] transition-colors",
                   snapshot.isDraggingOver && "bg-slate-200/50 dark:bg-slate-700/50 rounded-b-xl"
                 )}
               >
