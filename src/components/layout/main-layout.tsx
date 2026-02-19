@@ -44,7 +44,10 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             {showSidebar && <Sidebar isCollapsed={isCollapsed} toggle={toggle} />}
             <main
                 className={cn(
-                    "flex-1 min-w-0 flex flex-col overflow-y-auto custom-scrollbar transition-all duration-300 ease-in-out",
+                    "flex-1 min-w-0 flex flex-col transition-all duration-300 ease-in-out",
+                    // Se for página de CRM (/org/...), removemos o scroll global para que o Board gerencie.
+                    // Caso contrário, mantemos scroll nativo.
+                    pathname?.includes('/org/') ? "overflow-hidden" : "overflow-y-auto custom-scrollbar",
                     showSidebar ? (isCollapsed ? "ml-16" : "ml-64") : "ml-0"
                 )}
             >
