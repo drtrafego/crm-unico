@@ -36,12 +36,12 @@ export default async function OrgLayout({
     ),
   });
 
-  // If not a member and not a super-admin (logic to be added), deny access
-  if (!membership) {
-    // Optional: Check if user is super admin to bypass this
-    // if (!isSuperAdmin(session.user.email)) {
+  const adminEmails = process.env.ADMIN_EMAILS?.split(",") || [];
+  const isSuperAdmin = session.email && adminEmails.includes(session.email);
+
+  // If not a member and not a super-admin, deny access
+  if (!membership && !isSuperAdmin) {
     redirect("/unauthorized");
-    // }
   }
 
   return (

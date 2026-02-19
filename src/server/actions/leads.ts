@@ -26,6 +26,12 @@ async function checkPermissions(orgId: string) {
     const session = await getAuthenticatedUser();
     if (!session?.id) throw new Error("Unauthorized");
 
+    // Super Admin Bypass
+    const adminEmails = process.env.ADMIN_EMAILS?.split(",") || [];
+    if (session.email && adminEmails.includes(session.email)) {
+        return { role: 'owner', userId: session.id, organizationId: orgId };
+    }
+
     const member = await db.query.members.findFirst({
         where: and(
             eq(members.organizationId, orgId),
