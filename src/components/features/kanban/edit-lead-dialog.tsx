@@ -21,8 +21,6 @@ import { deleteLead } from "@/server/actions/leads";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { getWhatsAppLink, cn } from "@/lib/utils";
 import { getLeadSource } from "@/lib/leads-helper";
 
@@ -132,8 +130,8 @@ export function EditLeadDialog({ lead, open, onOpenChange, orgId, overrides }: E
         </div>
 
         {activeTab === 'details' ? (
-          <form action={handleSubmit} className="flex flex-col overflow-hidden">
-            <ScrollArea className="flex-1 p-6 max-h-[60vh]">
+          <form action={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+            <div className="flex-1 p-6 overflow-y-auto min-h-0">
               <div className="space-y-5 pb-2">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="space-y-2">
@@ -291,7 +289,7 @@ export function EditLeadDialog({ lead, open, onOpenChange, orgId, overrides }: E
                   />
                 </div>
               </div>
-            </ScrollArea>
+            </div>
 
             <DialogFooter className="p-6 pt-4 bg-slate-50/50 dark:bg-slate-900/30 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3 shrink-0">
               <div className="flex items-center gap-2">
@@ -339,8 +337,8 @@ export function EditLeadDialog({ lead, open, onOpenChange, orgId, overrides }: E
             </DialogFooter>
           </form>
         ) : (
-          <div className="flex flex-col flex-1 overflow-hidden h-[500px]">
-            <ScrollArea className="flex-1 p-6">
+          <div className="flex flex-col flex-1 overflow-hidden">
+            <div className="flex-1 p-6 overflow-y-auto min-h-0">
               <div className="space-y-6">
                 {isLoadingHistory ? (
                   <div className="text-center py-8 text-slate-500">Carregando histórico...</div>
@@ -390,14 +388,13 @@ export function EditLeadDialog({ lead, open, onOpenChange, orgId, overrides }: E
                 )}
               </div>
 
-            </ScrollArea>
+            </div>
             <DialogFooter className="p-6 pt-4 bg-slate-50/50 dark:bg-slate-900/30 border-t border-slate-100 dark:border-slate-800 shrink-0">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Fechar</Button>
             </DialogFooter>
           </div>
-        )
-        }
-      </DialogContent >
-    </Dialog >
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
