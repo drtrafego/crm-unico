@@ -150,7 +150,7 @@ export function Board({ columns: initialColumns, initialLeads, orgId, overrides 
             <div
               {...provided.droppableProps}
               ref={provided.innerRef}
-              className="flex-1 flex gap-4 overflow-x-auto px-4 pt-4 pb-4 items-start h-full w-full custom-scrollbar"
+              className="flex-1 flex gap-4 overflow-auto px-4 pt-4 pb-4 items-start h-full w-full custom-scrollbar"
             >
               {columns.map((col, index) => (
                 <Column
