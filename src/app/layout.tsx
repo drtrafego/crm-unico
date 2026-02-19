@@ -39,7 +39,7 @@ export default function RootLayout({
           <StackTheme>
             <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
               <div className="w-full bg-slate-950 text-slate-400 text-xs py-1 px-4 border-b border-slate-800 flex justify-center hover:bg-slate-900 transition-colors">
-                <Link href="https://clientes.casaldotrafego.com/hub" className="flex items-center gap-2 hover:text-white transition-colors">
+                <Link href="/" className="flex items-center gap-2 hover:text-white transition-colors">
                   <ArrowLeft className="w-3 h-3" />
                   Voltar para o Painel Principal
                 </Link>
