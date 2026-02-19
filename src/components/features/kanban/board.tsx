@@ -1,60 +1,34 @@
 "use client";
 
-import { useMemo, useState, useEffect, useRef } from "react";
-import { createPortal } from "react-dom";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import {
-  DndContext,
-  DragOverlay,
-  useSensor,
-  useSensors,
-  MouseSensor,
-  TouchSensor,
-  KeyboardSensor,
-  pointerWithin,
-  DragStartEvent,
-  DragOverEvent,
-  DragEndEvent,
-  MeasuringStrategy,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  arrayMove,
-  horizontalListSortingStrategy,
-  sortableKeyboardCoordinates,
-} from "@dnd-kit/sortable";
-
+import { DragDropContext, Droppable, DropResult } from "@hello-pangea/dnd";
 import { Column } from "./column";
-import { LeadCard } from "./lead-card";
-import { Lead, Column as ColumnType } from "@/server/db/schema";
+import { Lead as LeadType, Column as ColumnType } from "@/server/db/schema";
 import { updateLeadStatus, updateColumnOrder, createColumn } from "@/server/actions/leads";
 import { Button } from "@/components/ui/button";
 import { PlusIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-
 import { CRMActionOverrides } from "@/types/crm-actions";
 
 interface BoardProps {
   columns: ColumnType[];
-  initialLeads: Lead[];
-  onLeadsChange?: (leads: Lead[]) => void;
+  initialLeads: LeadType[];
   orgId: string;
   overrides?: CRMActionOverrides;
 }
 
-export function Board({ columns: initialColumns, initialLeads, onLeadsChange, orgId, overrides }: BoardProps) {
+export function Board({ columns: initialColumns, initialLeads, orgId, overrides }: BoardProps) {
   const router = useRouter();
   const [columns, setColumns] = useState<ColumnType[]>(initialColumns);
-  const [leads, setLeads] = useState<Lead[]>(initialLeads);
-
-  const [activeColumn, setActiveColumn] = useState<ColumnType | null>(null);
-  const [activeLead, setActiveLead] = useState<Lead | null>(null);
+  const [leads, setLeads] = useState<LeadType[]>(initialLeads);
 
   // Add Column State
   const [isCreateColumnOpen, setIsCreateColumnOpen] = useState(false);
   const [newColumnName, setNewColumnName] = useState("");
+  const [lastError, setLastError] = useState<string | null>(null);
 
   // Actions
   const updateLeadStatusAction = overrides?.updateLeadStatus || updateLeadStatus;
@@ -79,170 +53,76 @@ export function Board({ columns: initialColumns, initialLeads, onLeadsChange, or
     setLeads(initialLeads);
   }, [initialLeads]);
 
-  // Distinct sensors for Mouse (click & drag immediately after small movement)
-  // vs Touch (press & hold to distinguish from scrolling)
-  const sensors = useSensors(
-    useSensor(MouseSensor, {
-      activationConstraint: {
-        distance: 10, // Avoid accidental drags
-      },
-    }),
-    useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 250, // Press and hold for 250ms to start dragging
-        tolerance: 5, // Allow 5px movement during the delay
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
+  const onDragEnd = (result: DropResult) => {
+    const { destination, source, draggableId, type } = result;
 
-  const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
+    if (!destination) return;
 
-  function onDragStart(event: DragStartEvent) {
-    if (event.active.data.current?.type === "Column") {
-      setActiveColumn(event.active.data.current.column);
+    if (
+      destination.droppableId === source.droppableId &&
+      destination.index === source.index
+    ) {
       return;
     }
-    if (event.active.data.current?.type === "Lead") {
-      setActiveLead(event.active.data.current.lead);
-      return;
-    }
-  }
 
-  function onDragOver(event: DragOverEvent) {
-    const { active, over } = event;
-    if (!over) return;
+    // Move Columns
+    if (type === "COLUMN") {
+      const newColumns = Array.from(columns);
+      const [removed] = newColumns.splice(source.index, 1);
+      newColumns.splice(destination.index, 0, removed);
 
-    const activeId = active.id;
-    const overId = over.id;
+      setColumns(newColumns);
 
-    const isActiveALead = active.data.current?.type === "Lead";
-    const isOverALead = over.data.current?.type === "Lead";
-    const isOverAColumn = over.data.current?.type === "Column";
+      ignoreExternalUpdatesRef.current = true;
 
-    if (!isActiveALead) return;
-
-    // Scenario 1: Dragging Lead over Lead
-    if (isActiveALead && isOverALead) {
-      setLeads((leads) => {
-        const activeIndex = leads.findIndex((l) => l.id === activeId);
-        const overIndex = leads.findIndex((l) => l.id === overId);
-
-        if (activeIndex === -1 || overIndex === -1) return leads;
-
-        if (leads[activeIndex].columnId !== leads[overIndex].columnId) {
-          const newLeads = [...leads];
-          newLeads[activeIndex].columnId = leads[overIndex].columnId;
-          return arrayMove(newLeads, activeIndex, overIndex - 1);
-        }
-        return leads;
-      });
-    }
-
-    // Scenario 2: Dragging Lead over Column (empty or header)
-    if (isActiveALead && isOverAColumn) {
-      setLeads((leads) => {
-        const activeIndex = leads.findIndex((l) => l.id === activeId);
-        if (activeIndex === -1) return leads;
-
-        const activeLead = leads[activeIndex];
-        if (activeLead.columnId === overId) return leads;
-
-        const newLeads = [...leads];
-        newLeads[activeIndex].columnId = overId as string;
-        return arrayMove(newLeads, activeIndex, activeIndex);
-      });
-    }
-  }
-
-  const [lastError, setLastError] = useState<string | null>(null);
-
-  function onDragEnd(event: DragEndEvent) {
-    setActiveColumn(null);
-    setActiveLead(null);
-    setLastError(null);
-
-    const { active, over } = event;
-    if (!over) return;
-
-    const activeId = active.id;
-    const overId = over.id;
-
-    // Moving Columns
-    if (active.data.current?.type === "Column") {
-      if (activeId !== overId) {
-        setColumns((columns) => {
-          const oldIndex = columns.findIndex((col) => col.id === activeId);
-          const newIndex = columns.findIndex((col) => col.id === overId);
-
-          if (oldIndex === -1 || newIndex === -1) return columns;
-
-          const newOrder = arrayMove(columns, oldIndex, newIndex);
-
-          // Set ignore flag BEFORE calling server action to prevent race condition
-          ignoreExternalUpdatesRef.current = true;
-          console.log("[Board] Sending new column order:", newOrder.map(c => c.id));
-
-          // Call server action and handle potential errors
-          updateColumnOrderAction(newOrder.map(c => c.id), orgId)
-            .then((response) => {
-              console.log("[Board] Column order saved successfully");
-              if (response.columns) {
-                // Authoritatively update local state with server-verified order
-                setColumns(response.columns);
-                // Force router refresh to clear Next.js client router cache
-                router.refresh();
-              }
-            })
-            .catch(err => {
-              console.error("Failed to update column order:", err);
-              setLastError(`Erro ao salvar ordem das colunas: ${err.message}`);
-              ignoreExternalUpdatesRef.current = false;
-            });
-
-          return newOrder;
+      updateColumnOrderAction(newColumns.map(c => c.id), orgId)
+        .then((response) => {
+          if (response.columns) {
+            setColumns(response.columns);
+            router.refresh();
+          }
+        })
+        .catch(err => {
+          console.error("Failed to update column order:", err);
+          setLastError(`Erro ao salvar ordem das colunas: ${err.message}`);
+          ignoreExternalUpdatesRef.current = false;
         });
-      }
       return;
     }
 
-    // Moving Leads
-    if (active.data.current?.type === "Lead") {
-      setLeads((leads) => {
-        const activeIndex = leads.findIndex((l) => l.id === activeId);
-        const overIndex = leads.findIndex((l) => l.id === overId);
+    // Move Leads
+    if (type === "LEAD") {
+      const finishColumnId = destination.droppableId;
 
-        if (activeIndex === -1 || overIndex === -1) return leads;
+      // Note: We need to handle the lead movement locally first
+      const movedLead = leads.find(l => l.id === draggableId);
+      if (!movedLead) return;
 
-        const newOrderedLeads = arrayMove(leads, activeIndex, overIndex);
-        const movedLead = newOrderedLeads[overIndex];
+      // Let's update the specific lead's column immediately for UI responsiveness
+      const updatedLeads = leads.map(l =>
+        l.id === draggableId ? { ...l, columnId: finishColumnId } : l
+      );
 
-        if (!movedLead) return leads;
+      setLeads(updatedLeads);
+      ignoreExternalUpdatesRef.current = true;
 
-        const columnLeads = newOrderedLeads.filter(l => l.columnId === movedLead.columnId);
-        const newPosition = columnLeads.findIndex(l => l.id === movedLead.id);
-
-        // Set ignore flag BEFORE calling server action
-        ignoreExternalUpdatesRef.current = true;
-
-        // Note: Parent is notified via useEffect watching 'leads' state
-
-        updateLeadStatusAction(movedLead.id, movedLead.columnId!, newPosition, orgId)
-          .catch(err => {
-            console.error("Failed to update lead status:", err);
-            setLastError(`Erro ao salvar status do lead: ${err.message}`);
-            ignoreExternalUpdatesRef.current = false;
-          });
-
-        return newOrderedLeads;
-      });
+      // Allow the UI to settle, then call server
+      // We need the NEW POSITION index in the destination column.
+      // The `destination.index` gives us exactly that!
+      updateLeadStatusAction(draggableId, finishColumnId, destination.index, orgId)
+        .catch(err => {
+          console.error("Failed to update lead status:", err);
+          setLastError(`Erro ao salvar status do lead: ${err.message}`);
+          ignoreExternalUpdatesRef.current = false;
+        });
     }
-  }
+  };
 
   const getLeadsByColumn = (columnId: string) => {
-    return leads.filter((lead) => lead.columnId === columnId);
+    // Sort by position to ensure correct order
+    return leads
+      .filter((lead) => lead.columnId === columnId)
+      .sort((a, b) => a.position - b.position);
   };
 
   async function handleCreateColumn() {
@@ -253,19 +133,7 @@ export function Board({ columns: initialColumns, initialLeads, onLeadsChange, or
   }
 
   return (
-    <DndContext
-      id="kanban-board"
-      sensors={sensors}
-      collisionDetection={pointerWithin}
-      measuring={{
-        droppable: {
-          strategy: MeasuringStrategy.Always,
-        },
-      }}
-      onDragStart={onDragStart}
-      onDragOver={onDragOver}
-      onDragEnd={onDragEnd}
-    >
+    <DragDropContext onDragEnd={onDragEnd}>
       <div className="flex flex-col h-full">
         {lastError && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded relative mb-2 mx-4" role="alert">
@@ -276,59 +144,52 @@ export function Board({ columns: initialColumns, initialLeads, onLeadsChange, or
             </span>
           </div>
         )}
-        <div className="flex-1 flex gap-4 overflow-x-auto overflow-y-auto px-4 pt-4 pb-4 items-start custom-scrollbar h-full">
-          <SortableContext items={columnsId} strategy={horizontalListSortingStrategy}>
-            {columns.map((col) => (
-              <Column
-                key={col.id}
-                column={col}
-                leads={getLeadsByColumn(col.id)}
-                orgId={orgId}
-                overrides={overrides}
-              />
-            ))}
-          </SortableContext>
 
-          <Dialog open={isCreateColumnOpen} onOpenChange={setIsCreateColumnOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="h-[50px] min-w-[300px] border-dashed border-2 hover:border-solid hover:bg-slate-50 dark:hover:bg-slate-900">
-                <PlusIcon className="mr-2 h-4 w-4" />
-                Adicionar Coluna
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Nova Coluna</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="name">Nome da Coluna</Label>
-                  <Input id="name" value={newColumnName} onChange={(e) => setNewColumnName(e.target.value)} placeholder="Ex: Aguardando Resposta" />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button onClick={handleCreateColumn}>Criar Coluna</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
+        <Droppable droppableId="board" type="COLUMN" direction="horizontal">
+          {(provided) => (
+            <div
+              {...provided.droppableProps}
+              ref={provided.innerRef}
+              className="flex-1 flex gap-4 overflow-x-auto overflow-y-hidden px-4 pt-4 pb-4 items-start custom-scrollbar h-full"
+            >
+              {columns.map((col, index) => (
+                <Column
+                  key={col.id}
+                  column={col}
+                  leads={getLeadsByColumn(col.id)}
+                  index={index}
+                  orgId={orgId}
+                  overrides={overrides}
+                />
+              ))}
+              {provided.placeholder}
+
+              <Dialog open={isCreateColumnOpen} onOpenChange={setIsCreateColumnOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="h-[50px] min-w-[300px] border-dashed border-2 hover:border-solid hover:bg-slate-50 dark:hover:bg-slate-900 shrink-0">
+                    <PlusIcon className="mr-2 h-4 w-4" />
+                    Adicionar Coluna
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Nova Coluna</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="name">Nome da Coluna</Label>
+                      <Input id="name" value={newColumnName} onChange={(e) => setNewColumnName(e.target.value)} placeholder="Ex: Aguardando Resposta" />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={handleCreateColumn}>Criar Coluna</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+          )}
+        </Droppable>
       </div>
-
-      {typeof document !== 'undefined' && createPortal(
-        <DragOverlay>
-          {activeColumn && (
-            <div className="opacity-80 rotate-2 cursor-grabbing">
-              <Column column={activeColumn} leads={getLeadsByColumn(activeColumn.id)} orgId={orgId} overrides={overrides} />
-            </div>
-          )}
-          {activeLead && (
-            <div className="opacity-80 rotate-2 cursor-grabbing">
-              <LeadCard lead={activeLead} />
-            </div>
-          )}
-        </DragOverlay>,
-        document.body
-      )}
-    </DndContext>
+    </DragDropContext>
   );
 }
