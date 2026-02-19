@@ -307,7 +307,7 @@ export function CrmView({ initialLeads, columns, companyName, initialViewMode, o
       {/* Content Area */}
       <div className="flex-1 min-h-0 overflow-hidden">
         {view === "board" ? (
-          <Board initialLeads={filteredLeads} columns={columns} onLeadsChange={handleLeadsChange} orgId={orgId} overrides={overrides} />
+          <Board initialLeads={filteredLeads} columns={columns} orgId={orgId} overrides={overrides} />
         ) : view === "list" ? (
           <div className="p-4 h-full overflow-y-auto">
             <LeadsList leads={filteredLeads} columns={columns} orgId={orgId} overrides={overrides} />
