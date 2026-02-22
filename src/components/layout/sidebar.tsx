@@ -101,7 +101,7 @@ export function Sidebar({ isCollapsed = false, toggle }: SidebarProps) {
       )}>
         {!isCollapsed && (
           <h1 className="font-black text-xl bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent tracking-tighter">
-            CRM UNICO
+            CRM CASAL DO TRÁFEGO
           </h1>
         )}
         <Button

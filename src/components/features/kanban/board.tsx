@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { DragDropContext, Droppable, DropResult } from "@hello-pangea/dnd";
 import { Column } from "./column";
@@ -38,20 +39,14 @@ export function Board({ columns: initialColumns, initialLeads, orgId, overrides 
   // Ref to track local updates and prevent race conditions from server revalidation
   const ignoreExternalUpdatesRef = useRef(false);
 
+  // Still update if initialColumns/Leads change from parent after first mount
+  // but only if we are not ignoring external updates (e.g. during drag)
   useEffect(() => {
-    if (ignoreExternalUpdatesRef.current) {
-      const timer = setTimeout(() => {
-        ignoreExternalUpdatesRef.current = false;
-      }, 2000); // Ignore server updates for 2s after a local move
-      return () => clearTimeout(timer);
+    if (!ignoreExternalUpdatesRef.current) {
+      setColumns(initialColumns);
+      setLeads(initialLeads);
     }
-    setColumns(initialColumns);
-  }, [initialColumns]);
-
-  useEffect(() => {
-    if (ignoreExternalUpdatesRef.current) return;
-    setLeads(initialLeads);
-  }, [initialLeads]);
+  }, [initialColumns, initialLeads]);
 
   const onDragEnd = (result: DropResult) => {
     const { destination, source, draggableId, type } = result;
