@@ -4,19 +4,17 @@ import { useMemo, useState } from "react";
 import { Lead, Column } from "@/server/db/schema";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart, Line, Cell,
-    PieChart, Pie, Legend
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
 import { format, subDays, startOfDay, endOfDay, isWithinInterval, eachDayOfInterval, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
     Wallet, TrendingUp, Users, Target, Clock, CalendarClock,
-    RotateCcw, Flame, FileText, MousePointerClick, Gem, BrainCircuit, Link2,
-    AlertTriangle, CheckCircle2, XCircle, Activity, Zap, Timer, Bell
+    RotateCcw, FileText, MousePointerClick, Gem, BrainCircuit, Link2,
+    AlertTriangle, Activity, Zap, Bell
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { DateRangePickerWithPresets } from "./date-range-picker";
 import { DateRange } from "react-day-picker";
 import { KPI } from "./analytics-components";
@@ -25,7 +23,6 @@ import { cn } from "@/lib/utils";
 
 // --- Colors & Helpers ---
 const PIPELINE_COLORS = ["#6366f1", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#0ea5e9"];
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658', '#8dd1e1'];
 
 const DD_TO_STATE: Record<string, string> = {
     '11': 'SP', '12': 'SP', '13': 'SP', '14': 'SP', '15': 'SP', '16': 'SP', '17': 'SP', '18': 'SP', '19': 'SP',
@@ -69,29 +66,29 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
     const [selectedState, setSelectedState] = useState<string>("all");
     const [selectedColumn, setSelectedColumn] = useState<string | null>(null);
 
-    const checkStatus = (title: string, type: 'won' | 'lost') => {
-        const t = title.toLowerCase();
-        if (type === 'won') return /(fechado|won|ganho|vendido|contrato|sucesso)/.test(t) && !t.includes('não');
-        if (type === 'lost') return /(perdido|lost|arquivado|desqualificado|cancelado|não|sem retorno)/.test(t);
-        return false;
-    };
-
-    const isLeadWon = (lead: Lead) => {
-        if (!lead.columnId) return false;
-        const col = columns.find(c => c.id === lead.columnId);
-        return col ? checkStatus(col.title, 'won') : false;
-    };
-
-    const isLeadLost = (lead: Lead) => {
-        if (!lead.columnId) return false;
-        const col = columns.find(c => c.id === lead.columnId);
-        return col ? checkStatus(col.title, 'lost') : false;
-    };
-
     const {
         kpis, charts, uniqueOrigins, states, newMetrics,
         intelligence, utmStats
     } = useMemo(() => {
+        const checkStatus = (title: string, type: 'won' | 'lost') => {
+            const t = title.toLowerCase();
+            if (type === 'won') return /(fechado|won|ganho|vendido|contrato|sucesso)/.test(t) && !t.includes('não');
+            if (type === 'lost') return /(perdido|lost|arquivado|desqualificado|cancelado|não|sem retorno)/.test(t);
+            return false;
+        };
+
+        const isLeadWon = (lead: Lead) => {
+            if (!lead.columnId) return false;
+            const col = columns.find(c => c.id === lead.columnId);
+            return col ? checkStatus(col.title, 'won') : false;
+        };
+
+        const isLeadLost = (lead: Lead) => {
+            if (!lead.columnId) return false;
+            const col = columns.find(c => c.id === lead.columnId);
+            return col ? checkStatus(col.title, 'lost') : false;
+        };
+
         const filtered = initialLeads.filter(lead => {
             if (dateRange?.from) {
                 const start = startOfDay(dateRange.from);
@@ -115,7 +112,6 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
         // KPIs
         const totalLeadsCount = activeLeads.length;
         const wonLeads = activeLeads.filter(isLeadWon);
-        const lostLeads = activeLeads.filter(isLeadLost);
         const openLeads = activeLeads.filter(l => !isLeadWon(l) && !isLeadLost(l));
 
         const revenue = wonLeads.reduce((acc, l) => acc + parseValue(l.value), 0);
@@ -170,15 +166,25 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
         const health = getHealthScore(staleAlerts, followUp, velocity, totalLeadsCount, wonLeads.length);
 
         // UTM
-        const utmStats = activeLeads.reduce((acc, lead) => {
-            if (lead.utmSource || lead.utmMedium || lead.utmCampaign) {
-                const key = `${lead.utmSource || 'N/A'} / ${lead.utmMedium || 'N/A'} / ${lead.utmCampaign || 'N/A'}`;
-                if (!acc[key]) acc[key] = { name: key, source: lead.utmSource || '-', medium: lead.utmMedium || '-', campaign: lead.utmCampaign || '-', term: lead.utmTerm || '-', content: lead.utmContent || '-', size: 0 };
+        const utmStatsMap = activeLeads.reduce((acc, lead) => {
+            if (lead.utmSource || lead.utmMedium || lead.utmCampaign || lead.utmTerm) {
+                // Key MUST include term and campaign for accuracy
+                const key = `${lead.utmSource || 'N/A'}|${lead.utmMedium || 'N/A'}|${lead.utmCampaign || 'N/A'}|${lead.utmTerm || 'N/A'}`;
+                if (!acc[key]) {
+                    acc[key] = {
+                        name: key,
+                        source: lead.utmSource || '-',
+                        medium: lead.utmMedium || '-',
+                        campaign: lead.utmCampaign || '-',
+                        term: lead.utmTerm || '-',
+                        size: 0
+                    };
+                }
                 acc[key].size++;
             }
             return acc;
-        }, {} as Record<string, { name: string, source: string, medium: string, campaign: string, term: string, content: string, size: number }>);
-        const utmTreeData = Object.values(utmStats).sort((a, b) => b.size - a.size).slice(0, 20);
+        }, {} as Record<string, { name: string, source: string, medium: string, campaign: string, term: string, size: number }>);
+        const utmTableData = Object.values(utmStatsMap).sort((a, b) => b.size - a.size).slice(0, 30);
 
         return {
             uniqueOrigins, states,
@@ -186,7 +192,7 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
             charts: { monthlyData, regionalData, dailyData, funnelData },
             newMetrics: { ...processedNewMetrics, conversionData },
             intelligence: { staleAlerts, funnel, velocity, followUp, health },
-            utmStats: utmTreeData
+            utmStats: utmTableData
         };
     }, [initialLeads, columns, dateRange, selectedOrigin, selectedState, selectedColumn]);
 
@@ -201,7 +207,7 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
     const gradeBg: Record<string, string> = { A: 'bg-emerald-500/20', B: 'bg-green-500/20', C: 'bg-amber-500/20', D: 'bg-orange-500/20', F: 'bg-red-500/20' };
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500 pb-4">
+        <div className="space-y-6 animate-in fade-in duration-500 pb-10">
             {/* Toolbar */}
             <div className="flex flex-col md:flex-row items-center gap-4 bg-slate-950 p-4 rounded-xl border border-slate-800 shadow-sm sticky top-0 z-20">
                 <div className="flex items-center gap-2">
@@ -245,202 +251,113 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                 <KPI label="Follow-ups" value={kpis.followUpsCount} icon={CalendarClock} color="text-purple-500" iconBg="bg-purple-500/10" />
             </div>
 
-            {/* ===== SALES INTELLIGENCE v3 ===== */}
-            <Card className="bg-slate-950 border-slate-800 shadow-xl overflow-hidden">
-                <CardHeader className="pb-4 border-b border-slate-800">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <BrainCircuit className="h-5 w-5 text-purple-400" />
-                            <div>
-                                <CardTitle className="text-white text-base">Inteligência de Vendas</CardTitle>
-                                <CardDescription className="text-[10px] text-slate-500">
-                                    Insights acionáveis baseados em dados reais do pipeline
-                                </CardDescription>
-                            </div>
-                        </div>
-                        {/* Health Score Badge */}
-                        <div className={cn("flex items-center gap-2 px-4 py-2 rounded-full", gradeBg[intelligence.health.grade])}>
-                            <Activity className={cn("h-4 w-4", gradeColors[intelligence.health.grade])} />
-                            <span className={cn("text-lg font-bold", gradeColors[intelligence.health.grade])}>
-                                {intelligence.health.score}
-                            </span>
-                            <span className={cn("text-xs font-bold", gradeColors[intelligence.health.grade])}>
-                                / 100
-                            </span>
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent className="p-0">
-                    {/* Health Factors */}
-                    <div className="px-6 py-4 border-b border-slate-800/50 bg-slate-900/30">
-                        <div className="flex flex-wrap gap-3">
-                            {intelligence.health.factors.map((f, i) => (
-                                <div key={i} className={cn(
-                                    "flex items-center gap-2 text-[11px] px-3 py-1.5 rounded-full",
-                                    f.status === 'positive' && "bg-emerald-500/10 text-emerald-400",
-                                    f.status === 'warning' && "bg-amber-500/10 text-amber-400",
-                                    f.status === 'critical' && "bg-red-500/10 text-red-400",
-                                )}>
-                                    {f.status === 'positive' && <CheckCircle2 className="h-3 w-3" />}
-                                    {f.status === 'warning' && <AlertTriangle className="h-3 w-3" />}
-                                    {f.status === 'critical' && <XCircle className="h-3 w-3" />}
-                                    {f.label}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-800">
-                        {/* Stale Alerts */}
-                        <div className="p-5 space-y-3">
-                            <div className="flex items-center gap-2">
-                                <AlertTriangle className="h-4 w-4 text-amber-400" />
-                                <h4 className="text-xs font-bold text-white uppercase tracking-widest">Leads Parados</h4>
-                            </div>
-                            <div className="grid grid-cols-3 gap-2 text-center">
-                                <div className="bg-red-500/10 rounded-lg p-2">
-                                    <div className="text-xl font-bold text-red-400">{intelligence.staleAlerts.critical.length}</div>
-                                    <div className="text-[9px] text-red-400/70">+15 dias</div>
-                                </div>
-                                <div className="bg-amber-500/10 rounded-lg p-2">
-                                    <div className="text-xl font-bold text-amber-400">{intelligence.staleAlerts.warning.length}</div>
-                                    <div className="text-[9px] text-amber-400/70">7-15 dias</div>
-                                </div>
-                                <div className="bg-emerald-500/10 rounded-lg p-2">
-                                    <div className="text-xl font-bold text-emerald-400">{intelligence.staleAlerts.healthy}</div>
-                                    <div className="text-[9px] text-emerald-400/70">Ativos</div>
-                                </div>
-                            </div>
-                            {intelligence.staleAlerts.critical.length > 0 && (
-                                <div className="space-y-1.5 max-h-[120px] overflow-y-auto">
-                                    {intelligence.staleAlerts.critical.slice(0, 5).map(l => (
-                                        <div key={l.id} className="flex items-center justify-between text-[10px] bg-red-500/5 rounded px-2 py-1.5">
-                                            <span className="text-slate-300 truncate max-w-[140px]">{l.name}</span>
-                                            <Badge variant="outline" className="text-[9px] border-red-500/30 text-red-400">{l.daysStale}d · {l.stageName}</Badge>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Velocity */}
-                        <div className="p-5 space-y-3">
-                            <div className="flex items-center gap-2">
-                                <Zap className="h-4 w-4 text-blue-400" />
-                                <h4 className="text-xs font-bold text-white uppercase tracking-widest">Velocidade</h4>
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                                <div className="bg-slate-800/50 rounded-lg p-3 text-center">
-                                    <div className="text-lg font-bold text-blue-400">{intelligence.velocity.avgDaysToClose || '—'}</div>
-                                    <div className="text-[9px] text-slate-500">dias p/ fechar</div>
-                                </div>
-                                <div className="bg-slate-800/50 rounded-lg p-3 text-center">
-                                    <div className="text-lg font-bold text-rose-400">{intelligence.velocity.avgDaysToLose || '—'}</div>
-                                    <div className="text-[9px] text-slate-500">dias p/ perder</div>
-                                </div>
-                            </div>
-                            {intelligence.velocity.avgDaysByStage.length > 0 && (
-                                <div className="space-y-1">
-                                    <div className="text-[9px] text-slate-500 uppercase tracking-wider">Tempo médio por etapa</div>
-                                    {intelligence.velocity.avgDaysByStage.slice(0, 4).map(s => (
-                                        <div key={s.stage} className="flex items-center justify-between text-[10px]">
-                                            <span className="text-slate-400 truncate max-w-[120px]">{s.stage}</span>
-                                            <span className={cn("font-mono font-bold", s.avgDays > 15 ? 'text-red-400' : s.avgDays > 7 ? 'text-amber-400' : 'text-emerald-400')}>{s.avgDays}d</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Follow-up */}
-                        <div className="p-5 space-y-3">
-                            <div className="flex items-center gap-2">
-                                <Bell className="h-4 w-4 text-purple-400" />
-                                <h4 className="text-xs font-bold text-white uppercase tracking-widest">Follow-ups</h4>
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                                <div className={cn("rounded-lg p-3 text-center", intelligence.followUp.overdueLeads.length > 0 ? "bg-red-500/10" : "bg-emerald-500/10")}>
-                                    <div className={cn("text-lg font-bold", intelligence.followUp.overdueLeads.length > 0 ? "text-red-400" : "text-emerald-400")}>
-                                        {intelligence.followUp.overdueLeads.length}
-                                    </div>
-                                    <div className="text-[9px] text-slate-500">vencidos</div>
-                                </div>
-                                <div className="bg-slate-800/50 rounded-lg p-3 text-center">
-                                    <div className="text-lg font-bold text-purple-400">{intelligence.followUp.complianceRate}%</div>
-                                    <div className="text-[9px] text-slate-500">em dia</div>
-                                </div>
-                            </div>
-                            {intelligence.followUp.overdueLeads.length > 0 && (
-                                <div className="space-y-1.5 max-h-[120px] overflow-y-auto">
-                                    <div className="text-[9px] text-red-400/70 uppercase tracking-wider">⚠ Precisam de ação</div>
-                                    {intelligence.followUp.overdueLeads.slice(0, 5).map(l => (
-                                        <div key={l.id} className="flex items-center justify-between text-[10px] bg-red-500/5 rounded px-2 py-1.5">
-                                            <span className="text-slate-300 truncate max-w-[140px]">{l.name}</span>
-                                            <Badge variant="outline" className="text-[9px] border-red-500/30 text-red-400">{l.daysOverdue}d atraso</Badge>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                            {intelligence.followUp.overdueLeads.length === 0 && intelligence.followUp.totalWithFollowUp === 0 && (
-                                <p className="text-[10px] text-slate-500 text-center py-2">Nenhum follow-up agendado</p>
-                            )}
-                        </div>
-                    </div>
+            {/* Daily Leads Chart */}
+            <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 overflow-hidden shadow-lg border-l-4 border-l-purple-500">
+                <CardHeader className="py-4"><CardTitle className="text-sm font-bold flex items-center gap-2"><CalendarClock className="w-4 h-4" /> Volume de Leads Diários</CardTitle></CardHeader>
+                <CardContent className="h-[200px] pb-6 px-2">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={charts.dailyData}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} />
+                            <XAxis dataKey="day" tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} />
+                            <YAxis tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} />
+                            <Tooltip cursor={{ fill: 'rgba(168, 85, 247, 0.1)' }} contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '8px', color: '#fff' }} />
+                            <Bar dataKey="leads" fill="#a855f7" radius={[4, 4, 0, 0]} barSize={30} />
+                        </BarChart>
+                    </ResponsiveContainer>
                 </CardContent>
             </Card>
 
-            {/* Charts Row 1 */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* ===== MARKETING INTELLIGENCE (NEW SECTION) ===== */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Top UTM Sources */}
                 <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
-                    <CardHeader>
-                        <CardTitle className="text-sm font-bold flex items-center justify-between">
-                            Evolução de Vendas
-                            <div className="flex items-center gap-2 text-[10px] font-normal text-slate-500">
-                                <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-indigo-500" /> Leads</span>
-                                <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-500" /> Receita</span>
-                            </div>
-                        </CardTitle>
+                    <CardHeader className="py-3 px-4 flex flex-row items-center justify-between space-y-0">
+                        <CardTitle className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Top UTM Sources</CardTitle>
+                        <MousePointerClick className="w-3 h-3 text-blue-500" />
                     </CardHeader>
-                    <CardContent className="h-[300px]">
+                    <CardContent className="h-[220px] pb-4 px-2">
                         <ResponsiveContainer width="100%" height="100%">
-                            <ComposedChart data={charts.monthlyData}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} />
-                                <XAxis dataKey="month" tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} />
-                                <YAxis yAxisId="left" tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `R$${v / 1000}k`} />
-                                <YAxis yAxisId="right" orientation="right" tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} />
-                                <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '8px', color: '#fff' }} />
-                                <Line yAxisId="right" type="monotone" dataKey="leads" stroke="#6366f1" strokeWidth={2} dot={{ r: 3, fill: "#6366f1" }} />
-                                <Line yAxisId="left" type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} dot={{ r: 3, fill: "#10b981" }} />
-                            </ComposedChart>
+                            <BarChart data={newMetrics.sourceData} layout="vertical" margin={{ left: -10, right: 20 }}>
+                                <XAxis type="number" hide />
+                                <YAxis dataKey="name" type="category" tick={{ fill: '#64748b', fontSize: 9 }} width={80} axisLine={false} tickLine={false} />
+                                <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '10px' }} />
+                                <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={12} />
+                            </BarChart>
                         </ResponsiveContainer>
                     </CardContent>
                 </Card>
 
+                {/* Top UTM Terms (Keywords) */}
                 <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
-                    <CardHeader><CardTitle className="text-sm font-bold">Performance Regional</CardTitle></CardHeader>
-                    <CardContent className="h-[300px]">
+                    <CardHeader className="py-3 px-4 flex flex-row items-center justify-between space-y-0">
+                        <CardTitle className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Top UTM Terms</CardTitle>
+                        <Zap className="w-3 h-3 text-amber-500" />
+                    </CardHeader>
+                    <CardContent className="h-[220px] pb-4 px-2">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={charts.regionalData} layout="vertical">
-                                <CartesianGrid strokeDasharray="3 3" horizontal={false} opacity={0.1} />
+                            <BarChart data={newMetrics.termData} layout="vertical" margin={{ left: -10, right: 20 }}>
                                 <XAxis type="number" hide />
-                                <YAxis dataKey="name" type="category" tick={{ fill: '#64748b', fontSize: 10 }} width={30} />
-                                <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '8px', color: '#fff' }} />
-                                <Bar dataKey="value" fill="#38bdf8" radius={[0, 4, 4, 0]} barSize={16}>
-                                    {charts.regionalData.map((entry, index) => <Cell key={index} fill={entry.name === selectedState ? '#6366f1' : '#38bdf8'} />)}
-                                </Bar>
+                                <YAxis dataKey="name" type="category" tick={{ fill: '#64748b', fontSize: 9 }} width={100} axisLine={false} tickLine={false} tickFormatter={(v) => v.length > 20 ? v.substring(0, 18) + '...' : v} />
+                                <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '10px' }} />
+                                <Bar dataKey="leads" fill="#f59e0b" radius={[0, 4, 4, 0]} barSize={12} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </Card>
+
+                {/* Top Landing Pages */}
+                <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
+                    <CardHeader className="py-3 px-4 flex flex-row items-center justify-between space-y-0">
+                        <CardTitle className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Páginas de Entrada</CardTitle>
+                        <FileText className="w-3 h-3 text-emerald-500" />
+                    </CardHeader>
+                    <CardContent className="h-[220px] pb-4 px-2">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={newMetrics.pageData} layout="vertical" margin={{ left: -10, right: 20 }}>
+                                <XAxis type="number" hide />
+                                <YAxis dataKey="name" type="category" tick={{ fill: '#64748b', fontSize: 9 }} width={100} axisLine={false} tickLine={false} tickFormatter={(v) => v.length > 20 ? v.substring(0, 18) + '...' : v} />
+                                <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '10px' }} />
+                                <Bar dataKey="leads" fill="#10b981" radius={[0, 4, 4, 0]} barSize={12} />
                             </BarChart>
                         </ResponsiveContainer>
                     </CardContent>
                 </Card>
             </div>
 
-            {/* UTM Grid */}
+            {/* Keyword vs Page Relationship */}
+            <Card className="bg-slate-950 border-slate-800 shadow-sm overflow-hidden">
+                <CardHeader className="py-3 border-b border-slate-800">
+                    <CardTitle className="text-sm font-bold flex items-center gap-2">
+                        <BrainCircuit className="w-4 h-4 text-purple-400" />
+                        Relacionamento: Keywords vs Páginas
+                    </CardTitle>
+                    <CardDescription className="text-[10px]">Quais termos levam a quais páginas e qual a volumetria? (Top 20 relações)</CardDescription>
+                </CardHeader>
+                <CardContent className="p-0">
+                    <div className="grid grid-cols-12 bg-slate-900/50 p-2 text-[10px] font-bold text-slate-500 uppercase">
+                        <div className="col-span-6 pl-4 font-mono">UTM Term (Palavra-chave)</div>
+                        <div className="col-span-4">Página (Slug)</div>
+                        <div className="col-span-2 text-right pr-4 italic">Leads</div>
+                    </div>
+                    <div className="divide-y divide-slate-800 max-h-[250px] overflow-y-auto custom-scrollbar">
+                        {newMetrics.termPageRelation.map((rel, i) => (
+                            <div key={i} className="grid grid-cols-12 p-3 text-[11px] hover:bg-slate-900 transition-colors">
+                                <div className="col-span-6 pl-2 font-medium text-slate-200 truncate pr-2 border-l-2 border-slate-700">{rel.term}</div>
+                                <div className="col-span-4 text-slate-400 truncate">{rel.page}</div>
+                                <div className="col-span-2 text-right pr-4 font-bold text-purple-400">{rel.leads}</div>
+                            </div>
+                        ))}
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* Performance de UTMs Table */}
             {utmStats.length > 0 && (
                 <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
                     <CardHeader>
                         <CardTitle className="text-sm font-bold flex items-center gap-2">
                             <Link2 className="w-4 h-4 text-blue-500" />
-                            Performance de UTMs
+                            Detalhamento de Campanhas (UTMs)
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -449,17 +366,17 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                                 <div className="col-span-2">Source</div>
                                 <div className="col-span-2">Medium</div>
                                 <div className="col-span-4">Campaign</div>
-                                <div className="col-span-2">Term</div>
-                                <div className="col-span-2 text-right">Leads</div>
+                                <div className="col-span-3">Term (Keyword)</div>
+                                <div className="col-span-1 text-right pr-2">Leads</div>
                             </div>
                             <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-[300px] overflow-y-auto">
                                 {utmStats.map((item, idx) => (
                                     <div key={idx} className="grid grid-cols-12 p-2 text-[11px] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900/50">
                                         <div className="col-span-2 truncate pr-2">{item.source}</div>
-                                        <div className="col-span-2 truncate pr-2 text-slate-500">{item.medium}</div>
+                                        <div className="col-span-2 truncate pr-2 text-slate-400">{item.medium}</div>
                                         <div className="col-span-4 truncate pr-2 font-medium text-blue-600 dark:text-blue-400">{item.campaign}</div>
-                                        <div className="col-span-2 truncate pr-2 text-slate-500">{item.term}</div>
-                                        <div className="col-span-2 text-right font-bold">{item.size}</div>
+                                        <div className="col-span-3 truncate pr-2 text-slate-500 font-mono italic">{item.term}</div>
+                                        <div className="col-span-1 text-right font-bold pr-2">{item.size}</div>
                                     </div>
                                 ))}
                             </div>
@@ -468,91 +385,119 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                 </Card>
             )}
 
-            {/* Traffic & Origin */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
-                    <CardHeader>
-                        <CardTitle className="text-sm font-bold flex items-center gap-2">
-                            <MousePointerClick className="w-4 h-4 text-purple-500" /> Leads por Origem
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="h-[300px]">
+            {/* Sales Intelligence v3 (Lower Priority Now) */}
+            <Card className="bg-slate-950/50 border-slate-800 shadow-xl overflow-hidden opacity-90">
+                <CardHeader className="pb-4 border-b border-slate-800">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <BrainCircuit className="h-4 w-4 text-slate-400" />
+                            <div>
+                                <CardTitle className="text-slate-300 text-sm">Saúde do Pipeline</CardTitle>
+                                <CardDescription className="text-[10px] text-slate-600">
+                                    Insights acionáveis baseados em dados reais
+                                </CardDescription>
+                            </div>
+                        </div>
+                        <div className={cn("flex items-center gap-2 px-3 py-1 rounded-full", gradeBg[intelligence.health.grade])}>
+                            <Activity className={cn("h-3 w-3", gradeColors[intelligence.health.grade])} />
+                            <span className={cn("text-sm font-bold", gradeColors[intelligence.health.grade])}>
+                                {intelligence.health.score}
+                            </span>
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                    <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-800">
+                        {/* Stale Alerts */}
+                        <div className="p-4 space-y-2">
+                            <div className="flex items-center gap-2">
+                                <AlertTriangle className="h-3 w-3 text-amber-500" />
+                                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Leads Parados</h4>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2 text-center">
+                                <div className="bg-red-500/10 rounded p-1">
+                                    <div className="text-sm font-bold text-red-400">{intelligence.staleAlerts.critical.length}</div>
+                                    <div className="text-[8px] text-red-400/70">+15d</div>
+                                </div>
+                                <div className="bg-amber-500/10 rounded p-1">
+                                    <div className="text-sm font-bold text-amber-400">{intelligence.staleAlerts.warning.length}</div>
+                                    <div className="text-[8px] text-amber-400/70">7-15d</div>
+                                </div>
+                                <div className="bg-emerald-500/10 rounded p-1">
+                                    <div className="text-sm font-bold text-emerald-400">{intelligence.staleAlerts.healthy}</div>
+                                    <div className="text-[8px] text-emerald-400/70">Ok</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Velocity */}
+                        <div className="p-4 space-y-2">
+                            <div className="flex items-center gap-2">
+                                <Zap className="h-3 w-3 text-blue-500" />
+                                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Velocidade (Médias)</h4>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                                <div className="bg-slate-800/50 rounded p-2 text-center">
+                                    <div className="text-sm font-bold text-blue-400">{intelligence.velocity.avgDaysToClose || '—'}d</div>
+                                    <div className="text-[8px] text-slate-600">p/ fechar</div>
+                                </div>
+                                <div className="bg-slate-800/50 rounded p-2 text-center">
+                                    <div className="text-sm font-bold text-rose-400">{intelligence.velocity.avgDaysToLose || '—'}d</div>
+                                    <div className="text-[8px] text-slate-600">p/ perder</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Follow-up */}
+                        <div className="p-4 space-y-2">
+                            <div className="flex items-center gap-2">
+                                <Bell className="h-3 w-3 text-purple-500" />
+                                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Follow-ups</h4>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                                <div className={cn("rounded p-2 text-center", intelligence.followUp.overdueLeads.length > 0 ? "bg-red-500/10" : "bg-emerald-500/10")}>
+                                    <div className={cn("text-sm font-bold", intelligence.followUp.overdueLeads.length > 0 ? "text-red-400" : "text-emerald-400")}>
+                                        {intelligence.followUp.overdueLeads.length}
+                                    </div>
+                                    <div className="text-[8px] text-slate-600">vencidos</div>
+                                </div>
+                                <div className="bg-slate-800/50 rounded p-2 text-center">
+                                    <div className="text-sm font-bold text-purple-400">{intelligence.followUp.complianceRate}%</div>
+                                    <div className="text-[8px] text-slate-600">em dia</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* Legacy Section at Bottom */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 opacity-80 border-t border-slate-800 pt-10">
+                <Card className="bg-white dark:bg-slate-950/20 border-slate-200 dark:border-slate-800 shadow-sm">
+                    <CardHeader className="py-2"><CardTitle className="text-[10px] font-bold text-slate-500">Regional (Ativos)</CardTitle></CardHeader>
+                    <CardContent className="h-[200px]">
                         <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie data={newMetrics.sourceData} cx="50%" cy="50%" labelLine={false}
-                                    label={({ name, percent }: any) => `${name} ${(percent ? (percent * 100) : 0).toFixed(0)}%`}
-                                    outerRadius={80} fill="#8884d8" dataKey="value">
-                                    {newMetrics.sourceData.map((_, index) => <Cell key={index} fill={COLORS[index % COLORS.length]} />)}
-                                </Pie>
-                                <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '8px', color: '#fff' }} />
-                                <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{ fontSize: '10px' }} />
-                            </PieChart>
+                            <BarChart data={charts.regionalData} layout="vertical">
+                                <YAxis dataKey="name" type="category" tick={{ fill: '#64748b', fontSize: 9 }} width={25} />
+                                <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '10px' }} />
+                                <Bar dataKey="value" fill="#94a3b8" radius={[0, 4, 4, 0]} barSize={10} />
+                            </BarChart>
                         </ResponsiveContainer>
                     </CardContent>
                 </Card>
 
-                <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
-                    <CardHeader>
-                        <CardTitle className="text-sm font-bold flex items-center gap-2">
-                            <Target className="w-4 h-4 text-emerald-500" /> Conversão por Origem
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="h-[300px]">
+                <Card className="bg-white dark:bg-slate-950/20 border-slate-200 dark:border-slate-800 shadow-sm">
+                    <CardHeader className="py-2"><CardTitle className="text-[10px] font-bold text-slate-500">Pipeline (Volume)</CardTitle></CardHeader>
+                    <CardContent className="h-[200px]">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart layout="vertical" data={newMetrics.conversionData.slice(0, 8)} margin={{ left: 40 }}>
-                                <CartesianGrid strokeDasharray="3 3" horizontal={false} opacity={0.1} />
-                                <XAxis type="number" unit="%" domain={[0, 100]} tick={{ fontSize: 10, fill: '#64748b' }} />
-                                <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 10, fill: '#64748b' }} />
-                                <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '8px', color: '#fff' }} />
-                                <Bar dataKey="rate" name="Conversão (%)" fill="#82ca9d" radius={[0, 4, 4, 0]} barSize={16}>
-                                    {newMetrics.conversionData.map((entry, index) => (
-                                        <Cell key={index} fill={entry.rate > 20 ? '#10b981' : '#f59e0b'} />
-                                    ))}
-                                </Bar>
+                            <BarChart data={charts.funnelData} layout="vertical">
+                                <YAxis dataKey="name" type="category" tick={{ fill: '#64748b', fontSize: 9 }} width={100} tickFormatter={(v) => v.length > 15 ? v.substring(0, 15) : v} />
+                                <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={10} fill="#94a3b8" />
                             </BarChart>
                         </ResponsiveContainer>
                     </CardContent>
                 </Card>
             </div>
-
-            {/* Daily + Pipeline */}
-            <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-                <CardHeader><CardTitle className="text-sm font-bold">Leads Diários</CardTitle></CardHeader>
-                <CardContent className="h-[250px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={charts.dailyData}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} />
-                            <XAxis dataKey="day" tick={{ fill: '#64748b', fontSize: 10 }} />
-                            <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '8px', color: '#fff' }} />
-                            <Bar dataKey="leads" fill="#a855f7" radius={[4, 4, 0, 0]} barSize={20} />
-                        </BarChart>
-                    </ResponsiveContainer>
-                </CardContent>
-            </Card>
-
-            <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-                <CardHeader>
-                    <CardTitle className="text-sm font-bold flex items-center gap-2">
-                        Temperatura do Pipeline
-                        {selectedColumn && <Badge variant="secondary" onClick={() => setSelectedColumn(null)} className="cursor-pointer text-[10px]">✕ {selectedColumn}</Badge>}
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="h-[300px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={charts.funnelData} layout="vertical">
-                            <CartesianGrid strokeDasharray="3 3" horizontal={false} opacity={0.1} />
-                            <XAxis type="number" hide />
-                            <YAxis dataKey="name" type="category" tick={{ fill: '#64748b', fontSize: 10 }} width={120} tickFormatter={(v) => v.length > 20 ? v.substring(0, 20) + '...' : v} />
-                            <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '8px', color: '#fff' }} />
-                            <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={24} className="cursor-pointer" onClick={(data) => { if (data && data.name) setSelectedColumn(data.name === selectedColumn ? null : data.name) }}>
-                                {charts.funnelData.map((entry, index) => (
-                                    <Cell key={index} fill={entry.name === selectedColumn ? '#ffffff' : entry.fill} />
-                                ))}
-                            </Bar>
-                        </BarChart>
-                    </ResponsiveContainer>
-                </CardContent>
-            </Card>
         </div>
     );
 }

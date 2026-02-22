@@ -8,6 +8,8 @@ export interface AnalyticsData {
     sourceData: { name: string; value: number }[];
     campaignData: { name: string; leads: number }[];
     pageData: { name: string; leads: number }[];
+    termData: { name: string; leads: number }[];
+    termPageRelation: { term: string; page: string; leads: number }[];
     conversionBySource: { name: string; total: number; won: number; rate: number }[];
 }
 
@@ -15,6 +17,8 @@ export function processAnalyticsData(leads: Lead[]): AnalyticsData {
     const sourceMap = new Map<string, number>();
     const campaignMap = new Map<string, number>();
     const pageMap = new Map<string, number>();
+    const termMap = new Map<string, number>();
+    const termPageMap = new Map<string, number>();
 
     leads.forEach((lead) => {
         const source = getLeadSource(lead);
@@ -25,21 +29,38 @@ export function processAnalyticsData(leads: Lead[]): AnalyticsData {
             campaignMap.set(campaign, (campaignMap.get(campaign) || 0) + 1);
         }
 
+        const term = lead.utmTerm || "Direto / S. Termo";
+        termMap.set(term, (termMap.get(term) || 0) + 1);
+
+        let cleanPath = "Home / Desconhecida";
         if (lead.pagePath) {
-            let cleanPath = lead.pagePath;
+            cleanPath = lead.pagePath;
             try {
-                if (cleanPath.startsWith('http')) cleanPath = new URL(cleanPath).pathname;
+                if (cleanPath.startsWith('http')) {
+                    const url = new URL(cleanPath);
+                    cleanPath = url.pathname === '/' ? 'Home' : url.pathname;
+                }
             } catch { /* ignore */ }
             if (cleanPath.length > 1 && cleanPath.endsWith('/')) cleanPath = cleanPath.slice(0, -1);
+            if (cleanPath === '/') cleanPath = 'Home';
             pageMap.set(cleanPath, (pageMap.get(cleanPath) || 0) + 1);
         }
+
+        const relationKey = `${term}|||${cleanPath}`;
+        termPageMap.set(relationKey, (termPageMap.get(relationKey) || 0) + 1);
     });
 
     const sourceData = Array.from(sourceMap.entries()).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
     const campaignData = Array.from(campaignMap.entries()).map(([name, leads]) => ({ name, leads })).sort((a, b) => b.leads - a.leads).slice(0, 10);
-    const pageData = Array.from(pageMap.entries()).map(([name, leads]) => ({ name, leads })).sort((a, b) => b.leads - a.leads).slice(0, 10);
+    const pageData = Array.from(pageMap.entries()).map(([name, leads]) => ({ name, leads })).sort((a, b) => b.leads - a.leads).slice(0, 15);
+    const termData = Array.from(termMap.entries()).map(([name, leads]) => ({ name, leads })).sort((a, b) => b.leads - a.leads).slice(0, 15);
 
-    return { sourceData, campaignData, pageData, conversionBySource: [] };
+    const termPageRelation = Array.from(termPageMap.entries()).map(([key, leads]) => {
+        const [term, page] = key.split('|||');
+        return { term, page, leads };
+    }).sort((a, b) => b.leads - a.leads).slice(0, 20);
+
+    return { sourceData, campaignData, pageData, termData, termPageRelation, conversionBySource: [] };
 }
 
 export function calculateConversionBySource(leads: Lead[], isWon: (lead: Lead) => boolean) {
