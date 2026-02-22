@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Lead, Column } from "@/server/db/schema";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from "recharts";
 import { format, subDays, startOfDay, endOfDay, isWithinInterval, eachDayOfInterval, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -66,6 +66,11 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
     const [selectedState, setSelectedState] = useState<string>("all");
     const [selectedColumn, setSelectedColumn] = useState<string | null>(null);
 
+    // Cross-filtering states
+    const [selectedUTMSource, setSelectedUTMSource] = useState<string | null>(null);
+    const [selectedUTMTerm, setSelectedUTMTerm] = useState<string | null>(null);
+    const [selectedPage, setSelectedPage] = useState<string | null>(null);
+
     const {
         kpis, charts, uniqueOrigins, states, newMetrics,
         intelligence, utmStats
@@ -98,6 +103,23 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
             }
             if (selectedOrigin !== "all" && (lead.campaignSource || "Direto") !== selectedOrigin) return false;
             if (selectedState !== "all" && getStateFromPhone(lead.whatsapp) !== selectedState) return false;
+
+            // Cross-filters
+            if (selectedUTMSource && lead.utmSource !== selectedUTMSource) return false;
+            if (selectedUTMTerm && lead.utmTerm !== selectedUTMTerm) return false;
+            if (selectedPage) {
+                let cleanPath = lead.pagePath || "Home";
+                try {
+                    if (cleanPath.startsWith('http')) {
+                        const url = new URL(cleanPath);
+                        cleanPath = url.pathname === '/' ? 'Home' : url.pathname;
+                    }
+                } catch { /* ignore */ }
+                if (cleanPath.length > 1 && cleanPath.endsWith('/')) cleanPath = cleanPath.slice(0, -1);
+                if (cleanPath === '/') cleanPath = 'Home';
+                if (cleanPath !== selectedPage) return false;
+            }
+
             return true;
         });
 
@@ -194,13 +216,16 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
             intelligence: { staleAlerts, funnel, velocity, followUp, health },
             utmStats: utmTableData
         };
-    }, [initialLeads, columns, dateRange, selectedOrigin, selectedState, selectedColumn]);
+    }, [initialLeads, columns, dateRange, selectedOrigin, selectedState, selectedColumn, selectedUTMSource, selectedUTMTerm, selectedPage]);
 
     const handleReset = () => {
         setDateRange({ from: subDays(new Date(), 90), to: new Date() });
         setSelectedOrigin('all');
         setSelectedState('all');
         setSelectedColumn(null);
+        setSelectedUTMSource(null);
+        setSelectedUTMTerm(null);
+        setSelectedPage(null);
     };
 
     const gradeColors: Record<string, string> = { A: 'text-emerald-400', B: 'text-green-400', C: 'text-amber-400', D: 'text-orange-400', F: 'text-red-400' };
@@ -233,7 +258,32 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                         {states.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                     </SelectContent>
                 </Select>
-                {(selectedColumn || selectedOrigin !== "all" || selectedState !== "all") && (
+
+                {/* Active Filter Badges */}
+                <div className="flex flex-wrap gap-2 items-center">
+                    {selectedUTMSource && (
+                        <div onClick={() => setSelectedUTMSource(null)} className="flex items-center gap-1.5 bg-blue-500/10 text-blue-400 px-2 py-1 rounded-md text-[10px] cursor-pointer hover:bg-blue-500/20 transition-colors border border-blue-500/20">
+                            Source: {selectedUTMSource} <span className="text-xs">×</span>
+                        </div>
+                    )}
+                    {selectedUTMTerm && (
+                        <div onClick={() => setSelectedUTMTerm(null)} className="flex items-center gap-1.5 bg-amber-500/10 text-amber-400 px-2 py-1 rounded-md text-[10px] cursor-pointer hover:bg-amber-500/20 transition-colors border border-amber-500/20 font-mono">
+                            Term: {selectedUTMTerm} <span className="text-xs">×</span>
+                        </div>
+                    )}
+                    {selectedPage && (
+                        <div onClick={() => setSelectedPage(null)} className="flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded-md text-[10px] cursor-pointer hover:bg-emerald-500/20 transition-colors border border-emerald-500/20">
+                            Page: {selectedPage} <span className="text-xs">×</span>
+                        </div>
+                    )}
+                    {selectedColumn && (
+                        <div onClick={() => setSelectedColumn(null)} className="flex items-center gap-1.5 bg-slate-800 text-slate-300 px-2 py-1 rounded-md text-[10px] cursor-pointer hover:bg-slate-700 transition-colors border border-slate-700">
+                            {selectedColumn} <span className="text-xs">×</span>
+                        </div>
+                    )}
+                </div>
+
+                {(selectedColumn || selectedOrigin !== "all" || selectedState !== "all" || selectedUTMSource || selectedUTMTerm || selectedPage) && (
                     <Button variant="ghost" size="sm" onClick={handleReset} className="ml-auto text-slate-400 hover:text-white">
                         <RotateCcw className="mr-2 h-4 w-4" /> Resetar
                     </Button>
@@ -251,24 +301,52 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                 <KPI label="Follow-ups" value={kpis.followUpsCount} icon={CalendarClock} color="text-purple-500" iconBg="bg-purple-500/10" />
             </div>
 
-            {/* Daily Leads Chart */}
-            <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 overflow-hidden shadow-lg border-l-4 border-l-purple-500">
-                <CardHeader className="py-4"><CardTitle className="text-sm font-bold flex items-center gap-2"><CalendarClock className="w-4 h-4" /> Volume de Leads Diários</CardTitle></CardHeader>
-                <CardContent className="h-[200px] pb-6 px-2">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={charts.dailyData}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} />
-                            <XAxis dataKey="day" tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} />
-                            <YAxis tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} />
-                            <Tooltip cursor={{ fill: 'rgba(168, 85, 247, 0.1)' }} contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '8px', color: '#fff' }} />
-                            <Bar dataKey="leads" fill="#a855f7" radius={[4, 4, 0, 0]} barSize={30} />
-                        </BarChart>
-                    </ResponsiveContainer>
-                </CardContent>
-            </Card>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Daily Leads Chart */}
+                <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 overflow-hidden shadow-lg border-l-4 border-l-purple-500">
+                    <CardHeader className="py-4"><CardTitle className="text-sm font-bold flex items-center gap-2"><CalendarClock className="w-4 h-4" /> Volume de Leads Diários</CardTitle></CardHeader>
+                    <CardContent className="h-[200px] pb-6 px-2">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={charts.dailyData}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} />
+                                <XAxis dataKey="day" tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} />
+                                <YAxis tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} />
+                                <Tooltip cursor={{ fill: 'rgba(168, 85, 247, 0.1)' }} contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '8px', color: '#fff' }} />
+                                <Bar dataKey="leads" fill="#a855f7" radius={[4, 4, 0, 0]} barSize={25} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </Card>
+
+                {/* Top UTM Terms (Keywords) - NOW VERTICAL AND PROMINENT */}
+                <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 overflow-hidden shadow-lg border-l-4 border-l-amber-500">
+                    <CardHeader className="py-4">
+                        <CardTitle className="text-sm font-bold flex items-center gap-2">
+                            <Zap className="w-4 h-4 text-amber-500" /> Top UTM Terms (Keywords)
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="h-[200px] pb-6 px-2">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={newMetrics.termData}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.1} />
+                                <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 9 }} axisLine={false} tickLine={false} tickFormatter={(v) => v.length > 12 ? v.substring(0, 10) + '...' : v} />
+                                <YAxis tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} />
+                                <Tooltip cursor={{ fill: 'rgba(245, 158, 11, 0.1)' }} contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '10px' }} />
+                                <Bar dataKey="leads" fill="#f59e0b" radius={[4, 4, 0, 0]} barSize={25} className="cursor-pointer"
+                                    onClick={(data) => { if (data && data.name) setSelectedUTMTerm(data.name === selectedUTMTerm ? null : data.name) }}
+                                >
+                                    {newMetrics.termData.map((entry, index) => (
+                                        <Cell key={index} fill={entry.name === selectedUTMTerm ? '#ffffff' : '#f59e0b'} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </Card>
+            </div>
 
             {/* ===== MARKETING INTELLIGENCE (NEW SECTION) ===== */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Top UTM Sources */}
                 <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
                     <CardHeader className="py-3 px-4 flex flex-row items-center justify-between space-y-0">
@@ -281,25 +359,13 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                                 <XAxis type="number" hide />
                                 <YAxis dataKey="name" type="category" tick={{ fill: '#64748b', fontSize: 9 }} width={80} axisLine={false} tickLine={false} />
                                 <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '10px' }} />
-                                <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={12} />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </CardContent>
-                </Card>
-
-                {/* Top UTM Terms (Keywords) */}
-                <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
-                    <CardHeader className="py-3 px-4 flex flex-row items-center justify-between space-y-0">
-                        <CardTitle className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Top UTM Terms</CardTitle>
-                        <Zap className="w-3 h-3 text-amber-500" />
-                    </CardHeader>
-                    <CardContent className="h-[220px] pb-4 px-2">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={newMetrics.termData} layout="vertical" margin={{ left: -10, right: 20 }}>
-                                <XAxis type="number" hide />
-                                <YAxis dataKey="name" type="category" tick={{ fill: '#64748b', fontSize: 9 }} width={100} axisLine={false} tickLine={false} tickFormatter={(v) => v.length > 20 ? v.substring(0, 18) + '...' : v} />
-                                <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '10px' }} />
-                                <Bar dataKey="leads" fill="#f59e0b" radius={[0, 4, 4, 0]} barSize={12} />
+                                <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={12} className="cursor-pointer"
+                                    onClick={(data) => { if (data && data.name) setSelectedUTMSource(data.name === selectedUTMSource ? null : data.name) }}
+                                >
+                                    {newMetrics.sourceData.map((entry, index) => (
+                                        <Cell key={index} fill={entry.name === selectedUTMSource ? '#ffffff' : '#3b82f6'} />
+                                    ))}
+                                </Bar>
                             </BarChart>
                         </ResponsiveContainer>
                     </CardContent>
@@ -317,7 +383,13 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                                 <XAxis type="number" hide />
                                 <YAxis dataKey="name" type="category" tick={{ fill: '#64748b', fontSize: 9 }} width={100} axisLine={false} tickLine={false} tickFormatter={(v) => v.length > 20 ? v.substring(0, 18) + '...' : v} />
                                 <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '10px' }} />
-                                <Bar dataKey="leads" fill="#10b981" radius={[0, 4, 4, 0]} barSize={12} />
+                                <Bar dataKey="leads" fill="#10b981" radius={[0, 4, 4, 0]} barSize={12} className="cursor-pointer"
+                                    onClick={(data) => { if (data && data.name) setSelectedPage(data.name === selectedPage ? null : data.name) }}
+                                >
+                                    {newMetrics.pageData.map((entry, index) => (
+                                        <Cell key={index} fill={entry.name === selectedPage ? '#ffffff' : '#10b981'} />
+                                    ))}
+                                </Bar>
                             </BarChart>
                         </ResponsiveContainer>
                     </CardContent>
