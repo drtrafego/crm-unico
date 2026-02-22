@@ -145,6 +145,9 @@ export async function POST(
     const utmSource = rawData.utm_source || rawData.source;
     const utmMedium = rawData.utm_medium || rawData.medium;
     const utmCampaign = rawData.utm_campaign || rawData.campaign;
+    const utmTerm = rawData.utm_term || rawData.term || rawData.keyword;
+    const utmContent = rawData.utm_content || rawData.content;
+    const pagePath = rawData.page_path || rawData.page || rawData.url;
 
     // 1. Tries to use the explicit campaign source
     let rawCampaignSource = rawData.campaignSource || rawData.campaign_source || rawData.origem;
@@ -182,7 +185,10 @@ export async function POST(
       campaignSource: campaignSource,
       utmSource: utmSource,
       utmMedium: utmMedium,
-      utmCampaign: utmCampaign
+      utmCampaign: utmCampaign,
+      utmTerm: utmTerm,
+      utmContent: utmContent,
+      pagePath: pagePath
     }).returning();
 
     // History logging is handled by DB trigger
@@ -249,6 +255,9 @@ export async function GET(
     const utmSource = searchParams.utm_source || searchParams.source;
     const utmMedium = searchParams.utm_medium || searchParams.medium;
     const utmCampaign = searchParams.utm_campaign || searchParams.campaign;
+    const utmTerm = searchParams.utm_term || searchParams.term || searchParams.keyword;
+    const utmContent = searchParams.utm_content || searchParams.content;
+    const pagePath = searchParams.page_path || searchParams.page || searchParams.url;
 
     // 1. Tries to use the explicit campaign source
     let rawCampaignSource = searchParams.campaignSource || searchParams.campaign_source || searchParams.origem;
@@ -286,7 +295,10 @@ export async function GET(
       campaignSource: campaignSource,
       utmSource: utmSource as string,
       utmMedium: utmMedium as string,
-      utmCampaign: utmCampaign as string
+      utmCampaign: utmCampaign as string,
+      utmTerm: utmTerm as string,
+      utmContent: utmContent as string,
+      pagePath: pagePath as string
     }).returning();
 
     // History logging is handled by DB trigger

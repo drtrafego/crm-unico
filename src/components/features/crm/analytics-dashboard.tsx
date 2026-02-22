@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DateRangePickerWithPresets } from "./date-range-picker";
 import { DateRange } from "react-day-picker";
 import { KPI } from "./analytics-components";
+import { getLeadSource } from "@/lib/leads-helper";
 import { processAnalyticsData, calculateConversionBySource, getStaleAlerts, getFunnelData, getVelocityMetrics, getFollowUpMetrics, getHealthScore } from "@/lib/analytics-helper";
 import { cn } from "@/lib/utils";
 
@@ -101,7 +102,7 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                 const createdAt = lead.createdAt ? new Date(lead.createdAt) : new Date();
                 if (!isWithinInterval(createdAt, { start, end })) return false;
             }
-            if (selectedOrigin !== "all" && (lead.campaignSource || "Direto") !== selectedOrigin) return false;
+            if (selectedOrigin !== "all" && getLeadSource(lead) !== selectedOrigin) return false;
             if (selectedState !== "all" && getStateFromPhone(lead.whatsapp) !== selectedState) return false;
 
             // Cross-filters
@@ -128,7 +129,7 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
             return true;
         });
 
-        const uniqueOrigins = Array.from(new Set(initialLeads.map(l => l.campaignSource || "Direto").filter(Boolean))).sort();
+        const uniqueOrigins = Array.from(new Set(initialLeads.map(l => getLeadSource(l)))).sort();
         const states = Array.from(new Set(initialLeads.map(l => getStateFromPhone(l.whatsapp)))).sort();
 
         // KPIs
