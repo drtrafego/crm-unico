@@ -68,9 +68,9 @@ export function LeadCard({ lead, index }: LeadCardProps) {
                 "bg-slate-900/40 backdrop-blur-md border border-white/10 shadow-lg",
                 "hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5)] hover:-translate-y-1.5 hover:bg-slate-900/60 hover:border-white/20",
                 "cursor-grab active:cursor-grabbing",
-                snapshot.isDragging && "shadow-2xl ring-2 ring-indigo-500/40 rotate-2 scale-105 z-50 bg-slate-900/80"
+                snapshot.isDragging && "shadow-2xl ring-2 ring-indigo-500/40 rotate-2 scale-[1.05] z-[9999] bg-slate-900 !opacity-100 border-indigo-500/50 shadow-indigo-500/20"
               )}
-              onClick={(e) => {
+              onClick={() => {
                 if (!snapshot.isDragging) {
                   setShowEditDialog(true);
                 }
@@ -199,8 +199,7 @@ export function LeadCard({ lead, index }: LeadCardProps) {
                       variant="ghost"
                       size="icon"
                       className="h-7 w-7 rounded-xl text-white/30 hover:text-indigo-400 hover:bg-indigo-500/20 transition-all duration-300 hover:scale-110"
-                      onClick={(e) => {
-                        e.stopPropagation();
+                      onClick={() => {
                         setShowEditDialog(true);
                       }}
                     >

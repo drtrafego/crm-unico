@@ -74,7 +74,7 @@ export function Column({ column, leads, index, orgId, overrides }: ColumnProps) 
           ref={provided.innerRef}
           {...provided.draggableProps}
           className={cn(
-            "w-[320px] min-w-[320px] flex flex-col rounded-3xl transition-all duration-500 overflow-hidden",
+            "w-[340px] min-w-[340px] flex flex-col rounded-3xl transition-all duration-500 shrink-0 h-fit",
             "bg-slate-950/20 backdrop-blur-xl border border-white/5 shadow-2xl",
             isDeleting && "opacity-50 pointer-events-none",
             snapshot.isDragging && "opacity-90 rotate-2 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.6)] ring-2 ring-indigo-500/20 bg-slate-900/40"
@@ -84,7 +84,7 @@ export function Column({ column, leads, index, orgId, overrides }: ColumnProps) 
           <div
             {...provided.dragHandleProps}
             className={cn(
-              "p-4 cursor-grab active:cursor-grabbing sticky top-0 z-10 bg-white/5 backdrop-blur-md border-b border-white/5",
+              "p-5 cursor-grab active:cursor-grabbing sticky top-0 z-20 bg-slate-900/40 backdrop-blur-md border-b border-white/5 rounded-t-3xl",
               isEditing && "cursor-default"
             )}
           >
@@ -156,7 +156,7 @@ export function Column({ column, leads, index, orgId, overrides }: ColumnProps) 
                 ref={provided.innerRef}
                 {...provided.droppableProps}
                 className={cn(
-                  "p-3 flex-1 min-h-[150px] transition-all duration-300 custom-scrollbar overflow-y-auto",
+                  "p-3 flex-1 transition-all duration-300",
                   snapshot.isDraggingOver && "bg-white/5 shadow-[inset_0_0_40px_rgba(255,255,255,0.02)]"
                 )}
               >
