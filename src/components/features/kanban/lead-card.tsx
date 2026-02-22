@@ -64,20 +64,25 @@ export function LeadCard({ lead, index }: LeadCardProps) {
           >
             <Card
               className={cn(
-                "group hover:shadow-md transition-all duration-200 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 cursor-grab active:cursor-grabbing",
-                snapshot.isDragging && "shadow-xl ring-2 ring-indigo-500/20"
+                "group relative overflow-hidden transition-all duration-500",
+                "bg-slate-900/40 backdrop-blur-md border border-white/10 shadow-lg",
+                "hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5)] hover:-translate-y-1.5 hover:bg-slate-900/60 hover:border-white/20",
+                "cursor-grab active:cursor-grabbing",
+                snapshot.isDragging && "shadow-2xl ring-2 ring-indigo-500/40 rotate-2 scale-105 z-50 bg-slate-900/80"
               )}
               onClick={(e) => {
-                // Prevent triggering edit if we are just finishing a drag
                 if (!snapshot.isDragging) {
                   setShowEditDialog(true);
                 }
               }}
             >
-              <CardContent className="p-4 space-y-2">
+              {/* Subtle inner glow */}
+              <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none opacity-50" />
+
+              <CardContent className="p-4 space-y-3 relative z-10">
                 {/* Header with Tags */}
                 <div className="flex items-start justify-between gap-2">
-                  <div className="flex flex-wrap gap-1">
+                  <div className="flex flex-wrap gap-1.5">
                     <Popover open={originPopoverOpen} onOpenChange={setOriginPopoverOpen}>
                       <PopoverTrigger asChild>
                         <div onClick={(e) => { e.stopPropagation(); setOriginPopoverOpen(true); }}>
@@ -85,12 +90,12 @@ export function LeadCard({ lead, index }: LeadCardProps) {
                             <Badge
                               variant="secondary"
                               className={cn(
-                                "px-1.5 py-0 text-[10px] font-medium border cursor-pointer hover:ring-2 hover:ring-indigo-200 dark:hover:ring-indigo-800 transition-all",
-                                source === "Google" && "bg-rose-50 text-rose-700 border-rose-100 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-800",
-                                source === "Meta" && "bg-sky-50 text-sky-700 border-sky-100 dark:bg-sky-900/30 dark:text-sky-300 dark:border-rose-800",
-                                source === "Captação Ativa" && "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800",
-                                source === "Orgânicos" && "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800",
-                                !["Google", "Meta", "Captação Ativa", "Orgânicos"].includes(source) && "bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800"
+                                "px-2 py-0.5 text-[10px] font-black uppercase tracking-widest border transition-all duration-300",
+                                source === "Google" && "bg-rose-500/20 text-rose-300 border-rose-500/30 shadow-[0_0_10px_rgba(244,63,94,0.2)]",
+                                source === "Meta" && "bg-sky-500/20 text-sky-300 border-sky-500/30 shadow-[0_0_10px_rgba(14,165,233,0.2)]",
+                                source === "Captação Ativa" && "bg-amber-500/20 text-amber-300 border-amber-500/30 shadow-[0_0_10px_rgba(245,158,11,0.2)]",
+                                source === "Orgânicos" && "bg-emerald-500/20 text-emerald-300 border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.2)]",
+                                !["Google", "Meta", "Captação Ativa", "Orgânicos"].includes(source) && "bg-indigo-500/20 text-indigo-300 border-indigo-500/30 shadow-[0_0_10px_rgba(99,102,241,0.2)]"
                               )}
                             >
                               {source}
@@ -98,7 +103,7 @@ export function LeadCard({ lead, index }: LeadCardProps) {
                           ) : (
                             <Badge
                               variant="outline"
-                              className="px-1.5 py-0 text-[10px] font-medium border-dashed border-slate-300 text-slate-400 dark:border-slate-600 dark:text-slate-500 cursor-pointer hover:border-indigo-400 hover:text-indigo-500"
+                              className="px-2 py-0.5 text-[10px] font-bold border-dashed border-white/20 text-white/40 cursor-pointer hover:border-indigo-400/50 hover:text-indigo-300 transition-colors"
                             >
                               + Origem
                             </Badge>
@@ -106,21 +111,21 @@ export function LeadCard({ lead, index }: LeadCardProps) {
                         </div>
                       </PopoverTrigger>
                       <PopoverContent
-                        className="w-40 p-2 bg-white dark:bg-slate-950 shadow-xl border border-slate-200 dark:border-slate-800 z-50"
+                        className="w-44 p-2 bg-slate-900/90 backdrop-blur-xl border border-white/10 shadow-3xl z-50 rounded-2xl"
                         align="start"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <div className="space-y-1">
-                          <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">Selecionar Origem</p>
+                        <div className="space-y-1.5">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-2 px-1">Origem do Lead</p>
                           {ORIGIN_OPTIONS.map((opt) => (
                             <button
                               key={opt.value}
                               onClick={() => handleOriginChange(opt.value)}
                               disabled={isUpdatingOrigin}
                               className={cn(
-                                "w-full text-left px-2 py-1.5 rounded text-xs font-medium border transition-all hover:ring-2 hover:ring-indigo-200",
-                                opt.className,
-                                lead.campaignSource === opt.value && "ring-2 ring-indigo-400"
+                                "w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all duration-300",
+                                "hover:bg-white/10 border border-transparent",
+                                lead.campaignSource === opt.value ? "bg-white/15 border-white/20 text-white shadow-lg" : "text-white/60 hover:text-white"
                               )}
                             >
                               {opt.value}
@@ -129,18 +134,12 @@ export function LeadCard({ lead, index }: LeadCardProps) {
                         </div>
                       </PopoverContent>
                     </Popover>
+
                     {lead.followUpDate && (() => {
                       const today = new Date();
                       today.setHours(0, 0, 0, 0);
-
                       const followUp = new Date(lead.followUpDate);
-                      const followUpDateLocal = new Date(
-                        followUp.getUTCFullYear(),
-                        followUp.getUTCMonth(),
-                        followUp.getUTCDate(),
-                        0, 0, 0, 0
-                      );
-
+                      const followUpDateLocal = new Date(followUp.getUTCFullYear(), followUp.getUTCMonth(), followUp.getUTCDate(), 0, 0, 0, 0);
                       const isOverdue = followUpDateLocal < today;
                       const isToday = followUpDateLocal.getTime() === today.getTime();
 
@@ -148,24 +147,25 @@ export function LeadCard({ lead, index }: LeadCardProps) {
                         <Badge
                           variant="secondary"
                           className={cn(
-                            "px-1.5 py-0 text-[10px] font-medium border flex items-center gap-1",
-                            isOverdue && "bg-red-50 text-red-700 border-red-100 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800",
-                            isToday && "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800",
-                            !isOverdue && !isToday && "bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800"
+                            "px-2 py-0.5 text-[10px] font-black uppercase tracking-widest border flex items-center gap-1.5 transition-all",
+                            isOverdue && "bg-red-500/20 text-red-300 border-red-500/30 shadow-[0_0_10px_rgba(239,68,68,0.2)]",
+                            isToday && "bg-amber-500/20 text-amber-300 border-amber-500/30 shadow-[0_0_10px_rgba(245,158,11,0.2)]",
+                            !isOverdue && !isToday && "bg-blue-500/20 text-blue-300 border-blue-500/30 shadow-[0_0_10px_rgba(59,130,246,0.2)]"
                           )}
                         >
                           <span className={cn(
-                            "h-1.5 w-1.5 rounded-full",
-                            isOverdue && "bg-red-500",
-                            isToday && "bg-amber-500",
-                            !isOverdue && !isToday && "bg-blue-500"
+                            "h-1.5 w-1.5 rounded-full animate-pulse",
+                            isOverdue && "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]",
+                            isToday && "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.8)]",
+                            !isOverdue && !isToday && "bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]"
                           )} />
                           {followUpDateLocal.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
                         </Badge>
                       );
                     })()}
                   </div>
-                  <div className="flex items-center gap-1">
+
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -174,80 +174,84 @@ export function LeadCard({ lead, index }: LeadCardProps) {
                             size="icon"
                             disabled={!lead.whatsapp}
                             className={cn(
-                              "h-6 w-6 -mt-1 transition-colors",
+                              "h-7 w-7 rounded-xl transition-all duration-300",
                               lead.whatsapp
-                                ? "text-green-600 hover:text-green-700 hover:bg-green-50"
-                                : "text-slate-300 dark:text-slate-700 cursor-not-allowed"
+                                ? "text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/20 hover:scale-110"
+                                : "text-white/10 cursor-not-allowed"
                             )}
                             onClick={(e) => {
-                              e.stopPropagation(); // Prevent opening edit dialog
+                              e.stopPropagation();
                               if (lead.whatsapp) {
                                 window.open(getWhatsAppLink(lead.whatsapp), '_blank');
                               }
                             }}
                           >
-                            <MessageCircle className="h-3.5 w-3.5" />
+                            <MessageCircle className="h-4 w-4" />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>
-                          {lead.whatsapp ? "Conversar no WhatsApp" : "Sem WhatsApp cadastrado"}
+                        <TooltipContent className="bg-slate-900 border-white/10 font-bold text-xs uppercase tracking-widest px-3 py-2">
+                          {lead.whatsapp ? "WhatsApp" : "Sem WhatsApp"}
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
 
-                    {lead.value && (
-                      <div className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1 rounded">
-                        R$ {lead.value}
-                      </div>
-                    )}
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-6 w-6 text-slate-400 hover:text-indigo-600 -mt-1 -mr-1 transition-opacity"
-                      title="Editar Lead"
+                      className="h-7 w-7 rounded-xl text-white/30 hover:text-indigo-400 hover:bg-indigo-500/20 transition-all duration-300 hover:scale-110"
                       onClick={(e) => {
                         e.stopPropagation();
                         setShowEditDialog(true);
                       }}
                     >
-                      <Pencil className="h-3 w-3" />
+                      <Pencil className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 </div>
 
                 {/* Title & Description */}
-                <div className="space-y-1">
-                  <h4 className="text-sm font-medium text-slate-900 dark:text-slate-100 leading-tight">
-                    {lead.name}
-                  </h4>
+                <div className="space-y-1.5">
+                  <div className="flex justify-between items-start gap-2">
+                    <h4 className="text-sm font-black text-white tracking-tight leading-tight group-hover:text-indigo-300 transition-colors duration-300">
+                      {lead.name}
+                    </h4>
+                    {lead.value && (
+                      <div className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)] shrink-0">
+                        R$ {lead.value}
+                      </div>
+                    )}
+                  </div>
                   {lead.company && (
-                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-white/40">
                       {lead.company}
                     </p>
                   )}
-                  <p className="text-xs text-slate-400 dark:text-slate-500 line-clamp-2 min-h-[1.5em]">
-                    {lead.notes || "Sem observações"}
+                  <p className="text-xs text-white/50 line-clamp-2 min-h-[2.5em] leading-relaxed group-hover:text-white/70 transition-colors duration-300">
+                    {lead.notes || "Sem observações adicionais..."}
                   </p>
                 </div>
 
                 {/* Footer Info */}
-                <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700">
+                <div className="flex items-center justify-between pt-3 border-t border-white/10">
                   {/* Assignee */}
-                  <div className="flex items-center gap-2">
-                    <Avatar className="h-6 w-6 border-2 border-white dark:border-slate-800">
-                      <AvatarImage src={`https://avatar.vercel.sh/${lead?.email || 'unknown'}`} />
-                      <AvatarFallback className="text-[10px] bg-indigo-100 text-indigo-600">
-                        {lead?.name ? lead.name.substring(0, 2).toUpperCase() : "??"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                  <div className="flex items-center gap-2.5">
+                    <div className="relative">
+                      <Avatar className="h-7 w-7 border border-white/20 shadow-lg transition-transform group-hover:scale-110 duration-300">
+                        <AvatarImage src={`https://avatar.vercel.sh/${lead?.email || 'unknown'}`} />
+                        <AvatarFallback className="text-[9px] bg-gradient-to-br from-indigo-600 to-purple-600 text-white font-black">
+                          {lead?.name ? lead.name.substring(0, 2).toUpperCase() : "??"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="absolute -right-0.5 -bottom-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-slate-900 rounded-full shadow-[0_0_5px_rgba(16,185,129,0.8)]" />
+                    </div>
+                    <span className="text-[11px] text-white/60 font-black uppercase tracking-widest">
                       {lead?.name ? lead.name.split(' ')[0] : "Sem Nome"}
                     </span>
                   </div>
 
                   {/* Meta Stats */}
-                  <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
-                    <div className="flex items-center gap-1 text-[10px]">
+                  <div className="flex items-center gap-3 text-white/30">
+                    <div className="flex items-center gap-1.5 text-[10px] font-bold">
                       <Calendar className="h-3 w-3" />
                       <span>
                         {(() => {

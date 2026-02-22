@@ -74,43 +74,44 @@ export function Column({ column, leads, index, orgId, overrides }: ColumnProps) 
           ref={provided.innerRef}
           {...provided.draggableProps}
           className={cn(
-            "w-[300px] min-w-[300px] flex flex-col bg-slate-100/80 dark:bg-slate-800/50 rounded-xl border border-slate-200/60 dark:border-slate-700/50 transition-colors",
+            "w-[320px] min-w-[320px] flex flex-col rounded-3xl transition-all duration-500 overflow-hidden",
+            "bg-slate-950/20 backdrop-blur-xl border border-white/5 shadow-2xl",
             isDeleting && "opacity-50 pointer-events-none",
-            snapshot.isDragging && "opacity-80 rotate-2 shadow-xl ring-2 ring-indigo-500/20"
+            snapshot.isDragging && "opacity-90 rotate-2 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.6)] ring-2 ring-indigo-500/20 bg-slate-900/40"
           )}
         >
           {/* Header */}
           <div
             {...provided.dragHandleProps}
             className={cn(
-              "p-3 font-semibold cursor-grab active:cursor-grabbing sticky top-0 z-10 bg-inherit rounded-t-xl backdrop-blur-sm",
+              "p-4 cursor-grab active:cursor-grabbing sticky top-0 z-10 bg-white/5 backdrop-blur-md border-b border-white/5",
               isEditing && "cursor-default"
             )}
           >
             {isEditing ? (
-              <div className="flex items-center gap-2 w-full">
+              <div className="flex items-center gap-2 w-full animate-in fade-in zoom-in duration-300">
                 <Input
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  className="h-8 text-sm"
+                  className="h-9 text-xs font-bold bg-slate-900/50 border-white/10 text-white rounded-xl focus:ring-indigo-500/50"
                   autoFocus
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleUpdateTitle();
                     if (e.key === 'Escape') setIsEditing(false);
                   }}
                 />
-                <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600" onClick={handleUpdateTitle}>
+                <Button size="icon" variant="ghost" className="h-9 w-9 text-emerald-400 hover:bg-emerald-500/20" onClick={handleUpdateTitle}>
                   <Check className="h-4 w-4" />
                 </Button>
-                <Button size="icon" variant="ghost" className="h-8 w-8 text-red-600" onClick={() => setIsEditing(false)}>
+                <Button size="icon" variant="ghost" className="h-9 w-9 text-rose-400 hover:bg-rose-500/20" onClick={() => setIsEditing(false)}>
                   <X className="h-4 w-4" />
                 </Button>
               </div>
             ) : (
               <div className="flex items-center justify-between w-full">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm">{column.title}</span>
-                  <span className="bg-slate-200 text-slate-600 px-2 rounded-full text-xs font-medium">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-black uppercase tracking-widest text-white/90">{column.title}</span>
+                  <span className="bg-white/10 text-white/60 px-2.5 py-0.5 rounded-full text-[10px] font-black border border-white/5 shadow-inner">
                     {leads.length}
                   </span>
                 </div>
@@ -119,20 +120,26 @@ export function Column({ column, leads, index, orgId, overrides }: ColumnProps) 
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-6 w-6"
+                      className="h-8 w-8 text-white/30 hover:text-white hover:bg-white/10 rounded-xl transition-all"
                       onPointerDown={(e) => e.stopPropagation()} // Prevent drag start on menu click
                     >
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="bg-white dark:bg-slate-950 shadow-xl border border-slate-200 dark:border-slate-800 z-50">
-                    <DropdownMenuItem onClick={() => setIsEditing(true)}>
-                      <Pencil className="mr-2 h-4 w-4" />
+                  <DropdownMenuContent align="end" className="bg-slate-900/90 backdrop-blur-2xl border border-white/10 shadow-3xl z-50 rounded-2xl p-1.5">
+                    <DropdownMenuItem
+                      onClick={() => setIsEditing(true)}
+                      className="rounded-xl font-bold text-xs uppercase tracking-widest focus:bg-white/10 focus:text-white py-2"
+                    >
+                      <Pencil className="mr-2 h-3.5 w-3.5" />
                       Renomear
                     </DropdownMenuItem>
                     {!isDefault && (
-                      <DropdownMenuItem className="text-red-600" onClick={handleDelete}>
-                        <Trash2 className="mr-2 h-4 w-4" />
+                      <DropdownMenuItem
+                        className="text-rose-400 focus:text-rose-300 focus:bg-rose-500/20 rounded-xl font-bold text-xs uppercase tracking-widest py-2"
+                        onClick={handleDelete}
+                      >
+                        <Trash2 className="mr-2 h-3.5 w-3.5" />
                         Excluir
                       </DropdownMenuItem>
                     )}
@@ -149,11 +156,11 @@ export function Column({ column, leads, index, orgId, overrides }: ColumnProps) 
                 ref={provided.innerRef}
                 {...provided.droppableProps}
                 className={cn(
-                  "p-2 flex-1 min-h-[100px] transition-colors",
-                  snapshot.isDraggingOver && "bg-slate-200/50 dark:bg-slate-700/50 rounded-b-xl"
+                  "p-3 flex-1 min-h-[150px] transition-all duration-300 custom-scrollbar overflow-y-auto",
+                  snapshot.isDraggingOver && "bg-white/5 shadow-[inset_0_0_40px_rgba(255,255,255,0.02)]"
                 )}
               >
-                <div className="flex flex-col gap-3 pb-2">
+                <div className="flex flex-col gap-1 pb-4">
                   {leads.map((lead, index) => (
                     <LeadCard key={lead.id} lead={lead} index={index} />
                   ))}

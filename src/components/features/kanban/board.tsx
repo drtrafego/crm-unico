@@ -150,7 +150,7 @@ export function Board({ columns: initialColumns, initialLeads, orgId, overrides 
             <div
               {...provided.droppableProps}
               ref={provided.innerRef}
-              className="flex-1 flex gap-4 overflow-auto px-4 pt-4 pb-4 items-start h-full w-full custom-scrollbar"
+              className="flex-1 flex gap-6 overflow-x-auto overflow-y-hidden px-6 pt-2 pb-8 items-start h-full w-full custom-scrollbar scroll-smooth"
             >
               {columns.map((col, index) => (
                 <Column
@@ -166,23 +166,42 @@ export function Board({ columns: initialColumns, initialLeads, orgId, overrides 
 
               <Dialog open={isCreateColumnOpen} onOpenChange={setIsCreateColumnOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" className="h-[50px] min-w-[300px] border-dashed border-2 hover:border-solid hover:bg-slate-50 dark:hover:bg-slate-900 shrink-0">
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "h-[60px] min-w-[320px] shrink-0 rounded-3xl transition-all duration-500",
+                      "bg-white/5 border-dashed border-2 border-white/10 text-white/40 font-black uppercase tracking-widest text-[10px]",
+                      "hover:bg-white/10 hover:border-white/30 hover:text-white hover:scale-[1.02] active:scale-95",
+                      "shadow-xl"
+                    )}
+                  >
                     <PlusIcon className="mr-2 h-4 w-4" />
-                    Adicionar Coluna
+                    Nova Etapa
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="bg-slate-900/95 backdrop-blur-2xl border-white/10 text-white rounded-3xl shadow-3xl">
                   <DialogHeader>
-                    <DialogTitle>Nova Coluna</DialogTitle>
+                    <DialogTitle className="font-black uppercase tracking-tighter text-2xl bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">Nova Etapa do Funil</DialogTitle>
                   </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="name">Nome da Coluna</Label>
-                      <Input id="name" value={newColumnName} onChange={(e) => setNewColumnName(e.target.value)} placeholder="Ex: Aguardando Resposta" />
+                  <div className="grid gap-6 py-4">
+                    <div className="grid gap-3">
+                      <Label htmlFor="name" className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Nome da Coluna</Label>
+                      <Input
+                        id="name"
+                        value={newColumnName}
+                        onChange={(e) => setNewColumnName(e.target.value)}
+                        placeholder="Ex: Qualificação Estratégica"
+                        className="bg-white/5 border-white/10 text-white rounded-2xl h-12 focus:ring-indigo-500/50"
+                      />
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button onClick={handleCreateColumn}>Criar Coluna</Button>
+                    <Button
+                      onClick={handleCreateColumn}
+                      className="bg-indigo-600 hover:bg-indigo-500 text-white font-black px-8 h-12 rounded-2xl shadow-[0_0_20px_rgba(79,70,229,0.4)] transition-all hover:scale-105"
+                    >
+                      Criar Etapa
+                    </Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>

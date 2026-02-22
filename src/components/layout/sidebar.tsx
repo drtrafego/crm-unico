@@ -20,47 +20,62 @@ export function Sidebar({ isCollapsed = false, toggle }: SidebarProps) {
 
   // If we are not in an org context (e.g. root or admin), don't show sidebar or show different one
   if (!orgSlug) {
-    // Simple Admin Sidebar or Return Null
     if (pathname?.startsWith('/adm')) {
       return (
         <div className={cn(
-          "border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 h-screen flex flex-col fixed left-0 top-0 z-10 transition-all duration-300",
-          isCollapsed ? "w-16" : "w-64"
+          "fixed left-4 top-4 bottom-4 z-50 transition-all duration-500 ease-in-out",
+          "bg-slate-950/40 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl overflow-hidden",
+          isCollapsed ? "w-20" : "w-64"
         )}>
           <div className={cn(
-            "flex items-center border-b border-slate-100 dark:border-slate-800",
-            isCollapsed ? "h-16 justify-center p-0" : "h-16 p-6 justify-between"
+            "flex items-center border-b border-white/5",
+            isCollapsed ? "h-20 justify-center p-0" : "h-20 p-6 justify-between"
           )}>
-            {!isCollapsed && <h1 className="font-bold text-xl text-indigo-600 tracking-tight">Admin</h1>}
-            <Button variant="ghost" size="icon" onClick={toggle} className={cn("ml-auto", isCollapsed ? "h-6 w-6" : "h-8 w-8")}>
+            {!isCollapsed && (
+              <h1 className="font-black text-xl bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent tracking-tighter">
+                UNICO ADM
+              </h1>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggle}
+              className={cn("text-white/70 hover:text-white hover:bg-white/10", isCollapsed ? "h-8 w-8" : "h-8 w-8")}
+            >
               {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
             </Button>
           </div>
-          <nav className="flex-1 p-4 space-y-1">
+          <nav className="flex-1 p-4 space-y-2">
             <Link
               href="/adm/dashboard"
               className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium bg-slate-100 dark:bg-slate-800 text-indigo-600",
-                isCollapsed ? "justify-center" : ""
+                "group relative flex items-center gap-3 px-3 py-3 rounded-2xl text-sm font-bold transition-all duration-300",
+                isCollapsed ? "justify-center" : "",
+                "bg-white/10 text-white shadow-[inset_0_0_10px_rgba(255,255,255,0.05)] border border-white/10"
               )}
-              title={isCollapsed ? "Dashboard" : undefined}
             >
-              <LayoutDashboard className="!h-6 !w-6 min-w-[24px] shrink-0" />
+              <LayoutDashboard className="!h-5 !w-5 shrink-0 transition-transform group-hover:scale-110" />
               {!isCollapsed && "Dashboard"}
+              {isCollapsed && (
+                <div className="absolute left-24 px-3 py-1 bg-slate-900 text-white text-xs font-bold rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:translate-x-2 transition-all duration-300 whitespace-nowrap shadow-2xl border border-white/10">
+                  Dashboard
+                </div>
+              )}
             </Link>
           </nav>
-          <div className="p-4 border-t border-slate-100 dark:border-slate-800">
+          <div className="p-4 border-t border-white/5">
             <Button
               variant="ghost"
-              className={cn("justify-start text-red-500 hover:text-red-600 hover:bg-red-50", isCollapsed ? "justify-center px-0 w-full" : "w-full gap-2")}
+              className={cn(
+                "justify-start text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-2xl transition-all duration-300",
+                isCollapsed ? "justify-center px-0 w-full" : "w-full gap-3 font-bold"
+              )}
               onClick={() => stackApp.signOut()}
-              title={isCollapsed ? "Sair" : undefined}
             >
-              <LogOut className="!h-6 !w-6 min-w-[24px] shrink-0" />
+              <LogOut className="!h-5 !w-5 shrink-0" />
               {!isCollapsed && "Sair"}
             </Button>
           </div>
-
         </div>
       )
     }
@@ -68,88 +83,94 @@ export function Sidebar({ isCollapsed = false, toggle }: SidebarProps) {
   }
 
   const items = [
-    {
-      title: "Kanban",
-      url: `/org/${orgSlug}/kanban`,
-      icon: KanbanSquare,
-    },
-    {
-      title: "Analytics",
-      url: `/org/${orgSlug}/analytics`,
-      icon: LineChart,
-    },
-    {
-      title: "Calendário",
-      url: `/org/${orgSlug}/kanban/calendar`,
-      icon: CalendarDays,
-    },
-    {
-      title: "Configurações",
-      url: `/org/${orgSlug}/settings`,
-      icon: Settings,
-    },
+    { title: "Kanban", url: `/org/${orgSlug}/kanban`, icon: KanbanSquare },
+    { title: "Analytics", url: `/org/${orgSlug}/analytics`, icon: LineChart },
+    { title: "Calendário", url: `/org/${orgSlug}/kanban/calendar`, icon: CalendarDays },
+    { title: "Configurações", url: `/org/${orgSlug}/settings`, icon: Settings },
   ];
 
   return (
-
     <div className={cn(
-      "border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 h-screen flex flex-col fixed left-0 top-0 z-10 transition-all duration-300",
-      isCollapsed ? "w-16" : "w-64"
+      "fixed left-4 top-4 bottom-4 z-50 transition-all duration-500 ease-in-out",
+      "bg-slate-950/40 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl flex flex-col overflow-hidden",
+      isCollapsed ? "w-20" : "w-64"
     )}>
       <div className={cn(
-        "flex items-center border-b border-slate-100 dark:border-slate-800",
-        isCollapsed ? "h-16 justify-center p-0" : "h-16 p-6 justify-between"
+        "flex items-center border-b border-white/5",
+        isCollapsed ? "h-20 justify-center p-0" : "h-20 p-6 justify-between"
       )}>
-        {!isCollapsed && <h1 className="font-bold text-xl text-indigo-600 tracking-tight">CRM SaaS</h1>}
-        <Button variant="ghost" size="icon" onClick={toggle} className={cn("ml-auto", isCollapsed ? "h-6 w-6" : "h-8 w-8")}>
+        {!isCollapsed && (
+          <h1 className="font-black text-xl bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent tracking-tighter">
+            CRM UNICO
+          </h1>
+        )}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggle}
+          className={cn("text-white/70 hover:text-white hover:bg-white/10", isCollapsed ? "h-8 w-8" : "h-8 w-8")}
+        >
           {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </Button>
       </div>
 
-      <nav className="flex-1 p-4 space-y-1">
-        {items.map((item) => (
-          <Link
-            key={item.url}
-            href={item.url}
-            className={cn(
-              "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-              isCollapsed ? "justify-center" : "",
-              pathname === item.url || pathname?.startsWith(item.url)
-                ? "bg-slate-100 dark:bg-slate-800 text-indigo-600"
-                : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-slate-100"
-            )}
-            title={isCollapsed ? item.title : undefined}
-          >
-            <item.icon className="!h-6 !w-6 min-w-[24px] shrink-0" />
-            {!isCollapsed && item.title}
-          </Link>
-        ))}
-      </nav>
-
-      <div className="p-4 border-t border-slate-100 dark:border-slate-800">
-        <div className="flex flex-col gap-2">
-          <Link href="/adm/dashboard" title={isCollapsed ? "Voltar p/ Admin" : undefined}>
-            <Button
-              variant="outline"
+      <nav className="flex-1 p-4 space-y-2">
+        {items.map((item) => {
+          const isActive = pathname === item.url || pathname?.startsWith(item.url);
+          return (
+            <Link
+              key={item.url}
+              href={item.url}
               className={cn(
-                "w-full justify-start gap-2 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-indigo-600 hover:border-indigo-100",
-                isCollapsed ? "justify-center px-0" : ""
+                "group relative flex items-center gap-3 px-3 py-3 rounded-2xl text-sm font-bold transition-all duration-300",
+                isCollapsed ? "justify-center" : "",
+                isActive
+                  ? "bg-white/15 text-white shadow-[0_0_20px_rgba(255,255,255,0.05)] border border-white/10"
+                  : "text-slate-400 hover:text-white hover:bg-white/5"
               )}
             >
-              <LayoutDashboard className="!h-6 !w-6 min-w-[24px] shrink-0" />
-              {!isCollapsed && "Voltar p/ Admin"}
-            </Button>
-          </Link>
+              {isActive && (
+                <div className="absolute left-0 w-1 h-6 bg-indigo-500 rounded-r-full shadow-[0_0_15px_rgba(99,102,241,0.8)]" />
+              )}
+              <item.icon className={cn(
+                "!h-5 !w-5 shrink-0 transition-transform duration-300",
+                isActive ? "scale-110 text-indigo-400" : "group-hover:scale-110"
+              )} />
+              {!isCollapsed && item.title}
+              {isCollapsed && (
+                <div className="absolute left-24 px-3 py-1 bg-slate-900 text-white text-xs font-bold rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:translate-x-2 transition-all duration-300 whitespace-nowrap shadow-2xl border border-white/10">
+                  {item.title}
+                </div>
+              )}
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div className="p-4 border-t border-white/5 space-y-2">
+        <Link href="/adm/dashboard" className="block">
           <Button
             variant="ghost"
-            className={cn("justify-start text-red-500 hover:text-red-600 hover:bg-red-50", isCollapsed ? "justify-center px-0 w-full" : "w-full gap-2")}
-            onClick={() => stackApp.signOut()}
-            title={isCollapsed ? "Sair" : undefined}
+            className={cn(
+              "justify-start text-slate-400 hover:text-white hover:bg-white/5 rounded-2xl transition-all duration-300",
+              isCollapsed ? "justify-center px-0 w-full" : "w-full gap-3 font-bold"
+            )}
           >
-            <LogOut className="!h-6 !w-6 min-w-[24px] shrink-0" />
-            {!isCollapsed && "Sair"}
+            <LayoutDashboard className="!h-5 !w-5 shrink-0" />
+            {!isCollapsed && "Voltar p/ Admin"}
           </Button>
-        </div>
+        </Link>
+        <Button
+          variant="ghost"
+          className={cn(
+            "justify-start text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-2xl transition-all duration-300",
+            isCollapsed ? "justify-center px-0 w-full" : "w-full gap-3 font-bold"
+          )}
+          onClick={() => stackApp.signOut()}
+        >
+          <LogOut className="!h-5 !w-5 shrink-0" />
+          {!isCollapsed && "Sair"}
+        </Button>
       </div>
     </div>
   );

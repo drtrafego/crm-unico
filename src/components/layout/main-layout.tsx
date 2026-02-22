@@ -6,7 +6,15 @@ import { cn } from "@/lib/utils";
 import { usePathname, useParams } from "next/navigation";
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
-    const [isCollapsed, setIsCollapsed] = useState(false);
+    const [isCollapsed, setIsCollapsed] = useState(() => {
+        // Initialize from localStorage if on client
+        if (typeof window !== "undefined") {
+            const stored = localStorage.getItem("sidebar-collapsed");
+            if (stored !== null) return stored === "true";
+            return window.innerWidth < 1024;
+        }
+        return false;
+    });
     const pathname = usePathname();
     const params = useParams();
     const orgSlug = params?.orgSlug as string;
@@ -14,13 +22,6 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     const showSidebar = !!orgSlug || pathname?.startsWith('/adm');
 
     useEffect(() => {
-        const stored = localStorage.getItem("sidebar-collapsed");
-        if (stored === "true") {
-            setIsCollapsed(true);
-        } else if (window.innerWidth < 1024) {
-            setIsCollapsed(true);
-        }
-
         const handleResize = () => {
             if (window.innerWidth < 1024) {
                 setIsCollapsed(true);
@@ -44,11 +45,12 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             {showSidebar && <Sidebar isCollapsed={isCollapsed} toggle={toggle} />}
             <main
                 className={cn(
-                    "flex-1 min-w-0 flex flex-col transition-all duration-300 ease-in-out",
+                    "flex-1 min-w-0 flex flex-col transition-all duration-500 ease-in-out",
                     // Se for página de CRM (/org/...), removemos o scroll global para que o Board gerencie.
                     // Caso contrário, mantemos scroll nativo.
                     pathname?.includes('/org/') ? "overflow-hidden" : "overflow-y-auto custom-scrollbar",
-                    showSidebar ? (isCollapsed ? "ml-16" : "ml-64") : "ml-0"
+                    showSidebar ? (isCollapsed ? "ml-28" : "ml-72") : "ml-0",
+                    "p-4 sm:p-6" // Add some padding to content
                 )}
             >
                 {children}
