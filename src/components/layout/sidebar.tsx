@@ -83,7 +83,7 @@ export function Sidebar({ isCollapsed = false, toggle }: SidebarProps) {
   }
 
   const items = [
-    { title: "Kanban", url: `/ org / ${orgSlug}/kanban`, icon: KanbanSquare },
+    { title: "Kanban", url: `/org/${orgSlug}/kanban`, icon: KanbanSquare },
     { title: "Analytics", url: `/org/${orgSlug}/analytics`, icon: LineChart },
     { title: "Calendário", url: `/org/${orgSlug}/kanban/calendar`, icon: CalendarDays },
     { title: "Configurações", url: `/org/${orgSlug}/settings`, icon: Settings },
@@ -92,7 +92,7 @@ export function Sidebar({ isCollapsed = false, toggle }: SidebarProps) {
   return (
     <div className={cn(
       "fixed left-4 top-4 bottom-4 z-50 transition-all duration-500 ease-in-out",
-      "bg-slate-950/40 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl flex flex-col overflow-hidden",
+      "bg-white/80 dark:bg-slate-950/40 backdrop-blur-xl border border-slate-200 dark:border-white/10 shadow-2xl rounded-3xl flex flex-col overflow-hidden",
       isCollapsed ? "w-20" : "w-64"
     )}>
       <div className={cn(
