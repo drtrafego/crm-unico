@@ -96,7 +96,7 @@ export function Column({ column, leads, index, orgId, overrides }: ColumnProps) 
                 <Input
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  className="h-9 text-xs font-bold bg-slate-900/50 border-white/10 text-white rounded-xl focus:ring-indigo-500/50"
+                  className="h-9 text-xs font-bold bg-white dark:bg-slate-900/50 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-xl focus:ring-indigo-500/50"
                   autoFocus
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleUpdateTitle();
@@ -113,8 +113,8 @@ export function Column({ column, leads, index, orgId, overrides }: ColumnProps) 
             ) : (
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-3">
-                  <span className="text-xs font-black uppercase tracking-widest text-white/90">{column.title}</span>
-                  <span className="bg-white/10 text-white/60 px-2.5 py-0.5 rounded-full text-[10px] font-black border border-white/5 shadow-inner">
+                  <span className="text-xs font-black uppercase tracking-widest text-slate-900 dark:text-white/90">{column.title}</span>
+                  <span className="bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-white/60 px-2.5 py-0.5 rounded-full text-[10px] font-black border border-slate-300 dark:border-white/5 shadow-inner">
                     {leads.length}
                   </span>
                 </div>
@@ -123,16 +123,16 @@ export function Column({ column, leads, index, orgId, overrides }: ColumnProps) 
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-white/30 hover:text-white hover:bg-white/10 rounded-xl transition-all"
+                      className="h-8 w-8 text-slate-400 dark:text-white/30 hover:text-indigo-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl transition-all"
                       onPointerDown={(e) => e.stopPropagation()} // Prevent drag start on menu click
                     >
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="bg-slate-900/90 backdrop-blur-2xl border border-white/10 shadow-3xl z-50 rounded-2xl p-1.5">
+                  <DropdownMenuContent align="end" className="bg-white dark:bg-slate-900/90 backdrop-blur-2xl border border-slate-200 dark:border-white/10 shadow-3xl z-50 rounded-2xl p-1.5">
                     <DropdownMenuItem
                       onClick={() => setIsEditing(true)}
-                      className="rounded-xl font-bold text-xs uppercase tracking-widest focus:bg-white/10 focus:text-white py-2"
+                      className="rounded-xl font-bold text-xs uppercase tracking-widest text-slate-700 dark:text-slate-200 focus:bg-slate-100 dark:focus:bg-white/10 focus:text-indigo-600 dark:focus:text-white py-2"
                     >
                       <Pencil className="mr-2 h-3.5 w-3.5" />
                       Renomear
