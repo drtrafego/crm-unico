@@ -39,8 +39,7 @@ export function Board({ columns: initialColumns, initialLeads, orgId, overrides 
   // Ref to track local updates and prevent race conditions from server revalidation
   const ignoreExternalUpdatesRef = useRef(false);
 
-  // Still update if initialColumns/Leads change from parent after first mount
-  // but only if we are not ignoring external updates (e.g. during drag)
+  // Sync columns and leads when props change, but only if not dragging
   useEffect(() => {
     if (!ignoreExternalUpdatesRef.current) {
       setColumns(initialColumns);
@@ -79,7 +78,7 @@ export function Board({ columns: initialColumns, initialLeads, orgId, overrides 
         })
         .catch(err => {
           console.error("Failed to update column order:", err);
-          setLastError(`Erro ao salvar ordem das colunas: ${err.message}`);
+          setLastError(`Erro ao salvar ordem das colunas: ${err.message} `);
           ignoreExternalUpdatesRef.current = false;
         });
       return;
@@ -165,8 +164,8 @@ export function Board({ columns: initialColumns, initialLeads, orgId, overrides 
                     variant="outline"
                     className={cn(
                       "h-[60px] min-w-[320px] shrink-0 rounded-3xl transition-all duration-500",
-                      "bg-white/5 border-dashed border-2 border-white/10 text-white/40 font-black uppercase tracking-widest text-[10px]",
-                      "hover:bg-white/10 hover:border-white/30 hover:text-white hover:scale-[1.02] active:scale-95",
+                      "bg-white/40 dark:bg-white/5 border-dashed border-2 border-slate-200 dark:border-white/10 text-slate-400 dark:text-white/40 font-black uppercase tracking-widest text-[10px]",
+                      "hover:bg-white dark:hover:bg-white/10 hover:border-slate-300 dark:hover:border-white/30 hover:text-indigo-600 dark:hover:text-white hover:scale-[1.02] active:scale-95",
                       "shadow-xl"
                     )}
                   >
@@ -174,19 +173,19 @@ export function Board({ columns: initialColumns, initialLeads, orgId, overrides 
                     Nova Etapa
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="bg-slate-900/95 backdrop-blur-2xl border-white/10 text-white rounded-3xl shadow-3xl">
+                <DialogContent className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-3xl shadow-3xl">
                   <DialogHeader>
-                    <DialogTitle className="font-black uppercase tracking-tighter text-2xl bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">Nova Etapa do Funil</DialogTitle>
+                    <DialogTitle className="font-black uppercase tracking-tighter text-2xl bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent">Nova Etapa do Funil</DialogTitle>
                   </DialogHeader>
                   <div className="grid gap-6 py-4">
                     <div className="grid gap-3">
-                      <Label htmlFor="name" className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Nome da Coluna</Label>
+                      <Label htmlFor="name" className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40 ml-1">Nome da Coluna</Label>
                       <Input
                         id="name"
                         value={newColumnName}
                         onChange={(e) => setNewColumnName(e.target.value)}
                         placeholder="Ex: Qualificação Estratégica"
-                        className="bg-white/5 border-white/10 text-white rounded-2xl h-12 focus:ring-indigo-500/50"
+                        className="bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-2xl h-12 focus:ring-indigo-500/50"
                       />
                     </div>
                   </div>

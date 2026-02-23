@@ -23,6 +23,7 @@ import { KPI } from "./analytics-components";
 import { getLeadSource } from "@/lib/leads-helper";
 import { processAnalyticsData, calculateConversionBySource, getStaleAlerts, getFunnelData, getVelocityMetrics, getFollowUpMetrics, getHealthScore } from "@/lib/analytics-helper";
 import { cn } from "@/lib/utils";
+import { useTheme } from "next-themes";
 
 // --- Colors & Helpers ---
 const PIPELINE_COLORS = ["#6366f1", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#0ea5e9"];
@@ -61,6 +62,8 @@ interface AnalyticsDashboardProps {
 }
 
 export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboardProps) {
+    const { theme } = useTheme();
+    const isDark = theme === "dark";
     const [dateRange, setDateRange] = useState<DateRange | undefined>({
         from: subDays(new Date(), 90),
         to: new Date()
@@ -255,14 +258,14 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
             </svg>
 
             {/* Toolbar - Floating Glass Style */}
-            <div className="flex flex-col md:flex-row items-center gap-4 bg-slate-950/80 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl sticky top-4 z-50">
+            <div className="flex flex-col md:flex-row items-center gap-4 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl p-4 rounded-2xl border border-slate-200 dark:border-white/10 shadow-2xl sticky top-4 z-50">
                 <div className="flex items-center gap-2">
-                    <div className="bg-slate-900 rounded-md border border-slate-800">
+                    <div className="bg-slate-50 dark:bg-slate-900 rounded-md border border-slate-200 dark:border-slate-800">
                         <DateRangePickerWithPresets date={dateRange} setDate={setDateRange} />
                     </div>
                 </div>
                 <Select value={selectedOrigin} onValueChange={setSelectedOrigin}>
-                    <SelectTrigger className="w-full md:w-[180px] bg-slate-900 border-slate-800 text-slate-100">
+                    <SelectTrigger className="w-full md:w-[180px] bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
                         <SelectValue placeholder="Origem" />
                     </SelectTrigger>
                     <SelectContent className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
@@ -271,7 +274,7 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                     </SelectContent>
                 </Select>
                 <Select value={selectedState} onValueChange={setSelectedState}>
-                    <SelectTrigger className="w-full md:w-[140px] bg-slate-900 border-slate-800 text-slate-100">
+                    <SelectTrigger className="w-full md:w-[140px] bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
                         <SelectValue placeholder="Estado" />
                     </SelectTrigger>
                     <SelectContent className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
@@ -298,14 +301,14 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                         </div>
                     )}
                     {selectedColumn && (
-                        <div onClick={() => setSelectedColumn(null)} className="flex items-center gap-1.5 bg-slate-800 text-slate-300 px-2 py-1 rounded-md text-[10px] cursor-pointer hover:bg-slate-700 transition-colors border border-slate-700">
+                        <div onClick={() => setSelectedColumn(null)} className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-1 rounded-md text-[10px] cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors border border-slate-200 dark:border-slate-700">
                             {selectedColumn} <span className="text-xs">×</span>
                         </div>
                     )}
                 </div>
 
                 {(selectedColumn || selectedOrigin !== "all" || selectedState !== "all" || selectedUTMSource || selectedUTMTerm || selectedPage) && (
-                    <Button variant="ghost" size="sm" onClick={handleReset} className="ml-auto text-slate-400 hover:text-white">
+                    <Button variant="ghost" size="sm" onClick={handleReset} className="ml-auto text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-white">
                         <RotateCcw className="mr-2 h-4 w-4" /> Resetar
                     </Button>
                 )}
@@ -315,7 +318,7 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
                 <KPI label="Receita Fechada" value={formatCurrency(kpis.revenue)} icon={Wallet} color="text-emerald-500" iconBg="bg-emerald-500/10" />
                 <KPI label="Pipeline Aberto" value={formatCurrency(kpis.pipeline)} icon={Target} color="text-blue-500" iconBg="bg-blue-500/10" />
-                <KPI label="Total de Leads" value={kpis.totalLeads} icon={Users} color="text-slate-900 dark:text-white" />
+                <KPI label="Total de Leads" value={kpis.totalLeads} icon={Users} color="text-slate-900 dark:text-white" iconBg="bg-slate-100 dark:bg-white/5" />
                 <KPI label="Taxa de Conversão" value={kpis.conversionRate.toFixed(1) + "%"} icon={TrendingUp} color="text-emerald-500" iconBg="bg-emerald-500/10" />
                 <KPI label="Ticket Médio" value={formatCurrency(kpis.averageTicket)} icon={Gem} color="text-amber-500" iconBg="bg-amber-500/10" />
                 <KPI label="Ciclo Médio" value={`${kpis.avgCycle} dias`} icon={Clock} color="text-indigo-500" iconBg="bg-indigo-500/10" />
@@ -324,9 +327,9 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Daily Leads Chart - UPGRADED TO AREA */}
-                <Card className="bg-slate-900/40 backdrop-blur-md border border-white/10 overflow-hidden shadow-2xl">
-                    <CardHeader className="py-4 border-b border-white/5">
-                        <CardTitle className="text-xs font-black uppercase tracking-widest flex items-center gap-2 text-slate-400">
+                <Card className="bg-white dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-white/10 overflow-hidden shadow-2xl">
+                    <CardHeader className="py-4 border-b border-slate-100 dark:border-white/5">
+                        <CardTitle className="text-xs font-black uppercase tracking-widest flex items-center gap-2 text-slate-500 dark:text-slate-400">
                             <CalendarClock className="w-3.5 h-3.5 text-purple-500" /> Volume de Leads Diários
                         </CardTitle>
                     </CardHeader>
@@ -335,15 +338,21 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                             <AreaChart data={charts.dailyData}>
                                 <defs>
                                     <linearGradient id="gradLeads" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#a855f7" stopOpacity={0.4} />
+                                        <stop offset="5%" stopColor="#a855f7" stopOpacity={isDark ? 0.4 : 0.6} />
                                         <stop offset="95%" stopColor="#a855f7" stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-                                <XAxis dataKey="day" tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} />
-                                <YAxis tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"} />
+                                <XAxis dataKey="day" tick={{ fill: isDark ? '#64748b' : '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} />
+                                <YAxis tick={{ fill: isDark ? '#64748b' : '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} />
                                 <Tooltip
-                                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: '#fff' }}
+                                    contentStyle={{
+                                        backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.95)',
+                                        backdropFilter: 'blur(8px)',
+                                        border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)',
+                                        borderRadius: '12px',
+                                        color: isDark ? '#fff' : '#0f172a'
+                                    }}
                                     itemStyle={{ color: '#a855f7', fontWeight: 'bold' }}
                                 />
                                 <Area type="monotone" dataKey="leads" stroke="#a855f7" strokeWidth={3} fillOpacity={1} fill="url(#gradLeads)" animationDuration={2000} />
@@ -353,27 +362,34 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                 </Card>
 
                 {/* Top UTM Terms (Keywords) - NOW VERTICAL AND PROMINENT */}
-                <Card className="bg-slate-900/40 backdrop-blur-md border border-white/10 overflow-hidden shadow-2xl">
-                    <CardHeader className="py-4 border-b border-white/5 text-slate-400">
-                        <CardTitle className="text-xs font-black uppercase tracking-widest flex items-center gap-2">
+                <Card className="bg-white dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-white/10 overflow-hidden shadow-2xl">
+                    <CardHeader className="py-4 border-b border-slate-100 dark:border-white/5">
+                        <CardTitle className="text-xs font-black uppercase tracking-widest flex items-center gap-2 text-slate-500 dark:text-slate-400">
                             <Zap className="w-3.5 h-3.5 text-amber-500" /> Top UTM Terms (Keywords)
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="h-[220px] pt-6 pb-2 px-2">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={newMetrics.termData}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-                                <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 9 }} axisLine={false} tickLine={false} tickFormatter={(v) => v.length > 12 ? v.substring(0, 10) + '...' : v} />
-                                <YAxis tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"} />
+                                <XAxis dataKey="name" tick={{ fill: isDark ? '#64748b' : '#94a3b8', fontSize: 9 }} axisLine={false} tickLine={false} tickFormatter={(v) => v.length > 12 ? v.substring(0, 10) + '...' : v} />
+                                <YAxis tick={{ fill: isDark ? '#64748b' : '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} />
                                 <Tooltip
-                                    cursor={{ fill: 'rgba(245, 158, 11, 0.05)' }}
-                                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: '#fff', fontSize: '10px' }}
+                                    cursor={{ fill: isDark ? 'rgba(245, 158, 11, 0.05)' : 'rgba(245, 158, 11, 0.1)' }}
+                                    contentStyle={{
+                                        backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.95)',
+                                        backdropFilter: 'blur(8px)',
+                                        border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)',
+                                        borderRadius: '12px',
+                                        color: isDark ? '#fff' : '#0f172a',
+                                        fontSize: '10px'
+                                    }}
                                 />
-                                <Bar dataKey="leads" fill="url(#colorTerms)" radius={[6, 6, 0, 0]} barSize={25} className="cursor-pointer"
+                                <Bar dataKey="leads" fill="#f59e0b" radius={[6, 6, 0, 0]} barSize={25} className="cursor-pointer"
                                     onClick={(data) => { if (data && data.name) setSelectedUTMTerm(data.name === selectedUTMTerm ? null : data.name) }}
                                 >
                                     {newMetrics.termData.map((entry, index) => (
-                                        <Cell key={index} fill={entry.name === selectedUTMTerm ? '#ffffff' : 'url(#colorTerms)'} />
+                                        <Cell key={index} fill={entry.name === selectedUTMTerm ? (isDark ? '#ffffff' : '#4f46e5') : '#f59e0b'} fillOpacity={isDark ? 0.3 : 0.8} />
                                     ))}
                                 </Bar>
                             </BarChart>
@@ -385,8 +401,8 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
             {/* ===== MARKETING INTELLIGENCE (NEW SECTION) ===== */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Top UTM Sources */}
-                <Card className="bg-slate-900/40 backdrop-blur-md border border-white/10 shadow-2xl">
-                    <CardHeader className="py-3 px-4 flex flex-row items-center justify-between space-y-0 border-b border-white/5">
+                <Card className="bg-white dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-white/10 shadow-2xl">
+                    <CardHeader className="py-3 px-4 flex flex-row items-center justify-between space-y-0 border-b border-slate-100 dark:border-white/5">
                         <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Top UTM Sources</CardTitle>
                         <MousePointerClick className="w-3.5 h-3.5 text-blue-500" />
                     </CardHeader>
@@ -394,16 +410,23 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={newMetrics.sourceData} layout="vertical" margin={{ left: -10, right: 20 }}>
                                 <XAxis type="number" hide />
-                                <YAxis dataKey="name" type="category" tick={{ fill: '#64748b', fontSize: 9 }} width={80} axisLine={false} tickLine={false} />
+                                <YAxis dataKey="name" type="category" tick={{ fill: isDark ? '#64748b' : '#94a3b8', fontSize: 9 }} width={80} axisLine={false} tickLine={false} />
                                 <Tooltip
-                                    cursor={{ fill: 'rgba(255,255,255,0.03)' }}
-                                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: '#fff', fontSize: '10px' }}
+                                    cursor={{ fill: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)' }}
+                                    contentStyle={{
+                                        backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.95)',
+                                        backdropFilter: 'blur(8px)',
+                                        border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)',
+                                        borderRadius: '12px',
+                                        color: isDark ? '#fff' : '#0f172a',
+                                        fontSize: '10px'
+                                    }}
                                 />
                                 <Bar dataKey="value" fill="#3b82f6" radius={[0, 6, 6, 0]} barSize={12} className="cursor-pointer"
                                     onClick={(data) => { if (data && data.name) setSelectedUTMSource(data.name === selectedUTMSource ? null : data.name) }}
                                 >
                                     {newMetrics.sourceData.map((entry, index) => (
-                                        <Cell key={index} fill={entry.name === selectedUTMSource ? '#ffffff' : '#3b82f6'} />
+                                        <Cell key={index} fill={entry.name === selectedUTMSource ? (isDark ? '#ffffff' : '#4f46e5') : '#3b82f6'} />
                                     ))}
                                 </Bar>
                             </BarChart>
@@ -412,8 +435,8 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                 </Card>
 
                 {/* Top Landing Pages */}
-                <Card className="bg-slate-900/40 backdrop-blur-md border border-white/10 shadow-2xl">
-                    <CardHeader className="py-3 px-4 flex flex-row items-center justify-between space-y-0 border-b border-white/5">
+                <Card className="bg-white dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-white/10 shadow-2xl">
+                    <CardHeader className="py-3 px-4 flex flex-row items-center justify-between space-y-0 border-b border-slate-100 dark:border-white/5">
                         <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Páginas de Entrada</CardTitle>
                         <FileText className="w-3.5 h-3.5 text-emerald-500" />
                     </CardHeader>
@@ -421,16 +444,23 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={newMetrics.pageData} layout="vertical" margin={{ left: -10, right: 20 }}>
                                 <XAxis type="number" hide />
-                                <YAxis dataKey="name" type="category" tick={{ fill: '#64748b', fontSize: 9 }} width={100} axisLine={false} tickLine={false} tickFormatter={(v) => v.length > 20 ? v.substring(0, 18) + '...' : v} />
+                                <YAxis dataKey="name" type="category" tick={{ fill: isDark ? '#64748b' : '#94a3b8', fontSize: 9 }} width={100} axisLine={false} tickLine={false} tickFormatter={(v) => v.length > 20 ? v.substring(0, 18) + '...' : v} />
                                 <Tooltip
-                                    cursor={{ fill: 'rgba(255,255,255,0.03)' }}
-                                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: '#fff', fontSize: '10px' }}
+                                    cursor={{ fill: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)' }}
+                                    contentStyle={{
+                                        backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.95)',
+                                        backdropFilter: 'blur(8px)',
+                                        border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)',
+                                        borderRadius: '12px',
+                                        color: isDark ? '#fff' : '#0f172a',
+                                        fontSize: '10px'
+                                    }}
                                 />
                                 <Bar dataKey="leads" fill="#10b981" radius={[0, 6, 6, 0]} barSize={12} className="cursor-pointer"
                                     onClick={(data) => { if (data && data.name) setSelectedPage(data.name === selectedPage ? null : data.name) }}
                                 >
                                     {newMetrics.pageData.map((entry, index) => (
-                                        <Cell key={index} fill={entry.name === selectedPage ? '#ffffff' : '#10b981'} />
+                                        <Cell key={index} fill={entry.name === selectedPage ? (isDark ? '#ffffff' : '#4f46e5') : '#10b981'} />
                                     ))}
                                 </Bar>
                             </BarChart>
@@ -440,31 +470,31 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
             </div>
 
             {/* Keyword vs Page Relationship */}
-            <Card className="bg-slate-900/40 backdrop-blur-md border border-white/10 shadow-2xl overflow-hidden group">
-                <CardHeader className="py-4 border-b border-white/5 bg-white/5">
+            <Card className="bg-white dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-white/10 shadow-2xl overflow-hidden group">
+                <CardHeader className="py-4 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5">
                     <div className="flex items-center justify-between">
                         <div>
-                            <CardTitle className="text-xs font-black uppercase tracking-widest flex items-center gap-2 text-slate-400">
-                                <BrainCircuit className="w-4 h-4 text-purple-400" />
+                            <CardTitle className="text-xs font-black uppercase tracking-widest flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                                <BrainCircuit className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                                 Relacionamento: Keywords vs Páginas
                             </CardTitle>
                             <CardDescription className="text-[10px] text-slate-500 font-bold uppercase tracking-tight mt-1">Quais termos levam a quais páginas e qual a volumetria?</CardDescription>
                         </div>
-                        <Badge variant="outline" className="text-[10px] bg-purple-500/10 text-purple-400 border-purple-500/20">Top 20 Relações</Badge>
+                        <Badge variant="outline" className="text-[10px] bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20">Top 20 Relações</Badge>
                     </div>
                 </CardHeader>
                 <CardContent className="p-0">
-                    <div className="grid grid-cols-12 bg-slate-950/50 p-3 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] border-b border-white/5">
+                    <div className="grid grid-cols-12 bg-slate-50 dark:bg-slate-950/50 p-3 text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] border-b border-slate-100 dark:border-white/5">
                         <div className="col-span-6 pl-4 font-mono">UTM Term (Palavra-chave)</div>
                         <div className="col-span-4">Página (Slug)</div>
                         <div className="col-span-2 text-right pr-4 italic">Leads</div>
                     </div>
-                    <div className="divide-y divide-white/5 max-h-[300px] overflow-y-auto custom-scrollbar">
+                    <div className="divide-y divide-slate-100 dark:divide-white/5 max-h-[300px] overflow-y-auto custom-scrollbar bg-white dark:bg-transparent">
                         {newMetrics.termPageRelation.map((rel, i) => (
-                            <div key={i} className="grid grid-cols-12 p-3 text-[11px] hover:bg-white/5 transition-all group/row">
-                                <div className="col-span-6 pl-2 font-black text-slate-200 truncate pr-2 border-l-2 border-purple-500/30 group-hover/row:border-purple-500 transition-colors uppercase tracking-tight">{rel.term}</div>
-                                <div className="col-span-4 text-slate-400 truncate text-[10px] italic">{rel.page}</div>
-                                <div className="col-span-2 text-right pr-4 font-black text-purple-400 text-lg tabular-nums drop-shadow-[0_0_8px_rgba(168,85,247,0.2)]">{rel.leads}</div>
+                            <div key={i} className="grid grid-cols-12 p-3 text-[11px] hover:bg-slate-50 dark:hover:bg-white/5 transition-all group/row">
+                                <div className="col-span-6 pl-2 font-black text-slate-700 dark:text-slate-200 truncate pr-2 border-l-2 border-purple-500/30 group-hover/row:border-purple-500 transition-colors uppercase tracking-tight">{rel.term}</div>
+                                <div className="col-span-4 text-slate-500 dark:text-slate-400 truncate text-[10px] italic">{rel.page}</div>
+                                <div className="col-span-2 text-right pr-4 font-black text-purple-600 dark:text-purple-400 text-lg tabular-nums drop-shadow-[0_0_8px_rgba(168,85,247,0.2)] dark:drop-shadow-[0_0_8px_rgba(168,85,247,0.2)]">{rel.leads}</div>
                             </div>
                         ))}
                     </div>
@@ -473,30 +503,30 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
 
             {/* Performance de UTMs Table */}
             {utmStats.length > 0 && (
-                <Card className="bg-slate-900/40 backdrop-blur-md border border-white/10 shadow-2xl overflow-hidden">
-                    <CardHeader className="border-b border-white/5 bg-white/5 py-4">
-                        <CardTitle className="text-xs font-black uppercase tracking-widest flex items-center gap-2 text-slate-400">
-                            <Link2 className="w-4 h-4 text-blue-500" />
+                <Card className="bg-white dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-white/10 shadow-2xl overflow-hidden">
+                    <CardHeader className="border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 py-4">
+                        <CardTitle className="text-xs font-black uppercase tracking-widest flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                            <Link2 className="w-4 h-4 text-blue-600 dark:text-blue-500" />
                             Detalhamento de Campanhas (UTMs)
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="p-0">
-                        <div className="overflow-hidden">
-                            <div className="grid grid-cols-12 bg-slate-950/50 p-3 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] border-b border-white/5">
+                        <div className="overflow-hidden bg-white dark:bg-transparent">
+                            <div className="grid grid-cols-12 bg-slate-50 dark:bg-slate-950/50 p-3 text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] border-b border-slate-100 dark:border-white/5">
                                 <div className="col-span-2">Source</div>
                                 <div className="col-span-2">Medium</div>
                                 <div className="col-span-4">Campaign</div>
                                 <div className="col-span-3">Term (Keyword)</div>
                                 <div className="col-span-1 text-right pr-2">Leads</div>
                             </div>
-                            <div className="divide-y divide-white/5 max-h-[400px] overflow-y-auto custom-scrollbar">
+                            <div className="divide-y divide-slate-100 dark:divide-white/5 max-h-[400px] overflow-y-auto custom-scrollbar">
                                 {utmStats.map((item, idx) => (
-                                    <div key={idx} className="grid grid-cols-12 p-3 text-[11px] text-slate-300 hover:bg-white/5 transition-colors group">
+                                    <div key={idx} className="grid grid-cols-12 p-3 text-[11px] text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group">
                                         <div className="col-span-2 truncate pr-2 opacity-60 group-hover:opacity-100">{item.source}</div>
-                                        <div className="col-span-2 truncate pr-2 text-slate-500 text-[10px]">{item.medium}</div>
-                                        <div className="col-span-4 truncate pr-2 font-bold text-blue-400/80 group-hover:text-blue-400">{item.campaign}</div>
-                                        <div className="col-span-3 truncate pr-2 text-slate-400 font-mono italic text-[10px]">{item.term}</div>
-                                        <div className="col-span-1 text-right font-black pr-2 text-white">{item.size}</div>
+                                        <div className="col-span-2 truncate pr-2 text-slate-400 dark:text-slate-500 text-[10px]">{item.medium}</div>
+                                        <div className="col-span-4 truncate pr-2 font-bold text-blue-600 dark:text-blue-400/80 group-hover:text-blue-500">{item.campaign}</div>
+                                        <div className="col-span-3 truncate pr-2 text-slate-500 dark:text-slate-400 font-mono italic text-[10px]">{item.term}</div>
+                                        <div className="col-span-1 text-right font-black pr-2 text-slate-900 dark:text-white">{item.size}</div>
                                     </div>
                                 ))}
                             </div>
@@ -594,27 +624,27 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
             </Card>
 
             {/* Legacy Section at Bottom - SUBTLE GLASS STYLE */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-10 border-t border-white/5">
-                <Card className="bg-white/5 backdrop-blur-sm border border-white/5 shadow-sm opacity-60 hover:opacity-100 transition-opacity">
-                    <CardHeader className="py-2 border-b border-white/5"><CardTitle className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Regional (Ativos)</CardTitle></CardHeader>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-10 border-t border-slate-200 dark:border-white/5">
+                <Card className="bg-white/40 dark:bg-white/5 backdrop-blur-sm border border-slate-200 dark:border-white/5 shadow-sm opacity-80 hover:opacity-100 transition-opacity">
+                    <CardHeader className="py-2 border-b border-slate-100 dark:border-white/5"><CardTitle className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Regional (Ativos)</CardTitle></CardHeader>
                     <CardContent className="h-[200px] pt-4">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={charts.regionalData} layout="vertical">
-                                <YAxis dataKey="name" type="category" tick={{ fill: '#64748b', fontSize: 9 }} width={25} axisLine={false} tickLine={false} />
-                                <Tooltip cursor={{ fill: 'rgba(255,255,255,0.02)' }} contentStyle={{ backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '10px' }} />
-                                <Bar dataKey="value" fill="#475569" radius={[0, 4, 4, 0]} barSize={8} />
+                                <YAxis dataKey="name" type="category" tick={{ fill: isDark ? '#64748b' : '#94a3b8', fontSize: 9 }} width={25} axisLine={false} tickLine={false} />
+                                <Tooltip cursor={{ fill: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }} contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#fff', border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)', borderRadius: '8px', color: isDark ? '#fff' : '#0f172a', fontSize: '10px' }} />
+                                <Bar dataKey="value" fill={isDark ? "#475569" : "#94a3b8"} radius={[0, 4, 4, 0]} barSize={8} />
                             </BarChart>
                         </ResponsiveContainer>
                     </CardContent>
                 </Card>
 
-                <Card className="bg-white/5 backdrop-blur-sm border border-white/5 shadow-sm opacity-60 hover:opacity-100 transition-opacity">
-                    <CardHeader className="py-2 border-b border-white/5"><CardTitle className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Pipeline (Volume)</CardTitle></CardHeader>
+                <Card className="bg-white/40 dark:bg-white/5 backdrop-blur-sm border border-slate-200 dark:border-white/5 shadow-sm opacity-80 hover:opacity-100 transition-opacity">
+                    <CardHeader className="py-2 border-b border-slate-100 dark:border-white/5"><CardTitle className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Pipeline (Volume)</CardTitle></CardHeader>
                     <CardContent className="h-[200px] pt-4">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={charts.funnelData} layout="vertical">
-                                <YAxis dataKey="name" type="category" tick={{ fill: '#64748b', fontSize: 9 }} width={100} tickFormatter={(v) => v.length > 15 ? v.substring(0, 15) : v} axisLine={false} tickLine={false} />
-                                <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={8} fill="#475569" />
+                                <YAxis dataKey="name" type="category" tick={{ fill: isDark ? '#64748b' : '#94a3b8', fontSize: 9 }} width={100} tickFormatter={(v) => v.length > 15 ? v.substring(0, 15) : v} axisLine={false} tickLine={false} />
+                                <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={8} fill={isDark ? "#475569" : "#94a3b8"} />
                             </BarChart>
                         </ResponsiveContainer>
                     </CardContent>

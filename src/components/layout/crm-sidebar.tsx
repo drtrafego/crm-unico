@@ -9,8 +9,7 @@ import {
   List,
   BarChart2,
   Calendar,
-  Settings,
-  LogOut
+  Settings
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -32,7 +31,7 @@ export function CrmSidebar() {
     <aside className={cn(
       "hidden sm:flex flex-col items-center",
       "w-20 py-6 gap-6 h-[calc(100vh-2rem)] fixed left-4 top-4 z-50",
-      "bg-slate-950/40 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl transition-all duration-500 hover:bg-slate-950/60"
+      "bg-white/80 dark:bg-slate-950/40 backdrop-blur-xl border border-slate-200 dark:border-white/10 shadow-2xl rounded-3xl transition-all duration-500 hover:bg-white dark:hover:bg-slate-950/60"
     )}>
       <div className="mb-2">
         <div className="size-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white font-black shadow-[0_0_20px_rgba(79,70,229,0.4)] transition-transform hover:scale-110 active:scale-95 duration-300">
@@ -64,8 +63,8 @@ export function CrmSidebar() {
                 "relative group size-12 inline-flex items-center justify-center rounded-2xl transition-all duration-300",
                 l.className,
                 isActive
-                  ? "bg-white/10 text-white shadow-[inset_0_0_10px_rgba(255,255,255,0.1)] border border-white/10"
-                  : "bg-transparent text-slate-400 hover:text-white hover:bg-white/5 active:scale-90"
+                  ? "bg-slate-100 dark:bg-white/10 text-indigo-600 dark:text-white shadow-[inset_0_0_10px_rgba(0,0,0,0.05)] dark:shadow-[inset_0_0_10px_rgba(255,255,255,0.1)] border border-slate-200 dark:border-white/10"
+                  : "bg-transparent text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 active:scale-90"
               )}
               title={l.label}
             >
@@ -79,7 +78,7 @@ export function CrmSidebar() {
               <span className="sr-only">{l.label}</span>
 
               {/* Tooltip on hover */}
-              <div className="absolute left-16 px-3 py-1 bg-slate-900 text-white text-xs font-bold rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:translate-x-2 transition-all duration-300 whitespace-nowrap shadow-2xl border border-white/10">
+              <div className="absolute left-16 px-3 py-1 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-xs font-bold rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:translate-x-2 transition-all duration-300 whitespace-nowrap shadow-2xl border border-slate-200 dark:border-white/10">
                 {l.label}
               </div>
             </Link>
