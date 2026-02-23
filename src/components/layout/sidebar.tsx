@@ -83,7 +83,7 @@ export function Sidebar({ isCollapsed = false, toggle }: SidebarProps) {
   }
 
   const items = [
-    { title: "Kanban", url: `/org/${orgSlug}/kanban`, icon: KanbanSquare },
+    { title: "Kanban", url: `/ org / ${orgSlug}/kanban`, icon: KanbanSquare },
     { title: "Analytics", url: `/org/${orgSlug}/analytics`, icon: LineChart },
     { title: "Calendário", url: `/org/${orgSlug}/kanban/calendar`, icon: CalendarDays },
     { title: "Configurações", url: `/org/${orgSlug}/settings`, icon: Settings },
@@ -108,7 +108,7 @@ export function Sidebar({ isCollapsed = false, toggle }: SidebarProps) {
           variant="ghost"
           size="icon"
           onClick={toggle}
-          className={cn("text-white/70 hover:text-white hover:bg-white/10", isCollapsed ? "h-8 w-8" : "h-8 w-8")}
+          className={cn("text-slate-500 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10", isCollapsed ? "h-8 w-8" : "h-8 w-8")}
         >
           {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </Button>
@@ -125,8 +125,8 @@ export function Sidebar({ isCollapsed = false, toggle }: SidebarProps) {
                 "group relative flex items-center gap-3 px-3 py-3 rounded-2xl text-sm font-bold transition-all duration-300",
                 isCollapsed ? "justify-center" : "",
                 isActive
-                  ? "bg-white/15 text-white shadow-[0_0_20px_rgba(255,255,255,0.05)] border border-white/10"
-                  : "text-slate-400 hover:text-white hover:bg-white/5"
+                  ? "bg-slate-100 dark:bg-white/15 text-slate-900 dark:text-white shadow-sm dark:shadow-[0_0_20px_rgba(255,255,255,0.05)] border border-slate-200 dark:border-white/10"
+                  : "text-slate-700 dark:text-white/90 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5"
               )}
             >
               {isActive && (
@@ -152,7 +152,7 @@ export function Sidebar({ isCollapsed = false, toggle }: SidebarProps) {
           <Button
             variant="ghost"
             className={cn(
-              "justify-start text-slate-400 hover:text-white hover:bg-white/5 rounded-2xl transition-all duration-300",
+              "justify-start text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/5 rounded-2xl transition-all duration-300",
               isCollapsed ? "justify-center px-0 w-full" : "w-full gap-3 font-bold"
             )}
           >

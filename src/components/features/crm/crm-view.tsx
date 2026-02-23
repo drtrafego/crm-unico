@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { DateRange } from "react-day-picker";
 import { subDays, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 import { Column as DbColumn, Lead } from "@/server/db/schema";
@@ -10,15 +10,13 @@ import { LeadsList } from "@/components/features/crm/leads-list";
 import { DateRangePickerWithPresets } from "./date-range-picker";
 import { NewLeadDialog } from "@/components/features/kanban/new-lead-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Users, TrendingUp, AlertCircle, LayoutGrid, List, Wallet, Search, LucideIcon, BarChart3 } from "lucide-react";
+import { Users, TrendingUp, AlertCircle, Wallet, Search, LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
 import { AnalyticsDashboard } from "./analytics-dashboard";
 
 import { CompanyOnboarding } from "./company-onboarding";
 
-import { updateViewMode } from "@/server/actions/settings";
 
 import { CRMActionOverrides } from "@/types/crm-actions";
 
@@ -33,8 +31,6 @@ interface CrmViewProps {
 
 export function CrmView({ initialLeads, columns, companyName, initialViewMode, orgId, overrides }: CrmViewProps) {
   const searchParams = useSearchParams();
-  const router = useRouter();
-  const pathname = usePathname();
 
   const initialView = (searchParams.get("view") as "board" | "list" | "analytics") || (initialViewMode as "board" | "list" | "analytics") || "board";
   const [view, setView] = useState<"board" | "list" | "analytics">(initialView);
@@ -46,13 +42,6 @@ export function CrmView({ initialLeads, columns, companyName, initialViewMode, o
     if (viewParam === "analytics" && view !== "analytics") setView("analytics");
   }, [searchParams, view]);
 
-  const handleViewChange = (newView: "board" | "list" | "analytics") => {
-    setView(newView);
-    const params = new URLSearchParams(searchParams);
-    params.set("view", newView);
-    router.replace(`${pathname}?${params.toString()}`);
-    updateViewMode(newView, orgId);
-  };
 
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: subDays(new Date(), 30), // Last 30 days default
@@ -100,15 +89,6 @@ export function CrmView({ initialLeads, columns, companyName, initialViewMode, o
     });
   }, [optimisticLeads, dateRange, searchQuery]);
 
-  const handleLeadsChange = (newFilteredLeads: Lead[]) => {
-    setOptimisticLeads(prev => {
-      // Create a map of the updated leads for O(1) lookup
-      const updatedMap = new Map(newFilteredLeads.map(l => [l.id, l]));
-
-      // Merge: if lead exists in updated list, use it; otherwise keep existing
-      return prev.map(l => updatedMap.get(l.id) || l);
-    });
-  };
 
   // Stats Calculation
   const totalLeads = filteredLeads.length;
@@ -223,62 +203,8 @@ export function CrmView({ initialLeads, columns, companyName, initialViewMode, o
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleViewChange("board")}
-              className={cn(
-                "h-7 px-2 text-[10px] font-bold",
-                view === "board" && "bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400"
-              )}
-            >
-              <LayoutGrid className="h-3 w-3 mr-1" /> Kanban
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleViewChange("list")}
-              className={cn(
-                "h-7 px-2 text-[10px] font-bold",
-                view === "list" && "bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400"
-              )}
-            >
-              <List className="h-3 w-3 mr-1" /> Lista
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleViewChange("analytics")}
-              className={cn(
-                "h-7 px-2 text-[10px] font-bold",
-                view === "analytics" && "bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400"
-              )}
-            >
-              <BarChart3 className="h-3 w-3 mr-1" /> Analytics
-            </Button>
-          </div>
-
           {mounted && (
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 text-[10px] border-amber-500/20 text-amber-600 hover:bg-amber-50 dark:border-amber-500/30 dark:text-amber-400 dark:hover:bg-amber-950/30"
-                onClick={async () => {
-                  if (!confirm("Deseja instalar a proteção de histórico agora?")) return;
-                  try {
-                    const res = await fetch('/api/debug/setup-audit');
-                    const data = await res.json();
-                    if (data.success) alert("Sucesso! Proteção instalada: " + data.message);
-                    else alert("Erro: " + data.error);
-                  } catch (e: any) {
-                    alert("Erro ao conectar: " + e.message);
-                  }
-                }}
-              >
-                🛠️ Reparar Histórico
-              </Button>
               <DateRangePickerWithPresets date={dateRange} setDate={setDateRange} className="h-8 text-xs" />
               <NewLeadDialog orgId={orgId} overrides={overrides} />
             </div>
@@ -358,11 +284,11 @@ function StatsCard({
   return (
     <Card className={cn("bg-white dark:bg-[#0f172a] border-slate-200 dark:border-slate-800", className)}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0.5 p-2.5">
-        <CardTitle className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest truncate">
+        <CardTitle className="text-[9px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest truncate">
           {title}
         </CardTitle>
         <div className="bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
-          <Icon className={cn("h-3.5 w-3.5 text-slate-500 dark:text-slate-400", iconClassName)} />
+          <Icon className={cn("h-3.5 w-3.5 text-slate-600 dark:text-slate-400", iconClassName)} />
         </div>
       </CardHeader>
       <CardContent className="p-2.5 pt-0">
