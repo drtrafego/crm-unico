@@ -77,16 +77,16 @@ export function Column({ column, leads, index, orgId, overrides }: ColumnProps) 
             "w-[340px] min-w-[340px] flex flex-col rounded-3xl shrink-0 h-fit",
             // Disable transitions during drag to prevent jumping
             !snapshot.isDragging && "transition-all duration-500",
-            "bg-slate-950/20 backdrop-blur-xl border border-white/5 shadow-2xl",
+            "bg-white/80 dark:bg-slate-950/20 backdrop-blur-xl border border-slate-200 dark:border-white/5 shadow-xl dark:shadow-2xl",
             isDeleting && "opacity-50 pointer-events-none",
-            snapshot.isDragging && "opacity-90 rotate-2 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.6)] ring-2 ring-indigo-500/20 bg-slate-900/40 z-[9999]"
+            snapshot.isDragging && "opacity-90 rotate-2 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.6)] ring-2 ring-indigo-500/20 bg-white dark:bg-slate-900/40 z-[9999]"
           )}
         >
           {/* Header */}
           <div
             {...provided.dragHandleProps}
             className={cn(
-              "p-5 cursor-grab active:cursor-grabbing sticky top-0 bg-slate-900/40 backdrop-blur-md border-b border-white/5 rounded-t-3xl",
+              "p-5 cursor-grab active:cursor-grabbing sticky top-0 bg-slate-50/80 dark:bg-slate-900/40 backdrop-blur-md border-b border-slate-200 dark:border-white/5 rounded-t-3xl",
               isEditing && "cursor-default",
               snapshot.isDragging && "z-[10000]"
             )}
