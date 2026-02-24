@@ -46,9 +46,9 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             <main
                 className={cn(
                     "flex-1 min-w-0 flex flex-col transition-all duration-500 ease-in-out",
-                    // Se for página de CRM (/org/...), removemos o scroll global para que o Board gerencie.
-                    // Caso contrário, mantemos scroll nativo.
-                    pathname?.includes('/org/') ? "overflow-hidden" : "overflow-y-auto custom-scrollbar",
+                    // Se for página de Kanban cụ thể, removemos o scroll global para que o Board gerencie.
+                    // Em Configurações, Analytics ou ADM, mantemos scroll nativo.
+                    pathname?.includes('/kanban') ? "overflow-hidden" : "overflow-y-auto custom-scrollbar",
                     showSidebar ? (isCollapsed ? "ml-28" : "ml-72") : "ml-0",
                     "p-4 sm:p-6" // Add some padding to content
                 )}
