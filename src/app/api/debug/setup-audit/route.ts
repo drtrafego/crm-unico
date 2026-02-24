@@ -9,15 +9,19 @@ export async function GET() {
         await db.execute(sql`
       CREATE OR REPLACE FUNCTION log_lead_changes()
       RETURNS TRIGGER AS $$
+      DECLARE
+          new_col_name TEXT;
+          old_col_name TEXT; -- Added for logging old column title
       BEGIN
           -- Handle INSERT (New Lead)
           IF (TG_OP = 'INSERT') THEN
+              SELECT title INTO new_col_name FROM columns WHERE id = NEW.column_id; -- Get column title for new lead
               INSERT INTO lead_history (lead_id, action, to_column, details, created_at)
               VALUES (
                   NEW.id, 
                   'create', 
                   NEW.column_id, 
-                  'Lead criado automaticamente (Auditoria de Banco de Dados)',
+                  'Lead criado automaticamente na coluna ' || COALESCE('"' || new_col_name || '"', 'desconhecida') || ' (Auditoria de Banco de Dados)',
                   NOW()
               );
               RETURN NEW;
@@ -27,13 +31,15 @@ export async function GET() {
               -- Only log if significant fields changed
               -- 1. Status/Column Change
               IF (OLD.column_id IS DISTINCT FROM NEW.column_id) THEN
+                  SELECT title INTO new_col_name FROM columns WHERE id = NEW.column_id;
+                  SELECT title INTO old_col_name FROM columns WHERE id = OLD.column_id; -- Get old column title
                   INSERT INTO lead_history (lead_id, action, from_column, to_column, details, created_at)
                   VALUES (
                       NEW.id,
                       'move',
                       OLD.column_id,
                       NEW.column_id,
-                      'Lead movido de coluna',
+                      'Lead movido para a coluna ' || COALESCE('"' || new_col_name || '"', 'desconhecida'),
                       NOW()
                   );
               END IF;
