@@ -238,7 +238,7 @@ export function EditLeadDialog({ lead, open, onOpenChange, orgId, overrides }: E
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="utmTerm" className="text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                      <Search className="h-4 w-4 text-slate-400" /> Palavra-chave
+                      <Search className="h-4 w-4 text-slate-400" /> Palavra-Chave / Anúncio
                     </Label>
                     <Input
                       id="utmTerm"
