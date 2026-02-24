@@ -168,7 +168,7 @@ export function LeadCard({ lead, index }: LeadCardProps) {
                 })()}
               </div>
 
-              <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300">
+              <div className="flex items-center gap-1 transition-opacity duration-300">
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -189,7 +189,10 @@ export function LeadCard({ lead, index }: LeadCardProps) {
                           }
                         }}
                       >
-                        <MessageCircle className="h-4 w-4" />
+                        <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M17.498 14.382c-.301-.15-1.767-.867-2.04-.966-.274-.101-.473-.15-.673.15-.197.295-.771.964-.944 1.162-.175.195-.349.21-.646.065-.301-.15-1.265-.462-2.406-1.485-.888-.795-1.484-1.77-1.66-2.07-.174-.3-.019-.465.13-.615.136-.135.301-.345.451-.523.146-.181.194-.301.297-.496.095-.21.049-.375-.025-.524-.075-.15-.672-1.62-.922-2.206-.24-.584-.487-.51-.672-.51-.172-.015-.371-.015-.571-.015-.197 0-.523.074-.797.359-.273.3-1.045 1.02-1.045 2.475s1.07 2.865 1.219 3.075c.149.21 2.095 3.2 5.077 4.485.709.305 1.262.485 1.694.62.713.225 1.362.195 1.874.115.576-.09 1.767-.721 2.016-1.426.248-.705.248-1.305.174-1.425-.074-.121-.274-.196-.574-.346z" />
+                          <path d="M12.001 22.45h-.006c-1.844 0-3.654-.489-5.24-1.414l-.375-.224-3.899 1.021 1.04-3.799-.247-.393a10.428 10.428 0 01-1.597-5.592c0-5.766 4.704-10.457 10.485-10.457 2.793 0 5.419 1.088 7.391 3.065A10.422 10.422 0 0122.484 12c0 5.766-4.704 10.456-10.483 10.45l-.001.002zM6.92 18.23l.317.189c1.45.861 3.128 1.317 4.881 1.319 4.269 0 7.747-3.473 7.747-7.739a7.712 7.712 0 00-2.268-5.464 7.72 7.72 0 00-5.474-2.274C7.854 4.261 4.376 7.734 4.376 12A7.72 7.72 0 005.8 16.518l.206.328-.616 2.251 2.306-.604-.776-.263z" />
+                        </svg>
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 font-bold text-xs uppercase tracking-widest px-3 py-2 text-slate-900 dark:text-white">
