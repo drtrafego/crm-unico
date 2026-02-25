@@ -40,7 +40,7 @@ interface MemberType {
     id: string;
     role: string;
     createdAt: Date;
-    user: { id: string; name: string | null; email: string; image: string | null; };
+    user: { id: string; name: string | null; email: string | null; image: string | null; };
 }
 
 interface InvitationType {
