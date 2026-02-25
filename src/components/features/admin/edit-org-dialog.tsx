@@ -104,18 +104,25 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
 
     const handleSave = async () => {
         setIsLoading(true);
-        const res = await updateOrganization(organization.id, {
-            name,
-            slug,
-            features: { hasLaunchDashboard, launchSheetId, launchSheetTabName },
-        });
-        setIsLoading(false);
-        if (res.success) {
-            alert("Organização atualizada com sucesso!");
-            onOpenChange(false);
-            router.refresh();
-        } else {
-            alert("Erro: " + res.error);
+        try {
+            const res = await updateOrganization(organization.id, {
+                name,
+                slug,
+                features: { hasLaunchDashboard, launchSheetId, launchSheetTabName },
+            });
+
+            if (res.success) {
+                alert("Organização atualizada com sucesso!");
+                onOpenChange(false);
+                router.refresh();
+            } else {
+                alert("Erro: " + res.error);
+            }
+        } catch (err: any) {
+            console.error("Save Error:", err);
+            alert("Erro Inesperado: " + (err.message || "Falha ao salvar"));
+        } finally {
+            setIsLoading(false);
         }
     };
 
