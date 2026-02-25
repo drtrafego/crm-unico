@@ -21,10 +21,11 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, ExternalLink, Users, Clock, Building2, Copy, Check } from "lucide-react";
+import { Search, ExternalLink, Users, Clock, Building2, Copy, Check, Settings as SettingsIcon } from "lucide-react";
 import Link from "next/link";
 import { formatDistance } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { EditOrgDialog } from "./edit-org-dialog";
 
 interface Organization {
     id: string;
@@ -33,6 +34,7 @@ interface Organization {
     createdAt: Date;
     totalLeads: number;
     avgResponseTime: number;
+    features?: { hasLaunchDashboard?: boolean } | null;
 }
 
 interface OrganizationsListProps {
@@ -70,6 +72,8 @@ function CopyableId({ id }: { id: string }) {
 export function OrganizationsList({ organizations }: OrganizationsListProps) {
     const [sorting, setSorting] = useState<SortingState>([]);
     const [globalFilter, setGlobalFilter] = useState("");
+    const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
     // Calculate totals for KPI cards
     const totalOrgs = organizations.length;
@@ -137,7 +141,19 @@ export function OrganizationsList({ organizations }: OrganizationsListProps) {
             id: "actions",
             header: () => <div className="text-right">Ações</div>,
             cell: ({ row }) => (
-                <div className="text-right">
+                <div className="text-right flex items-center justify-end gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-2"
+                        onClick={() => {
+                            setSelectedOrg(row.original);
+                            setIsEditDialogOpen(true);
+                        }}
+                    >
+                        <SettingsIcon className="h-4 w-4" />
+                        Configurações
+                    </Button>
                     <Link href={`/org/${row.original.slug}/kanban`}>
                         <Button variant="outline" size="sm" className="gap-2">
                             <ExternalLink className="h-4 w-4" />
@@ -277,6 +293,14 @@ export function OrganizationsList({ organizations }: OrganizationsListProps) {
                     </div>
                 </div>
             </div>
+
+            {selectedOrg && (
+                <EditOrgDialog
+                    organization={selectedOrg}
+                    open={isEditDialogOpen}
+                    onOpenChange={setIsEditDialogOpen}
+                />
+            )}
         </div>
     );
 }

@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, pgEnum, integer, decimal, primaryKey, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, uuid, pgEnum, integer, decimal, primaryKey, boolean, jsonb } from "drizzle-orm/pg-core";
 
 
 // --- Auth Tables ---
@@ -18,9 +18,10 @@ export const users = pgTable("user", {
 // --- Multi-tenant Tables ---
 
 export const organizations = pgTable("organizations", {
-  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()), // Changed to text to match potential legacy or generic use
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   name: text("name").notNull(),
   slug: text("slug").unique().notNull(),
+  features: jsonb("features").$type<{ hasLaunchDashboard?: boolean }>(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -102,3 +103,22 @@ export type NewLead = typeof leads.$inferInsert;
 export type Column = typeof columns.$inferSelect;
 export type Settings = typeof settings.$inferSelect;
 
+// --- Launch Leads Table ---
+
+export const launchLeads = pgTable("launch_leads", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  organizationId: text("organization_id").notNull(),
+  formName: text("form_name").notNull(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  whatsapp: text("whatsapp"),
+  formData: jsonb("form_data"),
+  utmSource: text("utm_source"),
+  utmMedium: text("utm_medium"),
+  utmCampaign: text("utm_campaign"),
+  leadId: uuid("lead_id").references(() => leads.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type LaunchLead = typeof launchLeads.$inferSelect;
+export type NewLaunchLead = typeof launchLeads.$inferInsert;

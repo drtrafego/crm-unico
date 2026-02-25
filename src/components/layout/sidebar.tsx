@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { usePathname, useParams } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, KanbanSquare, Settings, LogOut, LineChart, CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import { LayoutDashboard, KanbanSquare, Settings, LogOut, LineChart, CalendarDays, ChevronLeft, ChevronRight, Rocket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { stackApp } from "@/stack";
+import { getOrganizationFeatures } from "@/server/actions/sidebar-features";
+import { useEffect, useState } from "react";
 
 interface SidebarProps {
   isCollapsed?: boolean;
@@ -17,6 +19,15 @@ export function Sidebar({ isCollapsed = false, toggle }: SidebarProps) {
   const params = useParams();
 
   const orgSlug = params?.orgSlug as string;
+  const [hasLaunchDashboard, setHasLaunchDashboard] = useState(false);
+
+  useEffect(() => {
+    if (orgSlug) {
+      getOrganizationFeatures(orgSlug).then(res => {
+        setHasLaunchDashboard(res.hasLaunchDashboard);
+      });
+    }
+  }, [orgSlug]);
 
   // If we are not in an org context (e.g. root or admin), don't show sidebar or show different one
   if (!orgSlug) {
@@ -84,6 +95,7 @@ export function Sidebar({ isCollapsed = false, toggle }: SidebarProps) {
 
   const items = [
     { title: "Kanban", url: `/org/${orgSlug}/kanban`, icon: KanbanSquare },
+    ...(hasLaunchDashboard ? [{ title: "Lançamentos", url: `/org/${orgSlug}/launch-leads`, icon: Rocket }] : []),
     { title: "Analytics", url: `/org/${orgSlug}/analytics`, icon: LineChart },
     { title: "Calendário", url: `/org/${orgSlug}/kanban/calendar`, icon: CalendarDays },
     { title: "Configurações", url: `/org/${orgSlug}/settings`, icon: Settings },
