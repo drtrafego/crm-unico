@@ -17,7 +17,7 @@ export const normalizeSourceString = (raw: string): string | null => {
         return "Google";
     }
 
-    // Meta / Facebook / Instagram
+    // Meta / Facebook / Instagram / Bio
     if (
         lower.includes('meta') ||
         lower.includes('facebook') ||
@@ -25,7 +25,8 @@ export const normalizeSourceString = (raw: string): string | null => {
         lower.includes('fb') ||
         lower.includes('instagram') ||
         lower.includes('insta') ||
-        lower.includes('ig')
+        lower.includes('ig') ||
+        lower.includes('bio')
     ) {
         return "Meta";
     }
