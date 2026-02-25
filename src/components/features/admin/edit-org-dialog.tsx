@@ -5,16 +5,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { updateOrganization, deleteOrganization } from "@/server/actions/admin-orgs";
-import { Switch } from "@/components/ui/switch";
-import { useRouter } from "next/navigation";
 import {
+    updateOrganization,
+    deleteOrganization,
     getOrganizationMembers,
     addOrganizationMember,
     removeOrganizationMember,
-    removeOrganizationInvitation
+    removeOrganizationInvitation,
 } from "@/server/actions/admin-orgs";
-import { Trash2, UserPlus, Shield } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Trash2, UserPlus, Shield, Settings, Users, Zap, AlertTriangle, Rocket, Save, X } from "lucide-react";
 import {
     Select,
     SelectContent,
@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/select";
 import { formatDistance } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 interface EditOrgDialogProps {
     organization: {
@@ -50,16 +51,17 @@ interface InvitationType {
     createdAt: Date;
 }
 
+type TabType = "general" | "features" | "members" | "danger";
+
 export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialogProps) {
     const [name, setName] = useState(organization.name);
     const [slug, setSlug] = useState(organization.slug);
     const [hasLaunchDashboard, setHasLaunchDashboard] = useState(
         organization.features?.hasLaunchDashboard || false
     );
-    const [activeTab, setActiveTab] = useState<"general" | "features" | "members" | "danger">("general");
+    const [activeTab, setActiveTab] = useState<TabType>("general");
     const [isLoading, setIsLoading] = useState(false);
 
-    // Members tab state
     const [newMemberEmail, setNewMemberEmail] = useState("");
     const [newMemberRole, setNewMemberRole] = useState("editor");
     const [membersList, setMembersList] = useState<MemberType[]>([]);
@@ -78,11 +80,9 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
         setIsLoadingMembers(false);
     };
 
-    const handleTabChange = (tab: "general" | "features" | "members" | "danger") => {
+    const handleTabChange = (tab: TabType) => {
         setActiveTab(tab);
-        if (tab === "members") {
-            fetchMembers();
-        }
+        if (tab === "members") fetchMembers();
     };
 
     const handleSave = async () => {
@@ -93,7 +93,6 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
             features: { hasLaunchDashboard },
         });
         setIsLoading(false);
-
         if (res.success) {
             alert("Organização atualizada com sucesso!");
             onOpenChange(false);
@@ -108,7 +107,6 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
             setIsLoading(true);
             const res = await deleteOrganization(organization.id);
             setIsLoading(false);
-
             if (res.success) {
                 alert("Organização excluída com sucesso.");
                 onOpenChange(false);
@@ -134,15 +132,13 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
         }
     };
 
-    const handleRemoveMember = async (id: string, type: 'member' | 'invitation') => {
+    const handleRemoveMember = async (id: string, type: "member" | "invitation") => {
         if (!confirm("Tem certeza que deseja remover este usuário?")) return;
-
         setIsLoading(true);
-        const res = type === 'member'
+        const res = type === "member"
             ? await removeOrganizationMember(id)
             : await removeOrganizationInvitation(id);
         setIsLoading(false);
-
         if (res.success) {
             alert("Removido com sucesso.");
             fetchMembers();
@@ -151,190 +147,272 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
         }
     };
 
+    const tabs: { id: TabType; label: string; icon: React.ReactNode }[] = [
+        { id: "general", label: "Geral", icon: <Settings className="w-3.5 h-3.5" /> },
+        { id: "members", label: "Membros", icon: <Users className="w-3.5 h-3.5" /> },
+        { id: "features", label: "Módulos", icon: <Zap className="w-3.5 h-3.5" /> },
+        { id: "danger", label: "Avançado", icon: <AlertTriangle className="w-3.5 h-3.5" /> },
+    ];
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[500px]">
-                <DialogHeader>
-                    <DialogTitle>Configurações da Organização</DialogTitle>
-                </DialogHeader>
-
-                <div className="flex space-x-4 border-b pb-2 mb-4">
-                    <button
-                        onClick={() => handleTabChange("general")}
-                        className={`text-sm font-medium ${activeTab === "general" ? "text-indigo-600 border-b-2 border-indigo-600 pb-1" : "text-slate-500"}`}
-                    >
-                        Geral
-                    </button>
-                    <button
-                        onClick={() => handleTabChange("members")}
-                        className={`text-sm font-medium ${activeTab === "members" ? "text-indigo-600 border-b-2 border-indigo-600 pb-1" : "text-slate-500"}`}
-                    >
-                        Membros
-                    </button>
-                    <button
-                        onClick={() => handleTabChange("features")}
-                        className={`text-sm font-medium ${activeTab === "features" ? "text-indigo-600 border-b-2 border-indigo-600 pb-1" : "text-slate-500"}`}
-                    >
-                        Módulos
-                    </button>
-                    <button
-                        onClick={() => handleTabChange("danger")}
-                        className={`text-sm font-medium ${activeTab === "danger" ? "text-red-600 border-b-2 border-red-600 pb-1" : "text-slate-500"}`}
-                    >
-                        Avançado
-                    </button>
+            <DialogContent className="sm:max-w-[520px] p-0 border-0 overflow-hidden bg-slate-900 text-white shadow-2xl rounded-2xl">
+                {/* Header */}
+                <div className="px-6 pt-6 pb-4 border-b border-white/5">
+                    <DialogHeader>
+                        <DialogTitle className="text-lg font-bold text-white">
+                            Configurações da Organização
+                        </DialogTitle>
+                        <p className="text-sm text-slate-400 mt-0.5">{organization.name}</p>
+                    </DialogHeader>
                 </div>
 
-                {activeTab === "general" && (
-                    <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                            <Label>Nome</Label>
-                            <Input value={name} onChange={(e) => setName(e.target.value)} />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Slug</Label>
-                            <Input value={slug} onChange={(e) => setSlug(e.target.value)} />
-                        </div>
-                    </div>
-                )}
+                {/* Tab Navigation */}
+                <div className="flex px-4 gap-1 border-b border-white/5 bg-slate-900/80">
+                    {tabs.map((tab) => (
+                        <button
+                            key={tab.id}
+                            onClick={() => handleTabChange(tab.id)}
+                            className={cn(
+                                "flex items-center gap-1.5 px-3 py-3 text-xs font-semibold transition-all duration-200 border-b-2 -mb-px",
+                                activeTab === tab.id
+                                    ? tab.id === "danger"
+                                        ? "border-red-500 text-red-400"
+                                        : "border-indigo-500 text-indigo-400"
+                                    : "border-transparent text-slate-500 hover:text-slate-300"
+                            )}
+                        >
+                            {tab.icon}
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
 
-                {activeTab === "features" && (
-                    <div className="space-y-4 py-4">
-                        <div className="flex items-center justify-between border dark:border-white/10 p-4 rounded-lg">
-                            <div className="space-y-0.5">
-                                <Label className="text-base dark:text-white/90">Módulo de Lançamentos</Label>
-                                <p className="text-sm text-slate-500 dark:text-slate-400">
-                                    Habilita a aba lateral para o Dashboard de Leads de Lançamento.
-                                </p>
-                            </div>
-                            <Switch
-                                checked={hasLaunchDashboard}
-                                onCheckedChange={setHasLaunchDashboard}
-                                className="data-[state=unchecked]:bg-slate-200 dark:data-[state=unchecked]:bg-slate-700"
-                            />
-                        </div>
-                    </div>
-                )}
+                {/* Tab Content */}
+                <div className="px-6 py-5 min-h-[200px]">
 
-                {activeTab === "danger" && (
-                    <div className="space-y-4 py-4 border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 p-4 rounded-lg">
-                        <h4 className="font-semibold text-red-600 dark:text-red-400">Danger Zone</h4>
-                        <p className="text-sm text-red-500 dark:text-red-400/80">
-                            A exclusão removerá permanentemente todos os leads, colunas e configurações desta empresa.
-                        </p>
-                        <Button variant="destructive" onClick={handleDelete} disabled={isLoading}>
-                            Excluir Organização
-                        </Button>
-                    </div>
-                )}
-
-                {activeTab === "members" && (
-                    <div className="space-y-6 py-2">
-                        <div className="flex gap-2 items-end">
-                            <div className="space-y-2 flex-1">
-                                <Label>Convidar Usuário (E-mail)</Label>
+                    {/* GERAL TAB */}
+                    {activeTab === "general" && (
+                        <div className="space-y-4">
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Nome da Empresa</Label>
                                 <Input
-                                    placeholder="email@exemplo.com"
-                                    value={newMemberEmail}
-                                    onChange={(e) => setNewMemberEmail(e.target.value)}
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    className="bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus:border-indigo-500 focus:ring-indigo-500/20 rounded-xl"
                                 />
                             </div>
-                            <div className="space-y-2 w-[120px]">
-                                <Label>Permissão</Label>
-                                <Select value={newMemberRole} onValueChange={setNewMemberRole}>
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="admin">Admin</SelectItem>
-                                        <SelectItem value="editor">Editor</SelectItem>
-                                        <SelectItem value="viewer">Leitor</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Slug (URL de acesso)</Label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">/org/</span>
+                                    <Input
+                                        value={slug}
+                                        onChange={(e) => setSlug(e.target.value)}
+                                        className="bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus:border-indigo-500 focus:ring-indigo-500/20 rounded-xl pl-12"
+                                    />
+                                </div>
                             </div>
-                            <Button onClick={handleAddMember} disabled={isLoading || !newMemberEmail} className="mb-[2px]">
-                                <UserPlus className="w-4 h-4" />
-                            </Button>
                         </div>
+                    )}
 
-                        {isLoadingMembers ? (
-                            <div className="text-center py-4 text-sm text-slate-500">Carregando membros...</div>
-                        ) : (
-                            <div className="space-y-4">
-                                {membersList.length > 0 && (
-                                    <div className="space-y-2">
-                                        <h4 className="text-sm font-semibold flex items-center gap-2">
-                                            <Shield className="w-4 h-4" /> Membros Ativos
-                                        </h4>
-                                        <div className="border dark:border-white/10 rounded-lg divide-y dark:divide-white/10">
-                                            {membersList.map((m) => (
-                                                <div key={m.id} className="flex items-center justify-between p-3 flex-wrap gap-2">
-                                                    <div>
-                                                        <p className="text-sm font-medium dark:text-white/90">{m.user.name || 'Sem Nome'}</p>
-                                                        <p className="text-xs text-slate-500 dark:text-slate-400">{m.user.email}</p>
-                                                    </div>
-                                                    <div className="flex items-center gap-3">
-                                                        <span className="text-xs px-2 py-1 bg-slate-100 dark:bg-white/5 rounded font-medium text-slate-600 dark:text-slate-300">
-                                                            {m.role}
-                                                        </span>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
-                                                            onClick={() => handleRemoveMember(m.id, 'member')}
-                                                            disabled={isLoading}
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {invitationsList.length > 0 && (
-                                    <div className="space-y-2">
-                                        <h4 className="text-sm font-semibold text-slate-500">Convites Pendentes</h4>
-                                        <div className="border border-dashed dark:border-white/10 rounded-lg divide-y dark:divide-white/10">
-                                            {invitationsList.map((inv) => (
-                                                <div key={inv.id} className="flex items-center justify-between p-3">
-                                                    <div>
-                                                        <p className="text-sm dark:text-white/80">{inv.email}</p>
-                                                        <p className="text-xs text-slate-400">
-                                                            Enviado {formatDistance(new Date(inv.createdAt), new Date(), { addSuffix: true, locale: ptBR })}
-                                                        </p>
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-xs text-slate-400">{inv.role}</span>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-8 w-8 text-slate-400 hover:text-red-500"
-                                                            onClick={() => handleRemoveMember(inv.id, 'invitation')}
-                                                            disabled={isLoading}
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {membersList.length === 0 && invitationsList.length === 0 && (
-                                    <p className="text-sm text-center py-4 text-slate-500">Nenhum membro encontrado.</p>
-                                )}
+                    {/* MEMBROS TAB */}
+                    {activeTab === "members" && (
+                        <div className="space-y-5">
+                            <div className="flex gap-2 items-end">
+                                <div className="space-y-1.5 flex-1">
+                                    <Label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Convidar por E-mail</Label>
+                                    <Input
+                                        placeholder="email@exemplo.com"
+                                        value={newMemberEmail}
+                                        onChange={(e) => setNewMemberEmail(e.target.value)}
+                                        className="bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus:border-indigo-500 rounded-xl"
+                                    />
+                                </div>
+                                <div className="space-y-1.5 w-[115px]">
+                                    <Label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Permissão</Label>
+                                    <Select value={newMemberRole} onValueChange={setNewMemberRole}>
+                                        <SelectTrigger className="bg-white/5 border-white/10 text-white rounded-xl">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-slate-800 border-white/10 text-white">
+                                            <SelectItem value="admin">Admin</SelectItem>
+                                            <SelectItem value="editor">Editor</SelectItem>
+                                            <SelectItem value="viewer">Leitor</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <Button
+                                    onClick={handleAddMember}
+                                    disabled={isLoading || !newMemberEmail}
+                                    size="icon"
+                                    className="shrink-0 bg-indigo-600 hover:bg-indigo-500 rounded-xl"
+                                >
+                                    <UserPlus className="w-4 h-4" />
+                                </Button>
                             </div>
-                        )}
-                    </div>
-                )}
 
-                <div className="flex justify-end gap-3 pt-4 border-t mt-4">
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>Fechar</Button>
+                            {isLoadingMembers ? (
+                                <div className="text-center py-8 text-sm text-slate-500">Carregando...</div>
+                            ) : (
+                                <div className="space-y-4 max-h-[240px] overflow-y-auto pr-1">
+                                    {membersList.length > 0 && (
+                                        <div className="space-y-1.5">
+                                            <h4 className="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
+                                                <Shield className="w-3.5 h-3.5 text-indigo-400" /> Membros Ativos
+                                            </h4>
+                                            <div className="rounded-xl overflow-hidden divide-y divide-white/5 border border-white/8">
+                                                {membersList.map((m) => (
+                                                    <div key={m.id} className="flex items-center justify-between px-4 py-3 bg-white/3 hover:bg-white/5 transition-colors">
+                                                        <div>
+                                                            <p className="text-sm font-medium text-white">{m.user.name || "Sem Nome"}</p>
+                                                            <p className="text-xs text-slate-500">{m.user.email}</p>
+                                                        </div>
+                                                        <div className="flex items-center gap-3">
+                                                            <span className="text-xs px-2 py-0.5 bg-indigo-500/10 text-indigo-400 rounded-full font-medium border border-indigo-500/20">
+                                                                {m.role}
+                                                            </span>
+                                                            <button
+                                                                className="p-1.5 text-slate-600 hover:text-red-400 transition-colors rounded-lg hover:bg-red-500/10"
+                                                                onClick={() => handleRemoveMember(m.id, "member")}
+                                                                disabled={isLoading}
+                                                            >
+                                                                <Trash2 className="w-3.5 h-3.5" />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {invitationsList.length > 0 && (
+                                        <div className="space-y-1.5">
+                                            <h4 className="text-xs font-semibold text-slate-500">Convites Pendentes</h4>
+                                            <div className="rounded-xl overflow-hidden divide-y divide-white/5 border border-dashed border-white/8">
+                                                {invitationsList.map((inv) => (
+                                                    <div key={inv.id} className="flex items-center justify-between px-4 py-3">
+                                                        <div>
+                                                            <p className="text-sm text-slate-300">{inv.email}</p>
+                                                            <p className="text-xs text-slate-600">
+                                                                Enviado {formatDistance(new Date(inv.createdAt), new Date(), { addSuffix: true, locale: ptBR })}
+                                                            </p>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-xs text-slate-600">{inv.role}</span>
+                                                            <button
+                                                                className="p-1.5 text-slate-600 hover:text-red-400 transition-colors rounded-lg hover:bg-red-500/10"
+                                                                onClick={() => handleRemoveMember(inv.id, "invitation")}
+                                                                disabled={isLoading}
+                                                            >
+                                                                <Trash2 className="w-3.5 h-3.5" />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {membersList.length === 0 && invitationsList.length === 0 && (
+                                        <div className="text-center py-8">
+                                            <Users className="w-8 h-8 text-slate-700 mx-auto mb-2" />
+                                            <p className="text-sm text-slate-500">Nenhum membro cadastrado.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* MÓDULOS TAB */}
+                    {activeTab === "features" && (
+                        <div className="space-y-3">
+                            {/* Custom Toggle Card for Launch Dashboard */}
+                            <button
+                                onClick={() => setHasLaunchDashboard(!hasLaunchDashboard)}
+                                className={cn(
+                                    "w-full text-left flex items-center justify-between p-4 rounded-xl border transition-all duration-200",
+                                    hasLaunchDashboard
+                                        ? "bg-indigo-500/10 border-indigo-500/30"
+                                        : "bg-white/3 border-white/8 hover:bg-white/5"
+                                )}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className={cn(
+                                        "p-2 rounded-lg transition-colors",
+                                        hasLaunchDashboard ? "bg-indigo-500/20" : "bg-white/5"
+                                    )}>
+                                        <Rocket className={cn("w-4 h-4", hasLaunchDashboard ? "text-indigo-400" : "text-slate-500")} />
+                                    </div>
+                                    <div>
+                                        <p className={cn("text-sm font-semibold", hasLaunchDashboard ? "text-indigo-300" : "text-slate-300")}>
+                                            Módulo de Lançamentos
+                                        </p>
+                                        <p className="text-xs text-slate-500 mt-0.5">
+                                            Dashboard exclusivo de leads do lançamento
+                                        </p>
+                                    </div>
+                                </div>
+                                {/* Custom visual toggle */}
+                                <div className={cn(
+                                    "relative w-11 h-6 rounded-full transition-colors duration-300 shrink-0",
+                                    hasLaunchDashboard ? "bg-indigo-600" : "bg-slate-700"
+                                )}>
+                                    <div className={cn(
+                                        "absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-300",
+                                        hasLaunchDashboard ? "translate-x-5" : "translate-x-0.5"
+                                    )} />
+                                </div>
+                            </button>
+                        </div>
+                    )}
+
+                    {/* AVANÇADO TAB */}
+                    {activeTab === "danger" && (
+                        <div className="space-y-4">
+                            <div className="p-4 rounded-xl border border-red-500/20 bg-red-500/5">
+                                <div className="flex gap-3">
+                                    <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                                    <div>
+                                        <h4 className="font-semibold text-red-400 text-sm">Excluir Organização</h4>
+                                        <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                                            Esta ação é <strong className="text-slate-400">permanente e irreversível</strong>. Todos os leads, colunas, membros e configurações desta empresa serão excluídos.
+                                        </p>
+                                        <Button
+                                            variant="destructive"
+                                            size="sm"
+                                            onClick={handleDelete}
+                                            disabled={isLoading}
+                                            className="mt-3 bg-red-600 hover:bg-red-500 text-white rounded-lg text-xs"
+                                        >
+                                            {isLoading ? "Excluindo..." : "Confirmar Exclusão"}
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Footer */}
+                <div className="flex justify-end gap-2 px-6 py-4 border-t border-white/5 bg-slate-900/60">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onOpenChange(false)}
+                        className="text-slate-400 hover:text-white hover:bg-white/10 rounded-xl gap-1.5"
+                    >
+                        <X className="w-3.5 h-3.5" /> Fechar
+                    </Button>
                     {(activeTab === "general" || activeTab === "features") && (
-                        <Button onClick={handleSave} disabled={isLoading}>
+                        <Button
+                            size="sm"
+                            onClick={handleSave}
+                            disabled={isLoading}
+                            className="bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl gap-1.5"
+                        >
+                            <Save className="w-3.5 h-3.5" />
                             {isLoading ? "Salvando..." : "Salvar Alterações"}
                         </Button>
                     )}
