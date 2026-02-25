@@ -1,4 +1,4 @@
-import { getLaunchLeads } from "@/server/actions/launch-leads";
+import { getLaunchLeads, getLaunchAnalyticsData } from "@/server/actions/launch-leads";
 import { LaunchLeadsClient } from "./client";
 import { db } from "@/lib/db";
 import { organizations } from "@/server/db/schema";
@@ -21,13 +21,15 @@ export default async function LaunchLeadsPage({
     }
 
     const leads = await getLaunchLeads(org.id);
+    const analyticsRes = await getLaunchAnalyticsData(org.id);
+    const analytics = analyticsRes.success ? analyticsRes.data : null;
 
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
             <div className="flex items-center justify-between space-y-2">
                 <h2 className="text-3xl font-bold tracking-tight">Leads de Lançamento</h2>
             </div>
-            <LaunchLeadsClient data={leads} organizationId={org.id} />
+            <LaunchLeadsClient data={leads} organizationId={org.id} analytics={analytics} />
         </div>
     );
 }

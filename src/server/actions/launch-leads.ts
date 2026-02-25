@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { launchLeads, organizations } from "@/server/db/schema";
+import { launchLeads, organizations, leads } from "@/server/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { fetchSheetData } from "@/lib/google-sheets";
 import { revalidatePath } from "next/cache";
@@ -17,6 +17,111 @@ export async function getLaunchLeads(organizationId: string) {
     } catch (error) {
         console.error("Error fetching launch leads:", error);
         throw new Error("Failed to fetch launch leads");
+    }
+}
+
+export async function getLaunchAnalyticsData(organizationId: string) {
+    try {
+        // Fetch base leads for UTM analysis
+        const baseLeads = await db.query.leads.findMany({
+            where: eq(leads.organizationId, organizationId),
+            columns: { utmSource: true }
+        });
+
+        const totalLeads = baseLeads.length;
+        let trackedLeadsCount = 0;
+        let p1Count = 0;
+        let p2Count = 0;
+        let outrosCount = 0;
+        const utmCounts: Record<string, number> = {};
+
+        baseLeads.forEach(l => {
+            if (l.utmSource) {
+                trackedLeadsCount++;
+                const source = l.utmSource;
+                utmCounts[source] = (utmCounts[source] || 0) + 1;
+
+                const lowerSource = source.toLowerCase();
+                if (lowerSource.includes('p1')) p1Count++;
+                else if (lowerSource.includes('p2')) p2Count++;
+                else outrosCount++;
+            } else {
+                outrosCount++;
+            }
+        });
+
+        const trackingRate = totalLeads > 0 ? Math.round((trackedLeadsCount / totalLeads) * 100) : 0;
+
+        const utmRanking = Object.entries(utmCounts)
+            .map(([source, leads]) => ({ source, leads }))
+            .sort((a, b) => b.leads - a.leads);
+
+        const temperatureData = [
+            { name: "P1 Frio", value: p1Count, fill: "hsl(var(--chart-1))" },
+            { name: "P2 Quente", value: p2Count, fill: "hsl(var(--chart-2))" },
+            { name: "Outros", value: outrosCount, fill: "hsl(var(--muted))" },
+        ];
+
+        // Fetch launch leads for form responses analytics
+        const launchLeadsList = await db.query.launchLeads.findMany({
+            where: eq(launchLeads.organizationId, organizationId),
+            columns: { formData: true }
+        });
+
+        const totalForms = launchLeadsList.length;
+
+        // Stopwords completely in Portuguese and generic terms
+        const stopWords = new Set([
+            "o", "a", "os", "as", "um", "uma", "uns", "umas", "e", "ou", "mas", "se", "por", "para", "com", "em", "no", "na",
+            "nos", "nas", "de", "do", "da", "dos", "das", "que", "qual", "quais", "quem", "como", "quando", "onde", "porque",
+            "porquê", "sim", "não", "eu", "tu", "ele", "ela", "nós", "vós", "eles", "elas", "me", "te", "se", "nos", "vos",
+            "lhe", "lhes", "meu", "minha", "meus", "minhas", "seu", "sua", "seus", "suas", "nosso", "nossa", "nossos", "nossas",
+            "este", "esta", "estes", "estas", "esse", "essa", "esses", "essas", "aquele", "aquela", "aqueles", "aquelas", "isso",
+            "isto", "aquilo", "ser", "estar", "ter", "haver", "fazer", "ir", "poder", "querer", "dizer", "saber", "dar", "ver",
+            "mais", "muito", "pouco", "tudo", "nada", "alguém", "ninguém", "algum", "nenhum", "qualquer", "cada", "mesmo", "outro",
+            "ainda", "já", "agora", "depois", "antes", "aqui", "ali", "lá", "ai", "muito", "tão", "bem", "mal", "apenas", "só",
+            "também", "nem", "sempre", "nunca", "vezes", "vez", "vai", "vou", "estou", "sou", "é", "são", "foi", "foram", "era", "eram",
+            "será", "serão", "teria", "tinha", "tinham", "tem", "têm"
+        ]);
+
+        const wordCounts: Record<string, number> = {};
+
+        launchLeadsList.forEach(ll => {
+            if (ll.formData && typeof ll.formData === 'object') {
+                Object.values(ll.formData).forEach(val => {
+                    if (typeof val === 'string') {
+                        // strip punctuation and spaces
+                        const words = val.toLowerCase().replace(/[.,/#!$%^&*;:{}=\-_`~()?"']/g, "").split(/\s+/);
+                        words.forEach(w => {
+                            if (w.length > 3 && !stopWords.has(w) && isNaN(Number(w))) {
+                                wordCounts[w] = (wordCounts[w] || 0) + 1;
+                            }
+                        });
+                    }
+                });
+            }
+        });
+
+        const wordCloud = Object.entries(wordCounts)
+            .map(([text, value]) => ({ text, value }))
+            .sort((a, b) => b.value - a.value)
+            .slice(0, 50);
+
+        return {
+            success: true,
+            data: {
+                totalLeads,
+                totalForms,
+                trackingRate,
+                utmRanking,
+                temperatureData,
+                wordCloud
+            }
+        };
+
+    } catch (error: any) {
+        console.error("Error fetching analytics data:", error);
+        return { success: false, error: "Falha ao carregar dashboard de analítica." };
     }
 }
 
