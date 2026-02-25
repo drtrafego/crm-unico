@@ -192,3 +192,17 @@ export async function updateMemberRole(memberId: string, role: string) {
         return { success: false, error: "Falha ao atualizar permissão" };
     }
 }
+
+export async function updateUserInfo(userId: string, data: { name?: string; email?: string }) {
+    try {
+        await verifySuperAdmin();
+        await db.update(users)
+            .set({ ...data })
+            .where(eq(users.id, userId));
+        revalidatePath("/adm/dashboard");
+        return { success: true };
+    } catch (error) {
+        console.error("Error updating user info:", error);
+        return { success: false, error: "Falha ao atualizar informações do usuário" };
+    }
+}

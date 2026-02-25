@@ -13,9 +13,10 @@ import {
     removeOrganizationMember,
     removeOrganizationInvitation,
     updateMemberRole,
+    updateUserInfo,
 } from "@/server/actions/admin-orgs";
 import { useRouter } from "next/navigation";
-import { Trash2, UserPlus, Shield, Settings, Users, Zap, AlertTriangle, Rocket, Save, X } from "lucide-react";
+import { Trash2, UserPlus, Shield, Settings, Users, Zap, AlertTriangle, Rocket, Save, X, Pencil, Check } from "lucide-react";
 import {
     Select,
     SelectContent,
@@ -69,6 +70,11 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
     const [invitationsList, setInvitationsList] = useState<InvitationType[]>([]);
     const [isLoadingMembers, setIsLoadingMembers] = useState(false);
 
+    // Inline member editing
+    const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
+    const [editingName, setEditingName] = useState("");
+    const [editingEmail, setEditingEmail] = useState("");
+
     const router = useRouter();
 
     const fetchMembers = async () => {
@@ -104,7 +110,7 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
     };
 
     const handleDelete = async () => {
-        if (confirm(`Tem certeza que deseja excluir ${organization.name}? Esta ação é irreversível e apagará todos os leads e dados da empresa.`)) {
+        if (confirm(`Tem certeza que deseja excluir ${organization.name}? Esta ação é irreversível.`)) {
             setIsLoading(true);
             const res = await deleteOrganization(organization.id);
             setIsLoading(false);
@@ -127,6 +133,24 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
         }
     };
 
+    const startEditingMember = (m: MemberType) => {
+        setEditingMemberId(m.id);
+        setEditingName(m.user.name || "");
+        setEditingEmail(m.user.email || "");
+    };
+
+    const handleSaveUserInfo = async (userId: string, memberId: string) => {
+        const res = await updateUserInfo(userId, { name: editingName, email: editingEmail });
+        if (res.success) {
+            setMembersList(prev => prev.map(m =>
+                m.id === memberId ? { ...m, user: { ...m.user, name: editingName, email: editingEmail } } : m
+            ));
+            setEditingMemberId(null);
+        } else {
+            alert("Erro: " + res.error);
+        }
+    };
+
     const handleAddMember = async () => {
         if (!newMemberEmail) return;
         setIsLoading(true);
@@ -143,7 +167,7 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
     };
 
     const handleRemoveMember = async (id: string, type: "member" | "invitation") => {
-        if (!confirm("Tem certeza que deseja remover este usuário?")) return;
+        if (!confirm("Tem certeza que deseja remover?")) return;
         setIsLoading(true);
         const res = type === "member"
             ? await removeOrganizationMember(id)
@@ -229,6 +253,7 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
                     {/* MEMBROS TAB */}
                     {activeTab === "members" && (
                         <div className="space-y-5">
+                            {/* Add member form */}
                             <div className="flex gap-2 items-end">
                                 <div className="space-y-1.5 flex-1">
                                     <Label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Convidar por E-mail</Label>
@@ -273,34 +298,78 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
                                             </h4>
                                             <div className="rounded-xl overflow-hidden divide-y divide-white/5 border border-white/8">
                                                 {membersList.map((m) => (
-                                                    <div key={m.id} className="flex items-center justify-between px-4 py-3 bg-white/3 hover:bg-white/5 transition-colors">
-                                                        <div>
-                                                            <p className="text-sm font-medium text-white">{m.user.name || "Sem Nome"}</p>
-                                                            <p className="text-xs text-slate-500">{m.user.email}</p>
-                                                        </div>
-                                                        <div className="flex items-center gap-2">
-                                                            <Select
-                                                                value={m.role}
-                                                                onValueChange={(val) => handleUpdateRole(m.id, val)}
-                                                            >
-                                                                <SelectTrigger className="h-7 px-2 text-xs bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 rounded-lg w-[90px]">
-                                                                    <SelectValue />
-                                                                </SelectTrigger>
-                                                                <SelectContent className="bg-slate-800 border-white/10 text-white text-xs">
-                                                                    <SelectItem value="admin">Admin</SelectItem>
-                                                                    <SelectItem value="editor">Editor</SelectItem>
-                                                                    <SelectItem value="viewer">Leitor</SelectItem>
-                                                                </SelectContent>
-                                                            </Select>
-                                                            <button
-                                                                title="Remover membro"
-                                                                className="p-1.5 text-slate-600 hover:text-red-400 transition-colors rounded-lg hover:bg-red-500/10"
-                                                                onClick={() => handleRemoveMember(m.id, "member")}
-                                                                disabled={isLoading}
-                                                            >
-                                                                <Trash2 className="w-3.5 h-3.5" />
-                                                            </button>
-                                                        </div>
+                                                    <div key={m.id} className="bg-white/3 hover:bg-white/5 transition-colors">
+                                                        {editingMemberId === m.id ? (
+                                                            /* EDIT MODE */
+                                                            <div className="px-4 py-3 space-y-2">
+                                                                <div className="flex gap-2">
+                                                                    <input
+                                                                        value={editingName}
+                                                                        onChange={(e) => setEditingName(e.target.value)}
+                                                                        placeholder="Nome"
+                                                                        className="flex-1 min-w-0 px-2.5 py-1.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500"
+                                                                    />
+                                                                    <input
+                                                                        value={editingEmail}
+                                                                        onChange={(e) => setEditingEmail(e.target.value)}
+                                                                        placeholder="E-mail"
+                                                                        className="flex-1 min-w-0 px-2.5 py-1.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500"
+                                                                    />
+                                                                </div>
+                                                                <div className="flex justify-end gap-2">
+                                                                    <button
+                                                                        onClick={() => setEditingMemberId(null)}
+                                                                        className="px-2.5 py-1 text-xs text-slate-400 hover:text-white bg-white/5 rounded-lg transition-colors"
+                                                                    >
+                                                                        Cancelar
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleSaveUserInfo(m.user.id, m.id)}
+                                                                        className="px-2.5 py-1 text-xs text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg transition-colors flex items-center gap-1"
+                                                                    >
+                                                                        <Check className="w-3 h-3" /> Salvar
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            /* VIEW MODE */
+                                                            <div className="flex items-center justify-between px-4 py-3 flex-wrap gap-2">
+                                                                <div>
+                                                                    <p className="text-sm font-medium text-white">{m.user.name || "Sem Nome"}</p>
+                                                                    <p className="text-xs text-slate-500">{m.user.email}</p>
+                                                                </div>
+                                                                <div className="flex items-center gap-2">
+                                                                    <Select
+                                                                        value={m.role}
+                                                                        onValueChange={(val) => handleUpdateRole(m.id, val)}
+                                                                    >
+                                                                        <SelectTrigger className="h-7 px-2 text-xs bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 rounded-lg w-[90px]">
+                                                                            <SelectValue />
+                                                                        </SelectTrigger>
+                                                                        <SelectContent className="bg-slate-800 border-white/10 text-white text-xs">
+                                                                            <SelectItem value="admin">Admin</SelectItem>
+                                                                            <SelectItem value="editor">Editor</SelectItem>
+                                                                            <SelectItem value="viewer">Leitor</SelectItem>
+                                                                        </SelectContent>
+                                                                    </Select>
+                                                                    <button
+                                                                        title="Editar membro"
+                                                                        className="p-1.5 text-slate-600 hover:text-indigo-400 transition-colors rounded-lg hover:bg-indigo-500/10"
+                                                                        onClick={() => startEditingMember(m)}
+                                                                    >
+                                                                        <Pencil className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                    <button
+                                                                        title="Remover membro"
+                                                                        className="p-1.5 text-slate-600 hover:text-red-400 transition-colors rounded-lg hover:bg-red-500/10"
+                                                                        onClick={() => handleRemoveMember(m.id, "member")}
+                                                                        disabled={isLoading}
+                                                                    >
+                                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 ))}
                                             </div>
@@ -350,7 +419,6 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
                     {/* MÓDULOS TAB */}
                     {activeTab === "features" && (
                         <div className="space-y-3">
-                            {/* Custom Toggle Card for Launch Dashboard */}
                             <button
                                 onClick={() => setHasLaunchDashboard(!hasLaunchDashboard)}
                                 className={cn(
@@ -376,7 +444,7 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
                                         </p>
                                     </div>
                                 </div>
-                                {/* Custom visual toggle */}
+                                {/* Custom toggle */}
                                 <div className={cn(
                                     "relative w-11 h-6 rounded-full transition-colors duration-300 shrink-0",
                                     hasLaunchDashboard ? "bg-indigo-600" : "bg-slate-700"
@@ -399,7 +467,7 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
                                     <div>
                                         <h4 className="font-semibold text-red-400 text-sm">Excluir Organização</h4>
                                         <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                                            Esta ação é <strong className="text-slate-400">permanente e irreversível</strong>. Todos os leads, colunas, membros e configurações desta empresa serão excluídos.
+                                            Esta ação é <strong className="text-slate-400">permanente e irreversível</strong>. Todos os leads, colunas, membros e configurações serão excluídos.
                                         </p>
                                         <Button
                                             variant="destructive"
