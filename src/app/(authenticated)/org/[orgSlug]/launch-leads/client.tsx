@@ -169,14 +169,17 @@ function DashSection({ title, children }: { title: string; children: React.React
 // ----------- Donut/Pie Chart Sub-component -----------
 const RADIAN = Math.PI / 180;
 function renderCustomLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent }: {
-    cx: number; cy: number; midAngle: number; innerRadius?: number; outerRadius?: number; percent: number; name: string;
+    cx?: number; cy?: number; midAngle?: number; innerRadius?: number; outerRadius?: number; percent?: number; name?: string;
 }) {
-    if (percent < 0.04) return null;
+    if (!percent || percent < 0.04) return null;
     const ir = innerRadius ?? 0;
     const or = outerRadius ?? 0;
+    const mA = midAngle ?? 0;
+    const cxVal = cx ?? 0;
+    const cyVal = cy ?? 0;
     const radius = ir + (or - ir) * 0.5;
-    const x = cx + radius * Math.cos(-midAngle * RADIAN);
-    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+    const x = cxVal + radius * Math.cos(-mA * RADIAN);
+    const y = cyVal + radius * Math.sin(-mA * RADIAN);
     return (
         <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight="600">
             {`${(percent * 100).toFixed(0)}%`}
