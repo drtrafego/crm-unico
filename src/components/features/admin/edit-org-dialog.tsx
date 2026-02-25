@@ -210,6 +210,7 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
                             <Switch
                                 checked={hasLaunchDashboard}
                                 onCheckedChange={setHasLaunchDashboard}
+                                className="data-[state=unchecked]:bg-slate-200 dark:data-[state=unchecked]:bg-slate-700"
                             />
                         </div>
                     </div>
@@ -332,7 +333,7 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
 
                 <div className="flex justify-end gap-3 pt-4 border-t mt-4">
                     <Button variant="outline" onClick={() => onOpenChange(false)}>Fechar</Button>
-                    {activeTab === "general" && (
+                    {(activeTab === "general" || activeTab === "features") && (
                         <Button onClick={handleSave} disabled={isLoading}>
                             {isLoading ? "Salvando..." : "Salvar Alterações"}
                         </Button>
