@@ -21,7 +21,11 @@ export async function updateOrganization(
     data: {
         name?: string;
         slug?: string;
-        features?: { hasLaunchDashboard?: boolean };
+        features?: {
+            hasLaunchDashboard?: boolean;
+            launchSheetId?: string;
+            launchSheetTabName?: string;
+        };
     }
 ) {
     try {
