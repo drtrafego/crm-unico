@@ -21,7 +21,11 @@ export const organizations = pgTable("organizations", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   name: text("name").notNull(),
   slug: text("slug").unique().notNull(),
-  features: jsonb("features").$type<{ hasLaunchDashboard?: boolean }>(),
+  features: jsonb("features").$type<{
+    hasLaunchDashboard?: boolean;
+    launchSheetId?: string;
+    launchSheetTabName?: string;
+  }>(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

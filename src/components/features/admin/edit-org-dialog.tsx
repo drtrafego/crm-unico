@@ -33,7 +33,11 @@ interface EditOrgDialogProps {
         id: string;
         name: string;
         slug: string;
-        features?: { hasLaunchDashboard?: boolean } | null;
+        features?: {
+            hasLaunchDashboard?: boolean;
+            launchSheetId?: string;
+            launchSheetTabName?: string;
+        } | null;
     };
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -60,6 +64,12 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
     const [slug, setSlug] = useState(organization.slug);
     const [hasLaunchDashboard, setHasLaunchDashboard] = useState(
         organization.features?.hasLaunchDashboard || false
+    );
+    const [launchSheetId, setLaunchSheetId] = useState(
+        organization.features?.launchSheetId || ""
+    );
+    const [launchSheetTabName, setLaunchSheetTabName] = useState(
+        organization.features?.launchSheetTabName || ""
     );
     const [activeTab, setActiveTab] = useState<TabType>("general");
     const [isLoading, setIsLoading] = useState(false);
@@ -97,7 +107,7 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
         const res = await updateOrganization(organization.id, {
             name,
             slug,
-            features: { hasLaunchDashboard },
+            features: { hasLaunchDashboard, launchSheetId, launchSheetTabName },
         });
         setIsLoading(false);
         if (res.success) {
@@ -455,6 +465,43 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
                                     )} />
                                 </div>
                             </button>
+
+                            {/* Google Sheets Config (only visible if launch dashboard is enabled) */}
+                            {hasLaunchDashboard && (
+                                <div className="p-4 rounded-xl border border-indigo-500/20 bg-indigo-500/5 space-y-4 animate-in slide-in-from-top-2 fade-in">
+                                    <div className="flex gap-2 text-indigo-300 items-center">
+                                        <div className="bg-indigo-500/20 p-1.5 rounded-lg flex items-center justify-center">
+                                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M19.001 22H4.999C3.895 22 3 21.105 3 20V5.001C3 3.896 3.895 3 4.999 3H14l5 5v12c0 1.105-.895 2-1.999 2zM13 4l6 6h-6V4zM8 12v2h8v-2H8zm0 4v2h8v-2H8z" />
+                                            </svg>
+                                        </div>
+                                        <h4 className="text-sm font-semibold">Integração Google Sheets</h4>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <div className="space-y-1.5">
+                                            <Label className="text-xs font-semibold text-slate-400">ID da Planilha</Label>
+                                            <Input
+                                                value={launchSheetId}
+                                                onChange={(e) => setLaunchSheetId(e.target.value)}
+                                                placeholder="ex: 1BxiMvs0XRYFgwnAKnZJ-ZjC..."
+                                                className="bg-white/5 border-indigo-500/20 text-white placeholder:text-slate-500 focus:border-indigo-500 h-9 text-sm"
+                                            />
+                                            <p className="text-[10px] text-slate-500 mt-1">
+                                                O código que fica na URL entre <code className="bg-black/20 px-1 rounded">/d/</code> e <code className="bg-black/20 px-1 rounded">/edit</code>
+                                            </p>
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <Label className="text-xs font-semibold text-slate-400">Nome da Aba</Label>
+                                            <Input
+                                                value={launchSheetTabName}
+                                                onChange={(e) => setLaunchSheetTabName(e.target.value)}
+                                                placeholder="ex: Página1 ou Respostas"
+                                                className="bg-white/5 border-indigo-500/20 text-white placeholder:text-slate-500 focus:border-indigo-500 h-9 text-sm"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 
