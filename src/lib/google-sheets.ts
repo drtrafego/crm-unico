@@ -10,7 +10,16 @@ export async function getGoogleSheetsClient() {
     }
 
     const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-    const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+    let privateKey = process.env.GOOGLE_PRIVATE_KEY;
+
+    if (privateKey) {
+        if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
+            privateKey = privateKey.slice(1, -1);
+        } else if (privateKey.startsWith("'") && privateKey.endsWith("'")) {
+            privateKey = privateKey.slice(1, -1);
+        }
+        privateKey = privateKey.replace(/\\n/g, '\n');
+    }
 
     if (!clientEmail || !privateKey) {
         throw new Error("Credenciais do Google (GOOGLE_SERVICE_ACCOUNT_EMAIL e GOOGLE_PRIVATE_KEY) não configuradas no .env");
@@ -40,11 +49,13 @@ export async function fetchSheetData(spreadsheetId: string, range: string) {
 
         // Enhance error message for common issues
         if (error && typeof error === "object" && "code" in error) {
+            const apiMsg = "message" in error ? String(error.message) : "";
+
             if (error.code === 403) {
-                throw new Error("Acesso Negado (403): O E-mail da Conta de Serviço precisa ter permissão de LEITOR na planilha.");
+                throw new Error(`Acesso Negado (403): Verifique se a API do Google Sheets está habilitada no GCP e se o e-mail tem permissão de LEITOR. Detalhes: ${apiMsg}`);
             }
             if (error.code === 404) {
-                throw new Error("Planilha Não Encontrada (404): Verifique se o ID da planilha está correto.");
+                throw new Error(`Planilha Não Encontrada (404): Verifique se o ID da planilha está correto. Detalhes: ${apiMsg}`);
             }
         }
 
