@@ -312,214 +312,239 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                     </div>
 
                     {/* ── UTM SOURCE ── */}
-                    {analytics.utmRanking.length > 0 && (
-                        <DashSection title="📍 Captação — UTM Source">
-                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                                <div className="space-y-1">
-                                    <p className="text-xs text-slate-400 mb-3">Evolução diária de leads captados</p>
-                                    <div className="h-56">
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <AreaChart data={analytics.dailyTimeline}>
-                                                <defs>
-                                                    <linearGradient id="colorLeads" x1="0" y1="0" x2="0" y2="1">
-                                                        <stop offset="5%" stopColor="#818cf8" stopOpacity={0.4} />
-                                                        <stop offset="95%" stopColor="#818cf8" stopOpacity={0} />
-                                                    </linearGradient>
-                                                </defs>
-                                                <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-                                                <XAxis dataKey="date" tick={{ fill: '#64748b', fontSize: 10 }} tickLine={false} axisLine={false} />
-                                                <YAxis tick={{ fill: '#64748b', fontSize: 10 }} tickLine={false} axisLine={false} />
-                                                <RechartsTooltip
-                                                    contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f1f5f9' }}
-                                                />
-                                                <Area type="monotone" dataKey="count" stroke="#818cf8" strokeWidth={2} fill="url(#colorLeads)" dot={false} name="Leads" />
-                                            </AreaChart>
-                                        </ResponsiveContainer>
-                                    </div>
-                                </div>
-                                <div>
-                                    <p className="text-xs text-slate-400 mb-3">Ranking de origens</p>
-                                    <RankingTable data={analytics.utmRanking} label="UTM Source" />
+                    <DashSection title="📍 Captação — UTM Source">
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                            <div className="space-y-1">
+                                <p className="text-xs text-slate-400 mb-3">Evolução diária de leads captados</p>
+                                <div className="h-56">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <AreaChart data={analytics.dailyTimeline}>
+                                            <defs>
+                                                <linearGradient id="colorLeads" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#818cf8" stopOpacity={0.4} />
+                                                    <stop offset="95%" stopColor="#818cf8" stopOpacity={0} />
+                                                </linearGradient>
+                                            </defs>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                                            <XAxis dataKey="date" tick={{ fill: '#64748b', fontSize: 10 }} tickLine={false} axisLine={false} />
+                                            <YAxis tick={{ fill: '#64748b', fontSize: 10 }} tickLine={false} axisLine={false} />
+                                            <RechartsTooltip
+                                                contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f1f5f9' }}
+                                            />
+                                            <Area type="monotone" dataKey="count" stroke="#818cf8" strokeWidth={2} fill="url(#colorLeads)" dot={false} name="Leads" />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
                                 </div>
                             </div>
-                        </DashSection>
-                    )}
+                            <div>
+                                <p className="text-xs text-slate-400 mb-3">Ranking de origens</p>
+                                <RankingTable data={analytics.utmRanking} label="UTM Source" />
+                            </div>
+                        </div>
+                    </DashSection>
 
                     {/* ── UTM MEDIUM ── */}
-                    {analytics.utmMediumRanking.length > 0 && (
-                        <DashSection title="📡 Captação — UTM Medium">
-                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                                <div>
-                                    <p className="text-xs text-slate-400 mb-3">Distribuição por mídia</p>
-                                    <div className="h-64">
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <BarChart data={analytics.utmMediumRanking.slice(0, 12)} layout="vertical">
-                                                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#334155" />
-                                                <XAxis type="number" tickLine={false} axisLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                                                <YAxis type="category" dataKey="name" tickLine={false} axisLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} width={150} />
-                                                <RechartsTooltip
-                                                    contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f1f5f9' }}
-                                                />
-                                                <Bar dataKey="value" radius={[0, 4, 4, 0]} name="Leads">
-                                                    {analytics.utmMediumRanking.slice(0, 12).map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
-                                                </Bar>
-                                            </BarChart>
-                                        </ResponsiveContainer>
-                                    </div>
-                                </div>
-                                <div>
-                                    <p className="text-xs text-slate-400 mb-3">Ranking de mídias</p>
-                                    <RankingTable data={analytics.utmMediumRanking} label="UTM Medium" />
+                    <DashSection title="📡 Captação — UTM Medium">
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                            <div>
+                                <p className="text-xs text-slate-400 mb-3">Distribuição por mídia</p>
+                                <div className="h-64">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart data={analytics.utmMediumRanking.slice(0, 12)} layout="vertical">
+                                            <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#334155" />
+                                            <XAxis type="number" tickLine={false} axisLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                                            <YAxis type="category" dataKey="name" tickLine={false} axisLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} width={150} />
+                                            <RechartsTooltip
+                                                contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f1f5f9' }}
+                                            />
+                                            <Bar dataKey="value" radius={[0, 4, 4, 0]} name="Leads">
+                                                {analytics.utmMediumRanking.slice(0, 12).map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                                            </Bar>
+                                        </BarChart>
+                                    </ResponsiveContainer>
                                 </div>
                             </div>
-                        </DashSection>
-                    )}
+                            <div>
+                                <p className="text-xs text-slate-400 mb-3">Ranking de mídias</p>
+                                <RankingTable data={analytics.utmMediumRanking} label="UTM Medium" />
+                            </div>
+                        </div>
+                    </DashSection>
 
                     {/* ── UTM TERM + UTM CONTENT ── */}
                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                        {analytics.utmTermRanking.length > 0 && (
-                            <DashSection title="🔖 Captação — UTM Term">
-                                <div className="space-y-5">
-                                    <div className="h-52">
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <PieChart>
-                                                <Pie
-                                                    data={analytics.utmTermRanking.slice(0, 10)}
-                                                    dataKey="value"
-                                                    nameKey="name"
-                                                    cx="50%"
-                                                    cy="50%"
-                                                    outerRadius={80}
-                                                    innerRadius={35}
-                                                    labelLine={false}
-                                                    label={renderCustomLabel}
-                                                >
-                                                    {analytics.utmTermRanking.slice(0, 10).map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
-                                                </Pie>
-                                                <RechartsTooltip
-                                                    contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f1f5f9' }}
-                                                />
-                                                <Legend wrapperStyle={{ fontSize: '11px', color: '#94a3b8' }} />
-                                            </PieChart>
-                                        </ResponsiveContainer>
-                                    </div>
-                                    <RankingTable data={analytics.utmTermRanking} label="UTM Term" />
-                                </div>
-                            </DashSection>
-                        )}
-                        {analytics.utmContentRanking.length > 0 && (
-                            <DashSection title="✍️ Captação — UTM Content">
-                                <div className="space-y-5">
-                                    <div className="h-52">
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <BarChart data={analytics.utmContentRanking.slice(0, 8)}>
-                                                <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-                                                <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 10 }} tickLine={false} axisLine={false} />
-                                                <YAxis tickLine={false} axisLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} />
-                                                <RechartsTooltip
-                                                    contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f1f5f9' }}
-                                                />
-                                                <Bar dataKey="value" radius={[4, 4, 0, 0]} name="Leads">
-                                                    {analytics.utmContentRanking.slice(0, 8).map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
-                                                </Bar>
-                                            </BarChart>
-                                        </ResponsiveContainer>
-                                    </div>
-                                    <RankingTable data={analytics.utmContentRanking} label="UTM Content" />
-                                </div>
-                            </DashSection>
-                        )}
-                    </div>
-
-                    {/* ── TEMPERATURA P1 vs P2 ── */}
-                    {analytics.temperatureData.length > 0 && (
-                        <DashSection title="🌡️ Temperatura dos Leads — P1 (Frio) vs P2 (Quente)">
-                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-center">
-                                <div className="h-64">
+                        <DashSection title="🔖 Captação — UTM Term">
+                            <div className="space-y-5">
+                                <div className="h-52">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <PieChart>
                                             <Pie
-                                                data={analytics.temperatureData}
+                                                data={analytics.utmTermRanking.slice(0, 10)}
                                                 dataKey="value"
                                                 nameKey="name"
                                                 cx="50%"
                                                 cy="50%"
-                                                innerRadius={60}
-                                                outerRadius={100}
-                                                paddingAngle={3}
+                                                outerRadius={80}
+                                                innerRadius={35}
                                                 labelLine={false}
                                                 label={renderCustomLabel}
                                             >
-                                                <Cell fill="#60a5fa" />
-                                                <Cell fill="#f87171" />
-                                                <Cell fill="#94a3b8" />
+                                                {analytics.utmTermRanking.slice(0, 10).map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                                             </Pie>
                                             <RechartsTooltip
                                                 contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f1f5f9' }}
                                             />
-                                            <Legend wrapperStyle={{ fontSize: '13px', color: '#94a3b8' }} />
+                                            <Legend wrapperStyle={{ fontSize: '11px', color: '#94a3b8' }} />
                                         </PieChart>
                                     </ResponsiveContainer>
                                 </div>
-                                <div className="space-y-3">
-                                    {analytics.temperatureData.map((d, i) => {
-                                        const total = analytics.temperatureData.reduce((s, x) => s + x.value, 0);
-                                        const pct = total > 0 ? Math.round((d.value / total) * 100) : 0;
-                                        const colors = ["#60a5fa", "#f87171", "#94a3b8"];
-                                        return (
-                                            <div key={i} className="space-y-1.5">
-                                                <div className="flex justify-between text-sm">
-                                                    <span className="text-slate-300 font-medium">{d.name}</span>
-                                                    <span className="text-slate-100 font-bold">{d.value.toLocaleString('pt-BR')} ({pct}%)</span>
-                                                </div>
-                                                <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
-                                                    <div
-                                                        className="h-2 rounded-full transition-all duration-500"
-                                                        style={{ width: `${pct}%`, backgroundColor: colors[i] }}
-                                                    />
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
+                                <RankingTable data={analytics.utmTermRanking} label="UTM Term" />
                             </div>
                         </DashSection>
-                    )}
+                        <DashSection title="✍️ Captação — UTM Content">
+                            <div className="space-y-5">
+                                <div className="h-52">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart data={analytics.utmContentRanking.slice(0, 8)}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                                            <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 10 }} tickLine={false} axisLine={false} />
+                                            <YAxis tickLine={false} axisLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} />
+                                            <RechartsTooltip
+                                                contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f1f5f9' }}
+                                            />
+                                            <Bar dataKey="value" radius={[4, 4, 0, 0]} name="Leads">
+                                                {analytics.utmContentRanking.slice(0, 8).map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                                            </Bar>
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                                <RankingTable data={analytics.utmContentRanking} label="UTM Content" />
+                            </div>
+                        </DashSection>
+                    </div>
+
+                    {/* ── TEMPERATURA P1 vs P2 ── */}
+                    <DashSection title="🌡️ Temperatura dos Leads — P1 (Frio) vs P2 (Quente)">
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-center">
+                            <div className="h-64">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie
+                                            data={analytics.temperatureData}
+                                            dataKey="value"
+                                            nameKey="name"
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius={60}
+                                            outerRadius={100}
+                                            paddingAngle={3}
+                                            labelLine={false}
+                                            label={renderCustomLabel}
+                                        >
+                                            <Cell fill="#60a5fa" />
+                                            <Cell fill="#f87171" />
+                                            <Cell fill="#94a3b8" />
+                                        </Pie>
+                                        <RechartsTooltip
+                                            contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f1f5f9' }}
+                                        />
+                                        <Legend wrapperStyle={{ fontSize: '13px', color: '#94a3b8' }} />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
+                            <div className="space-y-3">
+                                {analytics.temperatureData.map((d, i) => {
+                                    const total = analytics.temperatureData.reduce((s, x) => s + x.value, 0);
+                                    const pct = total > 0 ? Math.round((d.value / total) * 100) : 0;
+                                    const colors = ["#60a5fa", "#f87171", "#94a3b8"];
+                                    return (
+                                        <div key={i} className="space-y-1.5">
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-slate-300 font-medium">{d.name}</span>
+                                                <span className="text-slate-100 font-bold">{d.value.toLocaleString('pt-BR')} ({pct}%)</span>
+                                            </div>
+                                            <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                                                <div
+                                                    className="h-2 rounded-full transition-all duration-500"
+                                                    style={{ width: `${pct}%`, backgroundColor: colors[i] }}
+                                                />
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </DashSection>
 
                     {/* ── GRÁFICOS POR COLUNA DO FORMULÁRIO ── */}
-                    {analytics.columnCharts.length > 0 && (
-                        <div>
-                            <h4 className="text-sm font-bold uppercase tracking-wide text-slate-400 mb-4">📋 Análise por Coluna do Formulário</h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                                {analytics.columnCharts.map((chart, i) => (
+                    <div>
+                        <h4 className="text-sm font-bold uppercase tracking-wide text-slate-400 mb-4">📋 Análise por Coluna do Formulário</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                            {analytics.columnCharts.length > 0 ? (
+                                analytics.columnCharts.map((chart, i) => (
                                     <DashSection key={i} title={chart.displayName}>
                                         <ColumnChart chart={chart} />
                                     </DashSection>
-                                ))}
-                            </div>
+                                ))
+                            ) : (
+                                <>
+                                    <DashSection title="Exemplo: Múltipla Escolha">
+                                        <div className="h-52 flex items-center justify-center text-slate-500 text-sm border border-dashed border-slate-700 rounded-lg">
+                                            Sincronize respostas para visualizar.
+                                        </div>
+                                    </DashSection>
+                                    <DashSection title="Exemplo: Sim/Não">
+                                        <div className="h-52 flex items-center justify-center text-slate-500 text-sm border border-dashed border-slate-700 rounded-lg">
+                                            Sincronize respostas para visualizar.
+                                        </div>
+                                    </DashSection>
+                                    <DashSection title="Exemplo: Avaliação">
+                                        <div className="h-52 flex items-center justify-center text-slate-500 text-sm border border-dashed border-slate-700 rounded-lg">
+                                            Sincronize respostas para visualizar.
+                                        </div>
+                                    </DashSection>
+                                </>
+                            )}
                         </div>
-                    )}
+                    </div>
 
                     {/* ── NUVEM DE PALAVRAS POR COLUNA ── */}
-                    {analytics.wordCloudColumns.length > 0 && (
-                        <div>
-                            <h4 className="text-sm font-bold uppercase tracking-wide text-slate-400 mb-4">💬 Nuvem de Palavras por Coluna Aberta</h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                {analytics.wordCloudColumns.map((wcc, i) => (
+                    <div>
+                        <h4 className="text-sm font-bold uppercase tracking-wide text-slate-400 mb-4">💬 Nuvem de Palavras por Coluna Aberta</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            {analytics.wordCloudColumns.length > 0 ? (
+                                analytics.wordCloudColumns.map((wcc, i) => (
                                     <DashSection key={i} title={wcc.columnName}>
                                         <WordCloud words={wcc.words} />
                                     </DashSection>
-                                ))}
-                            </div>
+                                ))
+                            ) : (
+                                <>
+                                    <DashSection title="Exemplo: Qual seu maior desafio?">
+                                        <div className="h-48 flex items-center justify-center text-slate-500 text-sm border border-dashed border-slate-700 rounded-lg mx-6 my-2">
+                                            Sincronize respostas abertas para visualizar.
+                                        </div>
+                                    </DashSection>
+                                    <DashSection title="Exemplo: Dúvidas?">
+                                        <div className="h-48 flex items-center justify-center text-slate-500 text-sm border border-dashed border-slate-700 rounded-lg mx-6 my-2">
+                                            Sincronize respostas abertas para visualizar.
+                                        </div>
+                                    </DashSection>
+                                </>
+                            )}
                         </div>
-                    )}
+                    </div>
 
                     {/* ── NUVEM GERAL ── */}
-                    {analytics.wordCloud.length > 0 && (
-                        <DashSection title="☁️ Nuvem Geral de Palavras (Respostas Abertas)">
+                    <DashSection title="☁️ Nuvem Geral de Palavras (Respostas Abertas)">
+                        {analytics.wordCloud.length > 0 ? (
                             <WordCloud words={analytics.wordCloud} />
-                        </DashSection>
-                    )}
+                        ) : (
+                            <div className="h-48 flex items-center justify-center text-slate-500 text-sm border border-dashed border-slate-700 rounded-lg mx-6 my-2">
+                                Nenhuma palavra encontrada.
+                            </div>
+                        )}
+                    </DashSection>
                 </>
             )}
 
