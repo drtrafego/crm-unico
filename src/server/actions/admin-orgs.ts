@@ -178,3 +178,17 @@ export async function removeOrganizationInvitation(invitationId: string) {
         return { success: false, error: "Falha ao remover convite" };
     }
 }
+
+export async function updateMemberRole(memberId: string, role: string) {
+    try {
+        await verifySuperAdmin();
+        await db.update(members)
+            .set({ role: role as 'owner' | 'admin' | 'editor' | 'viewer' })
+            .where(eq(members.id, memberId));
+        revalidatePath("/adm/dashboard");
+        return { success: true };
+    } catch (error) {
+        console.error("Error updating member role:", error);
+        return { success: false, error: "Falha ao atualizar permissão" };
+    }
+}

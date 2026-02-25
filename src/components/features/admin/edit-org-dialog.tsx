@@ -12,6 +12,7 @@ import {
     addOrganizationMember,
     removeOrganizationMember,
     removeOrganizationInvitation,
+    updateMemberRole,
 } from "@/server/actions/admin-orgs";
 import { useRouter } from "next/navigation";
 import { Trash2, UserPlus, Shield, Settings, Users, Zap, AlertTriangle, Rocket, Save, X } from "lucide-react";
@@ -114,6 +115,15 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
             } else {
                 alert("Erro: " + res.error);
             }
+        }
+    };
+
+    const handleUpdateRole = async (memberId: string, newRole: string) => {
+        const res = await updateMemberRole(memberId, newRole);
+        if (res.success) {
+            setMembersList(prev => prev.map(m => m.id === memberId ? { ...m, role: newRole } : m));
+        } else {
+            alert("Erro ao atualizar permissão: " + res.error);
         }
     };
 
@@ -268,11 +278,22 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
                                                             <p className="text-sm font-medium text-white">{m.user.name || "Sem Nome"}</p>
                                                             <p className="text-xs text-slate-500">{m.user.email}</p>
                                                         </div>
-                                                        <div className="flex items-center gap-3">
-                                                            <span className="text-xs px-2 py-0.5 bg-indigo-500/10 text-indigo-400 rounded-full font-medium border border-indigo-500/20">
-                                                                {m.role}
-                                                            </span>
+                                                        <div className="flex items-center gap-2">
+                                                            <Select
+                                                                value={m.role}
+                                                                onValueChange={(val) => handleUpdateRole(m.id, val)}
+                                                            >
+                                                                <SelectTrigger className="h-7 px-2 text-xs bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 rounded-lg w-[90px]">
+                                                                    <SelectValue />
+                                                                </SelectTrigger>
+                                                                <SelectContent className="bg-slate-800 border-white/10 text-white text-xs">
+                                                                    <SelectItem value="admin">Admin</SelectItem>
+                                                                    <SelectItem value="editor">Editor</SelectItem>
+                                                                    <SelectItem value="viewer">Leitor</SelectItem>
+                                                                </SelectContent>
+                                                            </Select>
                                                             <button
+                                                                title="Remover membro"
                                                                 className="p-1.5 text-slate-600 hover:text-red-400 transition-colors rounded-lg hover:bg-red-500/10"
                                                                 onClick={() => handleRemoveMember(m.id, "member")}
                                                                 disabled={isLoading}
@@ -301,6 +322,7 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
                                                         <div className="flex items-center gap-2">
                                                             <span className="text-xs text-slate-600">{inv.role}</span>
                                                             <button
+                                                                title="Cancelar convite"
                                                                 className="p-1.5 text-slate-600 hover:text-red-400 transition-colors rounded-lg hover:bg-red-500/10"
                                                                 onClick={() => handleRemoveMember(inv.id, "invitation")}
                                                                 disabled={isLoading}

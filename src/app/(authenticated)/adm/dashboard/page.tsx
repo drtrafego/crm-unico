@@ -54,7 +54,7 @@ export default async function AdminDashboard() {
   }));
 
   return (
-    <div className="h-full bg-slate-50 dark:bg-slate-950 px-6 py-8">
+    <div className="h-full bg-slate-950 px-6 py-8">
       <div className="max-w-7xl mx-auto space-y-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
