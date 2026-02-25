@@ -22,10 +22,10 @@ export async function getLaunchLeads(organizationId: string) {
 
 export async function getLaunchAnalyticsData(organizationId: string) {
     try {
-        // Fetch base leads for UTM analysis
+        // Fetch base leads for all UTM analysis
         const baseLeads = await db.query.leads.findMany({
             where: eq(leads.organizationId, organizationId),
-            columns: { utmSource: true }
+            columns: { utmSource: true, utmMedium: true, utmTerm: true, utmContent: true, createdAt: true }
         });
 
         const totalLeads = baseLeads.length;
@@ -33,13 +33,18 @@ export async function getLaunchAnalyticsData(organizationId: string) {
         let p1Count = 0;
         let p2Count = 0;
         let outrosCount = 0;
-        const utmCounts: Record<string, number> = {};
+
+        const utmSourceCounts: Record<string, number> = {};
+        const utmMediumCounts: Record<string, number> = {};
+        const utmTermCounts: Record<string, number> = {};
+        const utmContentCounts: Record<string, number> = {};
+        const dailyCounts: Record<string, number> = {};
 
         baseLeads.forEach(l => {
             if (l.utmSource) {
                 trackedLeadsCount++;
                 const source = l.utmSource;
-                utmCounts[source] = (utmCounts[source] || 0) + 1;
+                utmSourceCounts[source] = (utmSourceCounts[source] || 0) + 1;
 
                 const lowerSource = source.toLowerCase();
                 if (lowerSource.includes('p1')) p1Count++;
@@ -48,21 +53,43 @@ export async function getLaunchAnalyticsData(organizationId: string) {
             } else {
                 outrosCount++;
             }
+
+            if (l.utmMedium) {
+                utmMediumCounts[l.utmMedium] = (utmMediumCounts[l.utmMedium] || 0) + 1;
+            }
+            if (l.utmTerm) {
+                utmTermCounts[l.utmTerm] = (utmTermCounts[l.utmTerm] || 0) + 1;
+            }
+            if (l.utmContent) {
+                utmContentCounts[l.utmContent] = (utmContentCounts[l.utmContent] || 0) + 1;
+            }
+
+            // Daily aggregation for timeline chart
+            const day = new Date(l.createdAt).toISOString().split('T')[0];
+            dailyCounts[day] = (dailyCounts[day] || 0) + 1;
         });
 
         const trackingRate = totalLeads > 0 ? Math.round((trackedLeadsCount / totalLeads) * 100) : 0;
 
-        const utmRanking = Object.entries(utmCounts)
-            .map(([source, leads]) => ({ source, leads }))
-            .sort((a, b) => b.leads - a.leads);
+        const toRanked = (counts: Record<string, number>) =>
+            Object.entries(counts).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+
+        const utmRanking = toRanked(utmSourceCounts);
+        const utmMediumRanking = toRanked(utmMediumCounts);
+        const utmTermRanking = toRanked(utmTermCounts);
+        const utmContentRanking = toRanked(utmContentCounts);
+
+        const dailyTimeline = Object.entries(dailyCounts)
+            .map(([date, count]) => ({ date, count }))
+            .sort((a, b) => a.date.localeCompare(b.date));
 
         const temperatureData = [
-            { name: "P1 Frio", value: p1Count, fill: "hsl(var(--chart-1))" },
-            { name: "P2 Quente", value: p2Count, fill: "hsl(var(--chart-2))" },
-            { name: "Outros", value: outrosCount, fill: "hsl(var(--muted))" },
-        ];
+            { name: "P1 Frio", value: p1Count },
+            { name: "P2 Quente", value: p2Count },
+            { name: "Outros", value: outrosCount },
+        ].filter(d => d.value > 0);
 
-        // Fetch launch leads for form responses analytics
+        // Fetch all launch_leads with full formData for form column analysis
         const launchLeadsList = await db.query.launchLeads.findMany({
             where: eq(launchLeads.organizationId, organizationId),
             columns: { formData: true }
@@ -70,31 +97,95 @@ export async function getLaunchAnalyticsData(organizationId: string) {
 
         const totalForms = launchLeadsList.length;
 
-        // Stopwords completely in Portuguese and generic terms
-        const stopWords = new Set([
-            "o", "a", "os", "as", "um", "uma", "uns", "umas", "e", "ou", "mas", "se", "por", "para", "com", "em", "no", "na",
-            "nos", "nas", "de", "do", "da", "dos", "das", "que", "qual", "quais", "quem", "como", "quando", "onde", "porque",
-            "porquê", "sim", "não", "eu", "tu", "ele", "ela", "nós", "vós", "eles", "elas", "me", "te", "se", "nos", "vos",
-            "lhe", "lhes", "meu", "minha", "meus", "minhas", "seu", "sua", "seus", "suas", "nosso", "nossa", "nossos", "nossas",
-            "este", "esta", "estes", "estas", "esse", "essa", "esses", "essas", "aquele", "aquela", "aqueles", "aquelas", "isso",
-            "isto", "aquilo", "ser", "estar", "ter", "haver", "fazer", "ir", "poder", "querer", "dizer", "saber", "dar", "ver",
-            "mais", "muito", "pouco", "tudo", "nada", "alguém", "ninguém", "algum", "nenhum", "qualquer", "cada", "mesmo", "outro",
-            "ainda", "já", "agora", "depois", "antes", "aqui", "ali", "lá", "ai", "muito", "tão", "bem", "mal", "apenas", "só",
-            "também", "nem", "sempre", "nunca", "vezes", "vez", "vai", "vou", "estou", "sou", "é", "são", "foi", "foram", "era", "eram",
-            "será", "serão", "teria", "tinha", "tinham", "tem", "têm"
-        ]);
-
-        const wordCounts: Record<string, number> = {};
+        // --- Build per-column aggregations ---
+        const columnValuesMap: Record<string, string[]> = {};
 
         launchLeadsList.forEach(ll => {
             if (ll.formData && typeof ll.formData === 'object') {
-                Object.values(ll.formData).forEach(val => {
-                    if (typeof val === 'string') {
-                        // strip punctuation and spaces
-                        const words = val.toLowerCase().replace(/[.,/#!$%^&*;:{}=\-_`~()?"']/g, "").split(/\s+/);
-                        words.forEach(w => {
+                Object.entries(ll.formData as Record<string, unknown>).forEach(([key, val]) => {
+                    if (!columnValuesMap[key]) columnValuesMap[key] = [];
+                    if (val !== null && val !== undefined && String(val).trim() !== '') {
+                        columnValuesMap[key].push(String(val).trim());
+                    }
+                });
+            }
+        });
+
+        const BOOLEAN_TERMS = ['sim', 'não', 'nao', 'yes', 'no', 'true', 'false'];
+
+        const columnCharts: Array<{
+            columnName: string;
+            displayName: string;
+            type: 'bar' | 'pie' | 'wordcloud' | 'boolean';
+            data: Array<{ name: string; value: number }>;
+        }> = [];
+
+        const wordCloudColumns: Array<{ columnName: string; words: Array<{ text: string; value: number }> }> = [];
+
+        const stopWords = new Set([
+            "o", "a", "os", "as", "um", "uma", "uns", "umas", "e", "ou", "mas", "se", "por", "para", "com", "em", "no", "na",
+            "nos", "nas", "de", "do", "da", "dos", "das", "que", "qual", "quais", "quem", "como", "quando", "onde", "porque",
+            "porquê", "sim", "não", "eu", "tu", "ele", "ela", "nós", "vós", "eles", "elas", "me", "te", "nos", "vos",
+            "lhe", "lhes", "meu", "minha", "meus", "minhas", "seu", "sua", "seus", "suas", "nosso", "nossa",
+            "este", "esta", "estes", "estas", "esse", "essa", "esses", "essas", "aquele", "aquela", "isso", "isto", "aquilo",
+            "ser", "estar", "ter", "haver", "fazer", "ir", "poder", "querer", "dizer", "saber", "dar", "ver",
+            "mais", "muito", "pouco", "tudo", "nada", "algum", "nenhum", "qualquer", "cada", "mesmo", "outro",
+            "ainda", "já", "agora", "depois", "antes", "aqui", "ali", "lá", "tão", "bem", "mal", "apenas", "só",
+            "também", "nem", "sempre", "nunca", "vai", "vou", "estou", "sou", "é", "são", "foi", "foram", "era", "eram",
+            "será", "serão", "teria", "tinha", "tinham", "tem", "têm", "vezes", "vez"
+        ]);
+
+        Object.entries(columnValuesMap).forEach(([colName, values]) => {
+            if (values.length === 0) return;
+
+            const valueCounts: Record<string, number> = {};
+            values.forEach(v => { valueCounts[v] = (valueCounts[v] || 0) + 1; });
+
+            const uniqueCount = Object.keys(valueCounts).length;
+            const totalCount = values.length;
+            const booleanCount = values.filter(v => BOOLEAN_TERMS.includes(v.toLowerCase())).length;
+            const isBooleanLike = booleanCount / totalCount > 0.7;
+            const avgLen = values.reduce((sum, v) => sum + v.length, 0) / totalCount;
+            const isOpenText = avgLen > 30 || (uniqueCount / totalCount > 0.7 && totalCount > 5);
+            const isCategorical = !isOpenText && uniqueCount <= 20;
+
+            const displayName = colName.split(/[\s_-]+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
+            if (isBooleanLike) {
+                const boolData = [
+                    { name: 'Sim', value: values.filter(v => ['sim', 'yes', 'true'].includes(v.toLowerCase())).length },
+                    { name: 'Não', value: values.filter(v => ['não', 'nao', 'no', 'false'].includes(v.toLowerCase())).length },
+                ].filter(d => d.value > 0);
+                columnCharts.push({ columnName: colName, displayName, type: 'boolean', data: boolData });
+            } else if (isOpenText) {
+                const wc: Record<string, number> = {};
+                values.forEach(v => {
+                    v.toLowerCase().replace(/[.,/#!$%^&*;:{}=\-_`~()?"']/g, '').split(/\s+/).forEach(w => {
+                        if (w.length > 3 && !stopWords.has(w) && isNaN(Number(w))) {
+                            wc[w] = (wc[w] || 0) + 1;
+                        }
+                    });
+                });
+                const words = Object.entries(wc).map(([text, value]) => ({ text, value })).sort((a, b) => b.value - a.value).slice(0, 40);
+                wordCloudColumns.push({ columnName: displayName, words });
+            } else if (isCategorical) {
+                const chartData = Object.entries(valueCounts)
+                    .map(([name, value]) => ({ name, value }))
+                    .sort((a, b) => b.value - a.value)
+                    .slice(0, 15);
+                const chartType = uniqueCount <= 6 ? 'pie' : 'bar';
+                columnCharts.push({ columnName: colName, displayName, type: chartType, data: chartData });
+            }
+        });
+
+        const allWordCounts: Record<string, number> = {};
+        launchLeadsList.forEach(ll => {
+            if (ll.formData && typeof ll.formData === 'object') {
+                Object.values(ll.formData as Record<string, unknown>).forEach(val => {
+                    if (typeof val === 'string' && val.length > 15) {
+                        val.toLowerCase().replace(/[.,/#!$%^&*;:{}=\-_`~()?"']/g, '').split(/\s+/).forEach(w => {
                             if (w.length > 3 && !stopWords.has(w) && isNaN(Number(w))) {
-                                wordCounts[w] = (wordCounts[w] || 0) + 1;
+                                allWordCounts[w] = (allWordCounts[w] || 0) + 1;
                             }
                         });
                     }
@@ -102,10 +193,10 @@ export async function getLaunchAnalyticsData(organizationId: string) {
             }
         });
 
-        const wordCloud = Object.entries(wordCounts)
+        const wordCloud = Object.entries(allWordCounts)
             .map(([text, value]) => ({ text, value }))
             .sort((a, b) => b.value - a.value)
-            .slice(0, 50);
+            .slice(0, 60);
 
         return {
             success: true,
@@ -113,13 +204,20 @@ export async function getLaunchAnalyticsData(organizationId: string) {
                 totalLeads,
                 totalForms,
                 trackingRate,
+                trackedLeadsCount,
                 utmRanking,
+                utmMediumRanking,
+                utmTermRanking,
+                utmContentRanking,
+                dailyTimeline,
                 temperatureData,
+                columnCharts,
+                wordCloudColumns,
                 wordCloud
             }
         };
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Error fetching analytics data:", error);
         return { success: false, error: "Falha ao carregar dashboard de analítica." };
     }
@@ -233,8 +331,8 @@ export async function syncLaunchLeadsFromSheet(organizationId: string) {
             message: `Sincronização concluída: ${newLeadsCount} novos leads e ${updatedLeadsCount} atualizados.`
         };
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Error syncing Google Sheets:", error);
-        return { success: false, error: error.message || "Erro na sincronização." };
+        return { success: false, error: (error as Error).message || "Erro na sincronização." };
     }
 }
