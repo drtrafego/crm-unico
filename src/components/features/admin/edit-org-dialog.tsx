@@ -264,6 +264,15 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
                                     />
                                 </div>
                             </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">ID da Organização (Banco de Dados)</Label>
+                                <Input
+                                    readOnly
+                                    defaultValue={organization.id}
+                                    className="bg-black/20 border-white/5 text-slate-400 font-mono text-xs rounded-xl cursor-text select-all"
+                                    onFocus={(e) => e.target.select()}
+                                />
+                            </div>
                         </div>
                     )}
 
