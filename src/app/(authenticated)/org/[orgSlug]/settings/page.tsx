@@ -66,6 +66,24 @@ export default async function SettingsPage({
       </div>
 
       <div className="space-y-6">
+        {/* Org Info Section */}
+        <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+          <CardHeader>
+            <CardTitle className="text-slate-900 dark:text-white">Dados da Organização</CardTitle>
+            <CardDescription className="text-slate-500 dark:text-slate-400">Identificadores técnicos desta empresa no sistema.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-2">
+              <Label className="text-slate-700 dark:text-slate-300">Slug (URL)</Label>
+              <Input readOnly defaultValue={org.slug} className="bg-slate-50 dark:bg-slate-800 font-mono text-sm" />
+            </div>
+            <div className="grid gap-2">
+              <Label className="text-slate-700 dark:text-slate-300">ID da Organização (Banco de Dados / Neon)</Label>
+              <Input readOnly defaultValue={org.id} className="bg-slate-50 dark:bg-slate-800 font-mono text-sm" />
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Profile Section */}
         <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
           <CardHeader>
