@@ -34,6 +34,7 @@
     "@vercel/speed-insights": "^1.2.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "d3-cloud": "^1.2.8",
     "date-fns": "^4.1.0",
     "drizzle-orm": "^0.44.7",
     "googleapis": "^171.4.0",
@@ -47,12 +48,15 @@
     "react-day-picker": "^9.11.2",
     "react-dom": "^19.2.3",
     "react-hook-form": "^7.66.1",
+    "react-wordcloud": "^1.2.7",
     "recharts": "^3.6.0",
     "tailwind-merge": "^3.4.0",
+    "xlsx": "^0.18.5",
     "zod": "^4.1.13"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/d3-cloud": "^1.2.9",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

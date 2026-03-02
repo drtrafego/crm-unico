@@ -25,7 +25,7 @@ export async function getLaunchAnalyticsData(organizationId: string) {
         // Fetch base leads for all UTM analysis
         const baseLeads = await db.query.leads.findMany({
             where: eq(leads.organizationId, organizationId),
-            columns: { utmSource: true, utmMedium: true, utmTerm: true, utmContent: true, createdAt: true }
+            columns: { utmSource: true, utmMedium: true, utmTerm: true, utmContent: true, utmCampaign: true, createdAt: true }
         });
 
         const totalLeads = baseLeads.length;
@@ -38,6 +38,7 @@ export async function getLaunchAnalyticsData(organizationId: string) {
         const utmMediumCounts: Record<string, number> = {};
         const utmTermCounts: Record<string, number> = {};
         const utmContentCounts: Record<string, number> = {};
+        const utmCampaignCounts: Record<string, number> = {};
         const dailyCounts: Record<string, number> = {};
 
         baseLeads.forEach(l => {
@@ -63,6 +64,9 @@ export async function getLaunchAnalyticsData(organizationId: string) {
             if (l.utmContent) {
                 utmContentCounts[l.utmContent] = (utmContentCounts[l.utmContent] || 0) + 1;
             }
+            if (l.utmCampaign) {
+                utmCampaignCounts[l.utmCampaign] = (utmCampaignCounts[l.utmCampaign] || 0) + 1;
+            }
 
             // Daily aggregation for timeline chart
             const day = new Date(l.createdAt).toISOString().split('T')[0];
@@ -78,6 +82,7 @@ export async function getLaunchAnalyticsData(organizationId: string) {
         const utmMediumRanking = toRanked(utmMediumCounts);
         const utmTermRanking = toRanked(utmTermCounts);
         const utmContentRanking = toRanked(utmContentCounts);
+        const utmCampaignRanking = toRanked(utmCampaignCounts);
 
         const dailyTimeline = Object.entries(dailyCounts)
             .map(([date, count]) => ({ date, count }))
@@ -103,6 +108,19 @@ export async function getLaunchAnalyticsData(organizationId: string) {
         launchLeadsList.forEach(ll => {
             if (ll.formData && typeof ll.formData === 'object') {
                 Object.entries(ll.formData as Record<string, unknown>).forEach(([key, val]) => {
+                    const lowerKey = key.toLowerCase();
+                    // FILTER: Skip email and timestamp columns
+                    if (
+                        lowerKey.includes('email') ||
+                        lowerKey.includes('e-mail') ||
+                        lowerKey.includes('carimbo') ||
+                        lowerKey.includes('data/hora') ||
+                        lowerKey.includes('timestamp') ||
+                        lowerKey.includes('horário')
+                    ) {
+                        return;
+                    }
+
                     if (!columnValuesMap[key]) columnValuesMap[key] = [];
                     if (val !== null && val !== undefined && String(val).trim() !== '') {
                         columnValuesMap[key].push(String(val).trim());
@@ -209,6 +227,7 @@ export async function getLaunchAnalyticsData(organizationId: string) {
                 utmMediumRanking,
                 utmTermRanking,
                 utmContentRanking,
+                utmCampaignRanking,
                 dailyTimeline,
                 temperatureData,
                 columnCharts,

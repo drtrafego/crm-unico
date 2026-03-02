@@ -8,8 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { exportContacts } from "@/server/actions/contacts";
 import { jsonToCsv } from "@/lib/csv-utils";
-import { Download, Loader2 } from "lucide-react";
-// import { toast } from "sonner";
+import { Download, Loader2, FileDown, Table } from "lucide-react";
+import * as XLSX from "xlsx";
 
 interface ContactExportCardProps {
     orgId: string;
@@ -17,6 +17,7 @@ interface ContactExportCardProps {
 
 export function ContactExportCard({ orgId }: ContactExportCardProps) {
     const [exportType, setExportType] = useState<"email" | "phone" | "both">("both");
+    const [exportFormat, setExportFormat] = useState<"xls" | "csv">("xls");
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [loading, setLoading] = useState(false);
@@ -27,30 +28,38 @@ export function ContactExportCard({ orgId }: ContactExportCardProps) {
             const result = await exportContacts(orgId, exportType, startDate, endDate);
 
             if (!result.success || !result.data) {
-                // toast.error(result.error || "Erro ao exportar contatos");
                 console.error(result.error || "Erro ao exportar contatos");
+                alert("Erro ao exportar contatos. Tente novamente.");
                 return;
             }
 
-            const csv = jsonToCsv(result.data);
-            const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-
+            const data = result.data;
             const timestamp = new Date().toISOString().split('T')[0];
-            link.setAttribute("href", url);
-            link.setAttribute("download", `contatos-${exportType}-${timestamp}.csv`);
-            link.style.visibility = "hidden";
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            const fileName = `contatos-${exportType}-${timestamp}.${exportFormat}`;
 
-            // toast.success("Exportação concluída!");
+            if (exportFormat === "csv") {
+                const csv = jsonToCsv(data);
+                const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.setAttribute("href", url);
+                link.setAttribute("download", fileName);
+                link.style.visibility = "hidden";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } else {
+                // XLS Export
+                const worksheet = XLSX.utils.json_to_sheet(data);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "Contatos");
+                XLSX.writeFile(workbook, fileName);
+            }
+
             alert("Exportação concluída!");
         } catch (error) {
             console.error(error);
-            // toast.error("Erro inesperado ao exportar");
-            console.error(error);
+            alert("Erro inesperado ao exportar.");
         } finally {
             setLoading(false);
         }
@@ -59,13 +68,16 @@ export function ContactExportCard({ orgId }: ContactExportCardProps) {
     return (
         <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
             <CardHeader>
-                <CardTitle className="text-slate-900 dark:text-white">Exportar Contatos</CardTitle>
+                <CardTitle className="text-slate-900 dark:text-white flex items-center gap-2">
+                    <Download className="h-5 w-5 text-indigo-500" />
+                    Exportar Contatos
+                </CardTitle>
                 <CardDescription className="text-slate-500 dark:text-slate-400">
                     Baixe uma planilha com os dados dos seus leads filtrados por tipo e período.
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="space-y-2">
                         <Label>Tipo de Exportação</Label>
                         <Select
@@ -79,6 +91,22 @@ export function ContactExportCard({ orgId }: ContactExportCardProps) {
                                 <SelectItem value="email">Apenas Email</SelectItem>
                                 <SelectItem value="phone">Apenas Telefone</SelectItem>
                                 <SelectItem value="both">Ambos (Email e Telefone)</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label>Formato</Label>
+                        <Select
+                            value={exportFormat}
+                            onValueChange={(v: any) => setExportFormat(v)}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Formato" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="xls">Excel (.xlsx)</SelectItem>
+                                <SelectItem value="csv">Texto (.csv)</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -106,14 +134,14 @@ export function ContactExportCard({ orgId }: ContactExportCardProps) {
                 <Button
                     onClick={handleExport}
                     disabled={loading}
-                    className="w-full md:w-auto"
+                    className="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white"
                 >
                     {loading ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
-                        <Download className="mr-2 h-4 w-4" />
+                        exportFormat === "xls" ? <FileDown className="mr-2 h-4 w-4" /> : <Table className="mr-2 h-4 w-4" />
                     )}
-                    Exportar Planilha
+                    Exportar para {exportFormat === "xls" ? "Excel" : "CSV"}
                 </Button>
             </CardFooter>
         </Card>
