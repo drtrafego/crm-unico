@@ -215,9 +215,9 @@ function ColumnChart({ chart }: { chart: AnalyticsData['columnCharts'][0] }) {
                             data={(chart?.data ?? []).filter(Boolean)}
                             dataKey="value"
                             nameKey="name"
-                            cx="50%"
+                            cx="40%"
                             cy="50%"
-                            outerRadius={80}
+                            outerRadius={70}
                             labelLine={false}
                             label={renderCustomLabel}
                         >
@@ -228,7 +228,12 @@ function ColumnChart({ chart }: { chart: AnalyticsData['columnCharts'][0] }) {
                         <RechartsTooltip
                             contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f1f5f9' }}
                         />
-                        <Legend wrapperStyle={{ fontSize: '11px', color: '#94a3b8' }} />
+                        <Legend
+                            layout="vertical"
+                            align="right"
+                            verticalAlign="middle"
+                            wrapperStyle={{ fontSize: '11px', color: '#94a3b8', paddingLeft: '10px' }}
+                        />
                     </PieChart>
                 </ResponsiveContainer>
             </div>
