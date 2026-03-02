@@ -14,6 +14,7 @@ import { getSettings } from "@/server/actions/settings";
 import { MembersList } from "./members-list";
 import { SettingsClient } from "./settings-client";
 import { IntegrationsCard } from "./integrations-card";
+import { ContactExportCard } from "./contact-export-card";
 
 export default async function SettingsPage({
   params,
@@ -139,6 +140,9 @@ export default async function SettingsPage({
             </div>
           </CardContent>
         </Card>
+
+        {/* Contact Export Section */}
+        <ContactExportCard orgId={org.id} />
 
         {/* Integrations Section - Only admin/owner can see webhook */}
         {canEdit && <IntegrationsCard webhookUrl={webhookUrl} webhookPayload={webhookPayload} />}
