@@ -201,7 +201,7 @@ function ColumnChart({ chart }: { chart: AnalyticsData['columnCharts'][0] }) {
                 <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                         <Pie
-                            data={chart.data}
+                            data={chart.data ?? []}
                             dataKey="value"
                             nameKey="name"
                             cx="50%"
@@ -210,7 +210,7 @@ function ColumnChart({ chart }: { chart: AnalyticsData['columnCharts'][0] }) {
                             labelLine={false}
                             label={renderCustomLabel}
                         >
-                            {chart.data.map((_, i) => <Cell key={i} fill={colors[i % colors.length]} />)}
+                            {(chart.data ?? []).map((_, i) => <Cell key={i} fill={colors[i % colors.length]} />)}
                         </Pie>
                         <RechartsTooltip
                             contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f1f5f9' }}
@@ -232,7 +232,7 @@ function ColumnChart({ chart }: { chart: AnalyticsData['columnCharts'][0] }) {
                         contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f1f5f9' }}
                     />
                     <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                        {chart.data.map((_, i) => <Cell key={i} fill={colors[i % colors.length]} />)}
+                        {(chart.data ?? []).map((_, i) => <Cell key={i} fill={colors[i % colors.length]} />)}
                     </Bar>
                 </BarChart>
             </ResponsiveContainer>
@@ -372,7 +372,7 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                                                 contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f1f5f9' }}
                                             />
                                             <Bar dataKey="value" radius={[0, 4, 4, 0]} name="Leads">
-                                                {analytics.utmMediumRanking.slice(0, 12).map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                                                {(analytics.utmMediumRanking ?? []).slice(0, 12).map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                                             </Bar>
                                         </BarChart>
                                     </ResponsiveContainer>
