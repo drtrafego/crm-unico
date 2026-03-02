@@ -25,13 +25,13 @@ export async function getLaunchAnalyticsData(organizationId: string) {
         // Fetch base leads for all UTM analysis
         const baseLeads = await db.query.leads.findMany({
             where: eq(leads.organizationId, organizationId),
-            columns: { utmSource: true, utmMedium: true, utmTerm: true, utmContent: true, utmCampaign: true, createdAt: true }
+            columns: { email: true, utmSource: true, utmMedium: true, utmTerm: true, utmContent: true, utmCampaign: true, createdAt: true }
         });
 
         // Fetch synced launch leads to include in analytics
         const syncedLeads = await db.query.launchLeads.findMany({
             where: eq(launchLeads.organizationId, organizationId),
-            columns: { utmSource: true, utmMedium: true, utmTerm: true, utmContent: true, utmCampaign: true, createdAt: true }
+            columns: { email: true, formData: true, utmSource: true, utmMedium: true, utmTerm: true, utmContent: true, utmCampaign: true, createdAt: true }
         });
 
         // Combine and de-duplicate leads by email
