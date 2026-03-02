@@ -111,7 +111,7 @@ function WordCloud({ words }: { words: { text: string; value: number }[] }) {
 
 // ----------- Ranking Table -----------
 function RankingTable({ data, label }: { data: { name: string; value: number }[], label: string }) {
-    const total = data.reduce((s, d) => s + d.value, 0);
+    const total = (data ?? []).reduce((s, d) => s + (d?.value ?? 0), 0);
     return (
         <div className="rounded-lg overflow-hidden border border-slate-700/50">
             <table className="w-full text-sm">
@@ -224,7 +224,7 @@ function ColumnChart({ chart }: { chart: AnalyticsData['columnCharts'][0] }) {
     return (
         <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chart.data} layout="vertical" margin={{ left: 0, right: 10, top: 0, bottom: 0 }}>
+                <BarChart data={chart.data ?? []} layout="vertical" margin={{ left: 0, right: 10, top: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#334155" />
                     <XAxis type="number" tickLine={false} axisLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
                     <YAxis type="category" dataKey="name" tickLine={false} axisLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} width={130} />
@@ -504,14 +504,14 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                             </div>
                             <div className="space-y-3">
                                 {(analytics.temperatureData ?? []).map((d, i) => {
-                                    const total = (analytics.temperatureData ?? []).reduce((s, x) => s + x.value, 0);
-                                    const pct = total > 0 ? Math.round((d.value / total) * 100) : 0;
+                                    const total = (analytics.temperatureData ?? []).reduce((s, x) => s + (x?.value ?? 0), 0);
+                                    const pct = total > 0 ? Math.round(((d?.value ?? 0) / total) * 100) : 0;
                                     const colors = ["#60a5fa", "#f87171", "#94a3b8"];
                                     return (
                                         <div key={i} className="space-y-1.5">
                                             <div className="flex justify-between text-sm">
-                                                <span className="text-slate-300 font-medium">{d.name}</span>
-                                                <span className="text-slate-100 font-bold">{d.value.toLocaleString('pt-BR')} ({pct}%)</span>
+                                                <span className="text-slate-300 font-medium">{d?.name ?? "Outros"}</span>
+                                                <span className="text-slate-100 font-bold">{(d?.value ?? 0).toLocaleString('pt-BR')} ({pct}%)</span>
                                             </div>
                                             <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
                                                 <div
@@ -623,7 +623,9 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                                                 {lead.formName}
                                             </Badge>
                                         </TableCell>
-                                        <TableCell className="text-slate-400 text-xs">{format(new Date(lead.createdAt), "dd/MM/yyyy HH:mm")}</TableCell>
+                                        <TableCell className="text-slate-400 text-xs">
+                                            {lead.createdAt ? format(new Date(lead.createdAt), "dd/MM/yyyy HH:mm") : "—"}
+                                        </TableCell>
                                         <TableCell className="text-right">
                                             <Dialog>
                                                 <DialogTrigger asChild>
