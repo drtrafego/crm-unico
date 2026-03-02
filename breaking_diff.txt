@@ -1,0 +1,202 @@
+commit 79b36e9e5a785ff14fc6a35f35a2ebbba0c2cabb
+Author: drtrafego <drtrafego@gmail.com>
+Date:   Mon Mar 2 11:02:47 2026 -0300
+
+    feat: add XLS export, improve word cloud, and filter dashboard columns
+
+diff --git a/src/app/(authenticated)/org/[orgSlug]/launch-leads/client.tsx b/src/app/(authenticated)/org/[orgSlug]/launch-leads/client.tsx
+index 21c9b11..b07476f 100644
+--- a/src/app/(authenticated)/org/[orgSlug]/launch-leads/client.tsx
++++ b/src/app/(authenticated)/org/[orgSlug]/launch-leads/client.tsx
+@@ -20,7 +20,8 @@ import {
+ import { Button } from "@/components/ui/button";
+ import { Badge } from "@/components/ui/badge";
+ import { RefreshCw, Users, FileText, Activity, TrendingUp, Database } from "lucide-react";
+-import { useState } from "react";
++import { useState, useMemo } from "react";
++import ReactWordcloud from "react-wordcloud";
+ import { syncLaunchLeadsFromSheet } from "@/server/actions/launch-leads";
+ import {
+     BarChart,
+@@ -48,6 +49,7 @@ interface AnalyticsData {
+     utmMediumRanking: { name: string; value: number }[];
+     utmTermRanking: { name: string; value: number }[];
+     utmContentRanking: { name: string; value: number }[];
++    utmCampaignRanking: { name: string; value: number }[];
+     dailyTimeline: { date: string; count: number }[];
+     temperatureData: { name: string; value: number }[];
+     columnCharts: { columnName: string; displayName: string; type: string; data: { name: string; value: number }[] }[];
+@@ -55,6 +57,7 @@ interface AnalyticsData {
+     wordCloud: { text: string; value: number }[];
+ }
+ 
++// ... (CHART_COLORS)
+ interface LaunchLeadsClientProps {
+     data: LaunchLead[];
+     organizationId: string;
+@@ -72,34 +75,31 @@ const CHART_COLORS = [
+ function WordCloud({ words }: { words: { text: string; value: number }[] }) {
+     if (!words || words.length === 0) {
+         return (
+-            <div className="flex h-48 items-center justify-center text-slate-500 text-sm">
+-                Nenhuma palavra encontrada nas respostas.
++            <div className="flex h-48 items-center justify-center text-slate-500 text-sm italic">
++                Nenhuma palavra relevante encontrada.
+             </div>
+         );
+     }
+-    const maxVal = Math.max(...words.map(w => w.value));
+-    const minVal = Math.min(...words.map(w => w.value));
++
++    const options = {
++        colors: CHART_COLORS,
++        enableTooltip: true,
++        deterministic: true,
++        fontFamily: "Inter, sans-serif",
++        fontSizes: [14, 48] as [number, number],
++        fontStyle: "normal",
++        fontWeight: "bold",
++        padding: 4,
++        rotations: 2,
++        rotationAngles: [0, 45] as [number, number],
++        scale: "sqrt" as const,
++        spiral: "archimedean" as const,
++        transitionDuration: 1000,
++    };
++
+     return (
+-        <div className="flex flex-wrap justify-center items-center gap-3 p-6 min-h-[220px]">
+-            {words.map((w, i) => {
+-                const norm = maxVal === minVal ? 0.5 : (w.value - minVal) / (maxVal - minVal);
+-                const size = 0.75 + norm * 2.0;
+-                const opacity = 0.5 + norm * 0.5;
+-                return (
+-                    <span
+-                        key={i}
+-                        className="font-semibold cursor-default transition-all hover:scale-110"
+-                        style={{
+-                            fontSize: `${size}rem`,
+-                            color: CHART_COLORS[i % CHART_COLORS.length],
+-                            opacity,
+-                        }}
+-                        title={`${w.value} menções`}
+-                    >
+-                        {w.text}
+-                    </span>
+-                );
+-            })}
++        <div className="h-64 w-full">
++            <ReactWordcloud words={words} options={options} />
+         </div>
+     );
+ }
+@@ -423,6 +423,42 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
+                         </DashSection>
+                     </div>
+ 
++                    {/* ── UTM CAMPAIGN ── */}
++                    <DashSection title="📢 Captação — UTM Campaign">
++                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
++                            <div>
++                                <p className="text-xs text-slate-400 mb-3">Distribuição por campanha</p>
++                                <div className="h-64">
++                                    <ResponsiveContainer width="100%" height="100%">
++                                        <PieChart>
++                                            <Pie
++                                                data={analytics.utmCampaignRanking.slice(0, 10)}
++                                                dataKey="value"
++                                                nameKey="name"
++                                                cx="50%"
++                                                cy="50%"
++                                                outerRadius={100}
++                                                innerRadius={40}
++                                                labelLine={false}
++                                                label={renderCustomLabel}
++                                            >
++                                                {analytics.utmCampaignRanking.slice(0, 10).map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
++                                            </Pie>
++                                            <RechartsTooltip
++                                                contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f1f5f9' }}
++                                            />
++                                            <Legend wrapperStyle={{ fontSize: '11px', color: '#94a3b8' }} />
++                                        </PieChart>
++                                    </ResponsiveContainer>
++                                </div>
++                            </div>
++                            <div>
++                                <p className="text-xs text-slate-400 mb-3">Ranking de campanhas</p>
++                                <RankingTable data={analytics.utmCampaignRanking} label="UTM Campaign" />
++                            </div>
++                        </div>
++                    </DashSection>
++
+                     {/* ── TEMPERATURA P1 vs P2 ── */}
+                     <DashSection title="🌡️ Temperatura dos Leads — P1 (Frio) vs P2 (Quente)">
+                         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-center">
+diff --git a/src/server/actions/launch-leads.ts b/src/server/actions/launch-leads.ts
+index 093221a..f719fda 100644
+--- a/src/server/actions/launch-leads.ts
++++ b/src/server/actions/launch-leads.ts
+@@ -25,7 +25,7 @@ export async function getLaunchAnalyticsData(organizationId: string) {
+         // Fetch base leads for all UTM analysis
+         const baseLeads = await db.query.leads.findMany({
+             where: eq(leads.organizationId, organizationId),
+-            columns: { utmSource: true, utmMedium: true, utmTerm: true, utmContent: true, createdAt: true }
++            columns: { utmSource: true, utmMedium: true, utmTerm: true, utmContent: true, utmCampaign: true, createdAt: true }
+         });
+ 
+         const totalLeads = baseLeads.length;
+@@ -38,6 +38,7 @@ export async function getLaunchAnalyticsData(organizationId: string) {
+         const utmMediumCounts: Record<string, number> = {};
+         const utmTermCounts: Record<string, number> = {};
+         const utmContentCounts: Record<string, number> = {};
++        const utmCampaignCounts: Record<string, number> = {};
+         const dailyCounts: Record<string, number> = {};
+ 
+         baseLeads.forEach(l => {
+@@ -63,6 +64,9 @@ export async function getLaunchAnalyticsData(organizationId: string) {
+             if (l.utmContent) {
+                 utmContentCounts[l.utmContent] = (utmContentCounts[l.utmContent] || 0) + 1;
+             }
++            if (l.utmCampaign) {
++                utmCampaignCounts[l.utmCampaign] = (utmCampaignCounts[l.utmCampaign] || 0) + 1;
++            }
+ 
+             // Daily aggregation for timeline chart
+             const day = new Date(l.createdAt).toISOString().split('T')[0];
+@@ -78,6 +82,7 @@ export async function getLaunchAnalyticsData(organizationId: string) {
+         const utmMediumRanking = toRanked(utmMediumCounts);
+         const utmTermRanking = toRanked(utmTermCounts);
+         const utmContentRanking = toRanked(utmContentCounts);
++        const utmCampaignRanking = toRanked(utmCampaignCounts);
+ 
+         const dailyTimeline = Object.entries(dailyCounts)
+             .map(([date, count]) => ({ date, count }))
+@@ -103,6 +108,19 @@ export async function getLaunchAnalyticsData(organizationId: string) {
+         launchLeadsList.forEach(ll => {
+             if (ll.formData && typeof ll.formData === 'object') {
+                 Object.entries(ll.formData as Record<string, unknown>).forEach(([key, val]) => {
++                    const lowerKey = key.toLowerCase();
++                    // FILTER: Skip email and timestamp columns
++                    if (
++                        lowerKey.includes('email') ||
++                        lowerKey.includes('e-mail') ||
++                        lowerKey.includes('carimbo') ||
++                        lowerKey.includes('data/hora') ||
++                        lowerKey.includes('timestamp') ||
++                        lowerKey.includes('horário')
++                    ) {
++                        return;
++                    }
++
+                     if (!columnValuesMap[key]) columnValuesMap[key] = [];
+                     if (val !== null && val !== undefined && String(val).trim() !== '') {
+                         columnValuesMap[key].push(String(val).trim());
+@@ -209,6 +227,7 @@ export async function getLaunchAnalyticsData(organizationId: string) {
+                 utmMediumRanking,
+                 utmTermRanking,
+                 utmContentRanking,
++                utmCampaignRanking,
+                 dailyTimeline,
+                 temperatureData,
+                 columnCharts,

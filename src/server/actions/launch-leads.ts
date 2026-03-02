@@ -302,7 +302,15 @@ export async function syncLaunchLeadsFromSheet(organizationId: string) {
             // Build dynamic formData for any remaining header column
             const formData: Record<string, string> = {};
             headers.forEach((headerName, idx) => {
-                if (idx !== nameIdx && idx !== emailIdx && idx !== phoneIdx && headerName) {
+                const lowerHeader = headerName.toLowerCase();
+                const isExcluded = idx === nameIdx || idx === emailIdx || idx === phoneIdx ||
+                    lowerHeader.includes("carimbo") ||
+                    lowerHeader.includes("data") ||
+                    lowerHeader.includes("hora") ||
+                    lowerHeader.includes("horário") ||
+                    lowerHeader.includes("timestamp");
+
+                if (!isExcluded && headerName) {
                     formData[headerName] = String(row[idx] || "");
                 }
             });

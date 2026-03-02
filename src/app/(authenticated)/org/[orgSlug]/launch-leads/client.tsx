@@ -19,15 +19,19 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCw, Users, FileText, Activity, TrendingUp, Database, Loader2 } from "lucide-react";
-import { useState, useMemo, useEffect } from "react";
-import dynamic from "next/dynamic";
+import * as XLSX from "xlsx";
+import {
+    RefreshCw,
+    Users,
+    FileText,
+    Activity,
+    TrendingUp,
+    Database,
+    Loader2,
+    FileDown
+} from "lucide-react";
+import { useState, useEffect } from "react";
 import { syncLaunchLeadsFromSheet } from "@/server/actions/launch-leads";
-
-const ReactWordcloud = dynamic(() => import("react-wordcloud"), {
-    ssr: false,
-    loading: () => <div className="flex h-64 items-center justify-center text-slate-500 text-sm">Carregando nuvem...</div>
-});
 import {
     BarChart,
     Bar,
@@ -85,26 +89,29 @@ function WordCloud({ words }: { words: { text: string; value: number }[] }) {
             </div>
         );
     }
-
-    const options = {
-        colors: CHART_COLORS,
-        enableTooltip: true,
-        deterministic: true,
-        fontFamily: "Inter, sans-serif",
-        fontSizes: [14, 48] as [number, number],
-        fontStyle: "normal",
-        fontWeight: "bold",
-        padding: 4,
-        rotations: 2,
-        rotationAngles: [0, 45] as [number, number],
-        scale: "sqrt" as const,
-        spiral: "archimedean" as const,
-        transitionDuration: 1000,
-    };
-
+    const maxVal = Math.max(...words.map(w => w.value));
+    const minVal = Math.min(...words.map(w => w.value));
     return (
-        <div className="h-64 w-full">
-            <ReactWordcloud words={words} options={options} />
+        <div className="flex flex-wrap justify-center items-center gap-3 p-6 min-h-[220px]">
+            {words.map((w, i) => {
+                const norm = maxVal === minVal ? 0.5 : (w.value - minVal) / (maxVal - minVal);
+                const size = 0.75 + norm * 2.0;
+                const opacity = 0.5 + norm * 0.5;
+                return (
+                    <span
+                        key={i}
+                        className="font-semibold cursor-default transition-all hover:scale-110"
+                        style={{
+                            fontSize: `${size}rem`,
+                            color: CHART_COLORS[i % CHART_COLORS.length],
+                            opacity,
+                        }}
+                        title={`${w.value} menções`}
+                    >
+                        {w.text}
+                    </span>
+                );
+            })}
         </div>
     );
 }
@@ -275,6 +282,29 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
         }
     };
 
+    const [isExporting, setIsExporting] = useState(false);
+    const handleExportXLS = () => {
+        setIsExporting(true);
+        try {
+            const exportData = (data ?? []).map(lead => ({
+                Nome: lead.name,
+                WhatsApp: lead.whatsapp || "",
+                Formulário: lead.formName,
+                Data: lead.createdAt ? format(new Date(lead.createdAt), "dd/MM/yyyy HH:mm") : "",
+                ...((lead.formData && typeof lead.formData === 'object') ? lead.formData : {})
+            }));
+            const worksheet = XLSX.utils.json_to_sheet(exportData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Leads de Lançamento");
+            XLSX.writeFile(workbook, `leads_lancamento_${new Date().toISOString().split('T')[0]}.xlsx`);
+        } catch (error) {
+            console.error("Erro na exportação:", error);
+            alert("Erro ao exportar arquivo.");
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
     const hasData = analytics && analytics.totalLeads > 0;
 
     return (
@@ -291,6 +321,15 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
+                    <Button
+                        onClick={handleExportXLS}
+                        disabled={isExporting || (data?.length ?? 0) === 0}
+                        variant="outline"
+                        className="gap-2 border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/10"
+                    >
+                        {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+                        Exportar XLS
+                    </Button>
                     <Button
                         onClick={handleSync}
                         disabled={isSyncing}
@@ -545,7 +584,7 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                                             <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
                                                 <div
                                                     className="h-2 rounded-full transition-all duration-500"
-                                                    style={{ width: `${pct}%`, backgroundColor: colors[i] }}
+                                                    style={{ width: `${pct}%`, backgroundColor: colors[i % colors.length] }}
                                                 />
                                             </div>
                                         </div>
@@ -641,7 +680,6 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                                     <TableHead className="text-slate-300">Nome</TableHead>
                                     <TableHead className="text-slate-300">WhatsApp</TableHead>
                                     <TableHead className="text-slate-300">Formulário</TableHead>
-                                    <TableHead className="text-slate-300">Data</TableHead>
                                     <TableHead className="text-right text-slate-300">Respostas</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -654,9 +692,6 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                                             <Badge variant="outline" className="border-indigo-500/30 text-indigo-300 text-xs">
                                                 {lead.formName}
                                             </Badge>
-                                        </TableCell>
-                                        <TableCell className="text-slate-400 text-xs">
-                                            {lead.createdAt ? format(new Date(lead.createdAt), "dd/MM/yyyy HH:mm") : "—"}
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <Dialog>
