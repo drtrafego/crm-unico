@@ -29,6 +29,7 @@ export function ContactExportCard({ orgId }: ContactExportCardProps) {
             if (!result.success || !result.data) {
                 // toast.error(result.error || "Erro ao exportar contatos");
                 console.error(result.error || "Erro ao exportar contatos");
+                return;
             }
 
             const csv = jsonToCsv(result.data);
