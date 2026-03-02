@@ -37,18 +37,38 @@ export async function getLaunchAnalyticsData(organizationId: string) {
         // Combine and de-duplicate leads by email
         const leadsMap = new Map<string, any>();
 
+        // 1. Process CRM Leads (Captured via URL) - Highest priority for UTMs
         baseLeads.forEach(l => {
-            if (l.email) leadsMap.set(l.email.toLowerCase(), { ...l, type: 'crm' });
-            else leadsMap.set(`no-email-${Math.random()}`, { ...l, type: 'crm' });
+            if (l.email) {
+                const lowerEmail = l.email.toLowerCase();
+                leadsMap.set(lowerEmail, { ...l, type: 'crm' });
+            } else {
+                leadsMap.set(`no-email-${Math.random()}`, { ...l, type: 'crm' });
+            }
         });
 
+        // 2. Process Synced Leads (From Spreadsheet) - Source for Form Data, fallback for UTMs
         syncedLeads.forEach(l => {
             if (l.email) {
                 const lowerEmail = l.email.toLowerCase();
                 const existing = leadsMap.get(lowerEmail);
-                // Prefer synced lead if it has more UTM info or if no record exists
-                if (!existing || (!existing.utmSource && (l.utmSource || (l.formData as any)?.utm_source))) {
+
+                if (!existing) {
+                    // Lead only exists in spreadsheet
                     leadsMap.set(lowerEmail, { ...l, type: 'launch' });
+                } else {
+                    // Merge: Keep CRM lead but add formData and missing UTMs from synced lead
+                    const merged = {
+                        ...existing,
+                        formData: (l as any).formData,
+                        // Only take UTMs from sync if CRM has none
+                        utmSource: existing.utmSource || l.utmSource,
+                        utmMedium: existing.utmMedium || l.utmMedium,
+                        utmCampaign: existing.utmCampaign || l.utmCampaign,
+                        utmTerm: existing.utmTerm || l.utmTerm,
+                        utmContent: existing.utmContent || l.utmContent,
+                    };
+                    leadsMap.set(lowerEmail, merged);
                 }
             } else {
                 leadsMap.set(`no-email-sync-${Math.random()}`, { ...l, type: 'launch' });

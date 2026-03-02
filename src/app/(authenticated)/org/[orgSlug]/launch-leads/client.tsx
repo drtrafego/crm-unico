@@ -541,63 +541,43 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                         </div>
                     </DashSection>
 
-                    {/* ── TEMPERATURA P1 vs P2 ── */}
-                    <DashSection title="🌡️ Temperatura dos Leads — P1 (Frio) vs P2 (Quente)">
-                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-center">
-                            <div className="h-64">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                        <Pie
-                                            data={(analytics.temperatureData ?? []).filter(Boolean)}
-                                            dataKey="value"
-                                            nameKey="name"
-                                            cx="50%"
-                                            cy="50%"
-                                            innerRadius={60}
-                                            outerRadius={100}
-                                            paddingAngle={3}
-                                            labelLine={false}
-                                            label={renderCustomLabel}
-                                        >
-                                            <Cell fill="#60a5fa" />
-                                            <Cell fill="#f87171" />
-                                            <Cell fill="#94a3b8" />
-                                        </Pie>
-                                        <RechartsTooltip
-                                            contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f1f5f9' }}
-                                        />
-                                        <Legend wrapperStyle={{ fontSize: '13px', color: '#94a3b8' }} />
-                                    </PieChart>
-                                </ResponsiveContainer>
-                            </div>
-                            <div className="space-y-3">
-                                {(analytics.temperatureData ?? []).map((d, i) => {
-                                    const total = (analytics.temperatureData ?? []).reduce((s, x) => s + (x?.value ?? 0), 0);
-                                    const pct = total > 0 ? Math.round(((d?.value ?? 0) / total) * 100) : 0;
-                                    const colors = ["#60a5fa", "#f87171", "#94a3b8"];
-                                    return (
-                                        <div key={i} className="space-y-1.5">
-                                            <div className="flex justify-between text-sm">
-                                                <span className="text-slate-300 font-medium">{d?.name ?? "Outros"}</span>
-                                                <span className="text-slate-100 font-bold">{(d?.value ?? 0).toLocaleString('pt-BR')} ({pct}%)</span>
-                                            </div>
-                                            <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
-                                                <div
-                                                    className="h-2 rounded-full transition-all duration-500"
-                                                    style={{ width: `${pct}%`, backgroundColor: colors[i % colors.length] }}
-                                                />
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    </DashSection>
 
                     {/* ── GRÁFICOS POR COLUNA DO FORMULÁRIO ── */}
                     <div>
                         <h4 className="text-sm font-bold uppercase tracking-wide text-slate-400 mb-4">📋 Análise por Coluna do Formulário</h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                            {/* Temperatura do Leads (P1 vs P2) prioritized here */}
+                            <DashSection title="🌡️ Temperatura (P1 vs P2)">
+                                <div className="h-52">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <PieChart>
+                                            <Pie
+                                                data={(analytics.temperatureData ?? []).filter(Boolean)}
+                                                dataKey="value"
+                                                nameKey="name"
+                                                cx="40%"
+                                                cy="50%"
+                                                outerRadius={70}
+                                                labelLine={false}
+                                                label={renderCustomLabel}
+                                            >
+                                                <Cell fill="#60a5fa" />
+                                                <Cell fill="#f87171" />
+                                                <Cell fill="#94a3b8" />
+                                            </Pie>
+                                            <RechartsTooltip
+                                                contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f1f5f9' }}
+                                            />
+                                            <Legend
+                                                layout="vertical"
+                                                align="right"
+                                                verticalAlign="middle"
+                                                wrapperStyle={{ fontSize: '11px', color: '#94a3b8', paddingLeft: '10px' }}
+                                            />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </DashSection>
                             {(analytics.columnCharts ?? []).length > 0 ? (
                                 (analytics.columnCharts ?? []).map((chart, i) => {
                                     if (!chart) return null;
