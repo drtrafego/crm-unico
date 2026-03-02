@@ -20,9 +20,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RefreshCw, Users, FileText, Activity, TrendingUp, Database } from "lucide-react";
-import { useState, useMemo } from "react";
-import ReactWordcloud from "react-wordcloud";
+import { useState, useMemo, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { syncLaunchLeadsFromSheet } from "@/server/actions/launch-leads";
+
+const ReactWordcloud = dynamic(() => import("react-wordcloud"), {
+    ssr: false,
+    loading: () => <div className="flex h-64 items-center justify-center text-slate-500 text-sm">Carregando nuvem...</div>
+});
 import {
     BarChart,
     Bar,
@@ -238,6 +243,11 @@ function ColumnChart({ chart }: { chart: AnalyticsData['columnCharts'][0] }) {
 // =========== Main Component ===========
 export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLeadsClientProps) {
     const [isSyncing, setIsSyncing] = useState(false);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     const handleSync = async () => {
         setIsSyncing(true);
@@ -282,15 +292,19 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                 </Button>
             </div>
 
-            {hasData && analytics && (
+            {!mounted ? (
+                <div className="flex h-96 items-center justify-center text-slate-500">
+                    <Loader2 className="w-8 h-8 animate-spin" />
+                </div>
+            ) : hasData && analytics && (
                 <>
                     {/* ── KPI Cards ── */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {[
-                            { label: "Total de Leads", value: analytics.totalLeads.toLocaleString('pt-BR'), sub: "Captação via páginas", icon: Users, color: "indigo" },
-                            { label: "Leads Rastreados", value: analytics.trackedLeadsCount.toLocaleString('pt-BR'), sub: "Com UTM Source", icon: Activity, color: "violet" },
-                            { label: "Taxa de Rastreio", value: `${analytics.trackingRate}%`, sub: "Leads com UTM / Total", icon: TrendingUp, color: "purple" },
-                            { label: "Respostas do Form", value: analytics.totalForms.toLocaleString('pt-BR'), sub: "Sincronizados da planilha", icon: FileText, color: "fuchsia" },
+                            { label: "Total de Leads", value: (analytics.totalLeads ?? 0).toLocaleString('pt-BR'), sub: "Captação via páginas", icon: Users, color: "indigo" },
+                            { label: "Leads Rastreados", value: (analytics.trackedLeadsCount ?? 0).toLocaleString('pt-BR'), sub: "Com UTM Source", icon: Activity, color: "violet" },
+                            { label: "Taxa de Rastreio", value: `${analytics.trackingRate ?? 0}%`, sub: "Leads com UTM / Total", icon: TrendingUp, color: "purple" },
+                            { label: "Respostas do Form", value: (analytics.totalForms ?? 0).toLocaleString('pt-BR'), sub: "Sincronizados da planilha", icon: FileText, color: "fuchsia" },
                         ].map((card, i) => (
                             <div
                                 key={i}
@@ -318,7 +332,7 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                                 <p className="text-xs text-slate-400 mb-3">Evolução diária de leads captados</p>
                                 <div className="h-56">
                                     <ResponsiveContainer width="100%" height="100%">
-                                        <AreaChart data={analytics.dailyTimeline}>
+                                        <AreaChart data={analytics.dailyTimeline ?? []}>
                                             <defs>
                                                 <linearGradient id="colorLeads" x1="0" y1="0" x2="0" y2="1">
                                                     <stop offset="5%" stopColor="#818cf8" stopOpacity={0.4} />
@@ -338,7 +352,7 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                             </div>
                             <div>
                                 <p className="text-xs text-slate-400 mb-3">Ranking de origens</p>
-                                <RankingTable data={analytics.utmRanking} label="UTM Source" />
+                                <RankingTable data={analytics.utmRanking ?? []} label="UTM Source" />
                             </div>
                         </div>
                     </DashSection>
@@ -350,7 +364,7 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                                 <p className="text-xs text-slate-400 mb-3">Distribuição por mídia</p>
                                 <div className="h-64">
                                     <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart data={analytics.utmMediumRanking.slice(0, 12)} layout="vertical">
+                                        <BarChart data={(analytics.utmMediumRanking ?? []).slice(0, 12)} layout="vertical">
                                             <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#334155" />
                                             <XAxis type="number" tickLine={false} axisLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
                                             <YAxis type="category" dataKey="name" tickLine={false} axisLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} width={150} />
@@ -366,7 +380,7 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                             </div>
                             <div>
                                 <p className="text-xs text-slate-400 mb-3">Ranking de mídias</p>
-                                <RankingTable data={analytics.utmMediumRanking} label="UTM Medium" />
+                                <RankingTable data={analytics.utmMediumRanking ?? []} label="UTM Medium" />
                             </div>
                         </div>
                     </DashSection>
@@ -379,7 +393,7 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                                     <ResponsiveContainer width="100%" height="100%">
                                         <PieChart>
                                             <Pie
-                                                data={analytics.utmTermRanking.slice(0, 10)}
+                                                data={(analytics.utmTermRanking ?? []).slice(0, 10)}
                                                 dataKey="value"
                                                 nameKey="name"
                                                 cx="50%"
@@ -389,7 +403,7 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                                                 labelLine={false}
                                                 label={renderCustomLabel}
                                             >
-                                                {analytics.utmTermRanking.slice(0, 10).map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                                                {(analytics.utmTermRanking ?? []).slice(0, 10).map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                                             </Pie>
                                             <RechartsTooltip
                                                 contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f1f5f9' }}
@@ -398,14 +412,14 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                                         </PieChart>
                                     </ResponsiveContainer>
                                 </div>
-                                <RankingTable data={analytics.utmTermRanking} label="UTM Term" />
+                                <RankingTable data={analytics.utmTermRanking ?? []} label="UTM Term" />
                             </div>
                         </DashSection>
                         <DashSection title="✍️ Captação — UTM Content">
                             <div className="space-y-5">
                                 <div className="h-52">
                                     <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart data={analytics.utmContentRanking.slice(0, 8)}>
+                                        <BarChart data={(analytics.utmContentRanking ?? []).slice(0, 8)}>
                                             <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
                                             <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 10 }} tickLine={false} axisLine={false} />
                                             <YAxis tickLine={false} axisLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} />
@@ -413,12 +427,12 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                                                 contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f1f5f9' }}
                                             />
                                             <Bar dataKey="value" radius={[4, 4, 0, 0]} name="Leads">
-                                                {analytics.utmContentRanking.slice(0, 8).map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                                                {(analytics.utmContentRanking ?? []).slice(0, 8).map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                                             </Bar>
                                         </BarChart>
                                     </ResponsiveContainer>
                                 </div>
-                                <RankingTable data={analytics.utmContentRanking} label="UTM Content" />
+                                <RankingTable data={analytics.utmContentRanking ?? []} label="UTM Content" />
                             </div>
                         </DashSection>
                     </div>
@@ -432,7 +446,7 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                                     <ResponsiveContainer width="100%" height="100%">
                                         <PieChart>
                                             <Pie
-                                                data={analytics.utmCampaignRanking.slice(0, 10)}
+                                                data={(analytics.utmCampaignRanking ?? []).slice(0, 10)}
                                                 dataKey="value"
                                                 nameKey="name"
                                                 cx="50%"
@@ -442,7 +456,7 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                                                 labelLine={false}
                                                 label={renderCustomLabel}
                                             >
-                                                {analytics.utmCampaignRanking.slice(0, 10).map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                                                {(analytics.utmCampaignRanking ?? []).slice(0, 10).map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                                             </Pie>
                                             <RechartsTooltip
                                                 contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f1f5f9' }}
@@ -454,7 +468,7 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                             </div>
                             <div>
                                 <p className="text-xs text-slate-400 mb-3">Ranking de campanhas</p>
-                                <RankingTable data={analytics.utmCampaignRanking} label="UTM Campaign" />
+                                <RankingTable data={analytics.utmCampaignRanking ?? []} label="UTM Campaign" />
                             </div>
                         </div>
                     </DashSection>
@@ -466,7 +480,7 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                                 <ResponsiveContainer width="100%" height="100%">
                                     <PieChart>
                                         <Pie
-                                            data={analytics.temperatureData}
+                                            data={analytics.temperatureData ?? []}
                                             dataKey="value"
                                             nameKey="name"
                                             cx="50%"
@@ -489,8 +503,8 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                                 </ResponsiveContainer>
                             </div>
                             <div className="space-y-3">
-                                {analytics.temperatureData.map((d, i) => {
-                                    const total = analytics.temperatureData.reduce((s, x) => s + x.value, 0);
+                                {(analytics.temperatureData ?? []).map((d, i) => {
+                                    const total = (analytics.temperatureData ?? []).reduce((s, x) => s + x.value, 0);
                                     const pct = total > 0 ? Math.round((d.value / total) * 100) : 0;
                                     const colors = ["#60a5fa", "#f87171", "#94a3b8"];
                                     return (
@@ -516,8 +530,8 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                     <div>
                         <h4 className="text-sm font-bold uppercase tracking-wide text-slate-400 mb-4">📋 Análise por Coluna do Formulário</h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                            {analytics.columnCharts.length > 0 ? (
-                                analytics.columnCharts.map((chart, i) => (
+                            {(analytics.columnCharts ?? []).length > 0 ? (
+                                (analytics.columnCharts ?? []).map((chart, i) => (
                                     <DashSection key={i} title={chart.displayName}>
                                         <ColumnChart chart={chart} />
                                     </DashSection>
@@ -548,8 +562,8 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                     <div>
                         <h4 className="text-sm font-bold uppercase tracking-wide text-slate-400 mb-4">💬 Nuvem de Palavras por Coluna Aberta</h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            {analytics.wordCloudColumns.length > 0 ? (
-                                analytics.wordCloudColumns.map((wcc, i) => (
+                            {(analytics.wordCloudColumns ?? []).length > 0 ? (
+                                (analytics.wordCloudColumns ?? []).map((wcc, i) => (
                                     <DashSection key={i} title={wcc.columnName}>
                                         <WordCloud words={wcc.words} />
                                     </DashSection>
@@ -573,8 +587,8 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
 
                     {/* ── NUVEM GERAL ── */}
                     <DashSection title="☁️ Nuvem Geral de Palavras (Respostas Abertas)">
-                        {analytics.wordCloud.length > 0 ? (
-                            <WordCloud words={analytics.wordCloud} />
+                        {(analytics.wordCloud ?? []).length > 0 ? (
+                            <WordCloud words={analytics.wordCloud ?? []} />
                         ) : (
                             <div className="h-48 flex items-center justify-center text-slate-500 text-sm border border-dashed border-slate-700 rounded-lg mx-6 my-2">
                                 Nenhuma palavra encontrada.
