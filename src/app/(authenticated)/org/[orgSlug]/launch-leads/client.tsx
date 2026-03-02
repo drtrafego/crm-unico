@@ -205,7 +205,7 @@ function ColumnChart({ chart }: { chart: AnalyticsData['columnCharts'][0] }) {
                 <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                         <Pie
-                            data={chart?.data ?? []}
+                            data={(chart?.data ?? []).filter(Boolean)}
                             dataKey="value"
                             nameKey="name"
                             cx="50%"
@@ -214,8 +214,8 @@ function ColumnChart({ chart }: { chart: AnalyticsData['columnCharts'][0] }) {
                             labelLine={false}
                             label={renderCustomLabel}
                         >
-                            {(chart?.data ?? []).map((entry, i) => (
-                                entry ? <Cell key={i} fill={colors[i % colors.length]} /> : null
+                            {(chart?.data ?? []).filter(Boolean).map((entry, i) => (
+                                <Cell key={i} fill={colors[i % colors.length]} />
                             ))}
                         </Pie>
                         <RechartsTooltip
@@ -238,8 +238,8 @@ function ColumnChart({ chart }: { chart: AnalyticsData['columnCharts'][0] }) {
                         contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f1f5f9' }}
                     />
                     <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                        {(chart?.data ?? []).map((entry, i) => (
-                            entry ? <Cell key={i} fill={colors[i % colors.length]} /> : null
+                        {(chart?.data ?? []).filter(Boolean).map((entry, i) => (
+                            <Cell key={i} fill={colors[i % colors.length]} />
                         ))}
                     </Bar>
                 </BarChart>
@@ -353,7 +353,7 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                                 <p className="text-xs text-slate-400 mb-3">Evolução diária de leads captados</p>
                                 <div className="h-56">
                                     <ResponsiveContainer width="100%" height="100%">
-                                        <AreaChart data={analytics.dailyTimeline ?? []}>
+                                        <AreaChart data={(analytics.dailyTimeline ?? []).filter(Boolean)}>
                                             <defs>
                                                 <linearGradient id="colorLeads" x1="0" y1="0" x2="0" y2="1">
                                                     <stop offset="5%" stopColor="#818cf8" stopOpacity={0.4} />
@@ -385,7 +385,7 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                                 <p className="text-xs text-slate-400 mb-3">Distribuição por mídia</p>
                                 <div className="h-64">
                                     <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart data={(analytics.utmMediumRanking ?? []).slice(0, 12)} layout="vertical">
+                                        <BarChart data={(analytics.utmMediumRanking ?? []).slice(0, 12).filter(Boolean)} layout="vertical">
                                             <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#334155" />
                                             <XAxis type="number" tickLine={false} axisLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
                                             <YAxis type="category" dataKey="name" tickLine={false} axisLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} width={150} />
@@ -393,8 +393,8 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                                                 contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f1f5f9' }}
                                             />
                                             <Bar dataKey="value" radius={[0, 4, 4, 0]} name="Leads">
-                                                {(analytics.utmMediumRanking ?? []).slice(0, 12).map((entry, i) => (
-                                                    entry ? <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} /> : null
+                                                {(analytics.utmMediumRanking ?? []).slice(0, 12).filter(Boolean).map((entry, i) => (
+                                                    <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                                                 ))}
                                             </Bar>
                                         </BarChart>
@@ -444,7 +444,7 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                             <div className="space-y-5">
                                 <div className="h-52">
                                     <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart data={(analytics.utmContentRanking ?? []).slice(0, 8)}>
+                                        <BarChart data={(analytics.utmContentRanking ?? []).slice(0, 8).filter(Boolean)}>
                                             <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
                                             <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 10 }} tickLine={false} axisLine={false} />
                                             <YAxis tickLine={false} axisLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} />
@@ -452,8 +452,8 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                                                 contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f1f5f9' }}
                                             />
                                             <Bar dataKey="value" radius={[4, 4, 0, 0]} name="Leads">
-                                                {(analytics.utmContentRanking ?? []).slice(0, 8).map((entry, i) => (
-                                                    entry ? <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} /> : null
+                                                {(analytics.utmContentRanking ?? []).slice(0, 8).filter(Boolean).map((entry, i) => (
+                                                    <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                                                 ))}
                                             </Bar>
                                         </BarChart>
@@ -473,7 +473,7 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                                     <ResponsiveContainer width="100%" height="100%">
                                         <PieChart>
                                             <Pie
-                                                data={(analytics.utmCampaignRanking ?? []).slice(0, 10)}
+                                                data={(analytics.utmCampaignRanking ?? []).slice(0, 10).filter(Boolean)}
                                                 dataKey="value"
                                                 nameKey="name"
                                                 cx="50%"
@@ -509,7 +509,7 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                                 <ResponsiveContainer width="100%" height="100%">
                                     <PieChart>
                                         <Pie
-                                            data={analytics.temperatureData ?? []}
+                                            data={(analytics.temperatureData ?? []).filter(Boolean)}
                                             dataKey="value"
                                             nameKey="name"
                                             cx="50%"
