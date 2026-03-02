@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { exportContacts } from "@/server/actions/contacts";
 import { jsonToCsv } from "@/lib/csv-utils";
 import { Download, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+// import { toast } from "sonner";
 
 interface ContactExportCardProps {
     orgId: string;
@@ -27,8 +27,8 @@ export function ContactExportCard({ orgId }: ContactExportCardProps) {
             const result = await exportContacts(orgId, exportType, startDate, endDate);
 
             if (!result.success || !result.data) {
-                toast.error(result.error || "Erro ao exportar contatos");
-                return;
+                // toast.error(result.error || "Erro ao exportar contatos");
+                console.error(result.error || "Erro ao exportar contatos");
             }
 
             const csv = jsonToCsv(result.data);
@@ -44,10 +44,12 @@ export function ContactExportCard({ orgId }: ContactExportCardProps) {
             link.click();
             document.body.removeChild(link);
 
-            toast.success("Exportação concluída!");
+            // toast.success("Exportação concluída!");
+            alert("Exportação concluída!");
         } catch (error) {
             console.error(error);
-            toast.error("Erro inesperado ao exportar");
+            // toast.error("Erro inesperado ao exportar");
+            console.error(error);
         } finally {
             setLoading(false);
         }
