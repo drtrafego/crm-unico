@@ -149,7 +149,7 @@ function RankingTable({ data, label }: { data: { name: string; value: number }[]
                             </tr>
                         );
                     })}
-                    {data.length > 0 && (
+                    {data?.length > 0 && (
                         <tr className="border-t border-slate-600 bg-slate-800/60">
                             <td className="px-4 py-2.5 text-slate-300 font-semibold">Total</td>
                             <td className="px-4 py-2.5 text-right font-bold text-white">{total.toLocaleString('pt-BR')}</td>
@@ -230,7 +230,7 @@ function ColumnChart({ chart }: { chart: AnalyticsData['columnCharts'][0] }) {
     return (
         <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chart.data ?? []} layout="vertical" margin={{ left: 0, right: 10, top: 0, bottom: 0 }}>
+                <BarChart data={(chart.data ?? []).filter(Boolean)} layout="vertical" margin={{ left: 0, right: 10, top: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#334155" />
                     <XAxis type="number" tickLine={false} axisLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
                     <YAxis type="category" dataKey="name" tickLine={false} axisLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} width={130} />
@@ -321,7 +321,7 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                 <>
                     {/* ── KPI Cards ── */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {[
+                        {(analytics?.totalLeads !== undefined) && [
                             { label: "Total de Leads", value: (analytics.totalLeads ?? 0).toLocaleString('pt-BR'), sub: "Captação via páginas", icon: Users, color: "indigo" },
                             { label: "Leads Rastreados", value: (analytics.trackedLeadsCount ?? 0).toLocaleString('pt-BR'), sub: "Com UTM Source", icon: Activity, color: "violet" },
                             { label: "Taxa de Rastreio", value: `${analytics.trackingRate ?? 0}%`, sub: "Leads com UTM / Total", icon: TrendingUp, color: "purple" },
@@ -416,7 +416,7 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                                     <ResponsiveContainer width="100%" height="100%">
                                         <PieChart>
                                             <Pie
-                                                data={(analytics.utmTermRanking ?? []).slice(0, 10)}
+                                                data={(analytics.utmTermRanking ?? []).slice(0, 10).filter(Boolean)}
                                                 dataKey="value"
                                                 nameKey="name"
                                                 cx="50%"
@@ -631,7 +631,7 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
             )}
 
             {/* ── TABELA DE RESPOSTAS ── */}
-            {data.length > 0 && (
+            {(data?.length ?? 0) > 0 && (
                 <div>
                     <h4 className="text-sm font-bold uppercase tracking-wide text-slate-400 mb-4">📄 Base Sincronizada de Respostas</h4>
                     <div className="rounded-xl border border-slate-700/60 overflow-hidden bg-slate-900/70">
@@ -646,7 +646,7 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {data.map((lead) => (
+                                {(data ?? []).map((lead) => (
                                     <TableRow key={lead.id} className="border-slate-700/30 hover:bg-slate-800/30 transition-colors">
                                         <TableCell className="font-medium text-slate-200">{lead.name}</TableCell>
                                         <TableCell className="text-slate-400">{lead.whatsapp || "—"}</TableCell>
@@ -671,7 +671,7 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                                                     </DialogHeader>
                                                     <div className="grid gap-3 py-2 max-h-[60vh] overflow-y-auto">
                                                         {lead.formData && typeof lead.formData === "object" ? (
-                                                            Object.entries(lead.formData as Record<string, unknown>).map(([key, value]) => (
+                                                            Object.entries(lead.formData as Record<string, unknown>).filter(([key]) => key).map(([key, value]) => (
                                                                 <div key={key} className="rounded-lg bg-slate-800/60 p-3">
                                                                     <span className="text-xs font-semibold text-indigo-400 block mb-1">{key}</span>
                                                                     <span className="text-sm text-slate-200">{String(value)}</span>
@@ -692,7 +692,7 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                 </div>
             )}
 
-            {!hasData && data.length === 0 && (
+            {!hasData && data?.length === 0 && (
                 <div className="flex flex-col items-center justify-center p-16 border border-dashed border-slate-700 rounded-xl text-center">
                     <Database className="w-10 h-10 text-slate-600 mb-4" />
                     <p className="text-slate-400 font-medium mb-2">Nenhum dado de lançamento encontrado.</p>
