@@ -290,14 +290,27 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                         <p className="text-xs text-slate-400 mt-0.5">Sincronize as respostas do formulário com o CRM.</p>
                     </div>
                 </div>
-                <Button
-                    onClick={handleSync}
-                    disabled={isSyncing}
-                    className="gap-2 bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-500/20 border border-indigo-500/30"
-                >
-                    <RefreshCw className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`} />
-                    {isSyncing ? "Sincronizando..." : "Sincronizar Planilha"}
-                </Button>
+                <div className="flex items-center gap-3">
+                    <Button
+                        onClick={handleSync}
+                        disabled={isSyncing}
+                        className="gap-2 bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-500/20 border border-indigo-500/30"
+                    >
+                        <RefreshCw className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`} />
+                        {isSyncing ? "Sincronizando..." : "Sincronizar Planilha"}
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        asChild
+                        className="text-slate-400 hover:text-indigo-400"
+                    >
+                        <a href={`/org/${organizationId}/launch-leads/debug`} target="_blank" rel="noreferrer">
+                            <Activity className="w-4 h-4 mr-2" />
+                            Log de Diagnóstico
+                        </a>
+                    </Button>
+                </div>
             </div>
 
             {!mounted ? (
@@ -470,7 +483,9 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                                                 labelLine={false}
                                                 label={renderCustomLabel}
                                             >
-                                                {(analytics.utmCampaignRanking ?? []).slice(0, 10).map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                                                {(analytics.utmCampaignRanking ?? []).slice(0, 10).map((entry, i) => (
+                                                    entry ? <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} /> : null
+                                                ))}
                                             </Pie>
                                             <RechartsTooltip
                                                 contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f1f5f9' }}
