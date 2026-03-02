@@ -123,15 +123,18 @@ function RankingTable({ data, label }: { data: { name: string; value: number }[]
                     </tr>
                 </thead>
                 <tbody>
-                    {data.slice(0, 15).map((row, i) => {
-                        const pct = total > 0 ? Math.round((row.value / total) * 100) : 0;
+                    {(data ?? []).slice(0, 15).map((row, i) => {
+                        if (!row || typeof row !== 'object') return null;
+                        const rowValue = row.value ?? 0;
+                        const rowName = row.name ?? "Desconhecido";
+                        const pct = total > 0 ? Math.round((rowValue / total) * 100) : 0;
                         return (
                             <tr key={i} className="border-t border-slate-700/30 hover:bg-slate-800/30 transition-colors">
                                 <td className="px-4 py-2.5 text-slate-300">
                                     <div className="flex items-center gap-2">
                                         <span className="text-xs text-slate-500 w-5 shrink-0">{i + 1}.</span>
                                         <div className="flex-1 min-w-0">
-                                            <div className="truncate font-medium text-slate-200" title={row.name}>{row.name}</div>
+                                            <div className="truncate font-medium text-slate-200" title={rowName}>{rowName}</div>
                                             <div className="h-1 mt-1 bg-slate-700 rounded-full overflow-hidden">
                                                 <div
                                                     className="h-1 rounded-full bg-violet-500"
@@ -141,7 +144,7 @@ function RankingTable({ data, label }: { data: { name: string; value: number }[]
                                         </div>
                                     </div>
                                 </td>
-                                <td className="px-4 py-2.5 text-right font-bold text-slate-100">{row.value.toLocaleString('pt-BR')}</td>
+                                <td className="px-4 py-2.5 text-right font-bold text-slate-100">{rowValue.toLocaleString('pt-BR')}</td>
                                 <td className="px-4 py-2.5 text-right text-slate-400">{pct}%</td>
                             </tr>
                         );
@@ -194,6 +197,7 @@ function renderCustomLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent
 
 // ----------- Dynamic Form Column Chart -----------
 function ColumnChart({ chart }: { chart: AnalyticsData['columnCharts'][0] }) {
+    if (!chart || !chart.data) return null;
     const colors = CHART_COLORS;
     if (chart.type === 'pie' || chart.type === 'boolean') {
         return (
@@ -201,7 +205,7 @@ function ColumnChart({ chart }: { chart: AnalyticsData['columnCharts'][0] }) {
                 <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                         <Pie
-                            data={chart.data ?? []}
+                            data={chart?.data ?? []}
                             dataKey="value"
                             nameKey="name"
                             cx="50%"
@@ -210,7 +214,9 @@ function ColumnChart({ chart }: { chart: AnalyticsData['columnCharts'][0] }) {
                             labelLine={false}
                             label={renderCustomLabel}
                         >
-                            {(chart.data ?? []).map((_, i) => <Cell key={i} fill={colors[i % colors.length]} />)}
+                            {(chart?.data ?? []).map((entry, i) => (
+                                entry ? <Cell key={i} fill={colors[i % colors.length]} /> : null
+                            ))}
                         </Pie>
                         <RechartsTooltip
                             contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f1f5f9' }}
@@ -232,7 +238,9 @@ function ColumnChart({ chart }: { chart: AnalyticsData['columnCharts'][0] }) {
                         contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f1f5f9' }}
                     />
                     <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                        {(chart.data ?? []).map((_, i) => <Cell key={i} fill={colors[i % colors.length]} />)}
+                        {(chart?.data ?? []).map((entry, i) => (
+                            entry ? <Cell key={i} fill={colors[i % colors.length]} /> : null
+                        ))}
                     </Bar>
                 </BarChart>
             </ResponsiveContainer>
@@ -372,7 +380,9 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                                                 contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f1f5f9' }}
                                             />
                                             <Bar dataKey="value" radius={[0, 4, 4, 0]} name="Leads">
-                                                {(analytics.utmMediumRanking ?? []).slice(0, 12).map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                                                {(analytics.utmMediumRanking ?? []).slice(0, 12).map((entry, i) => (
+                                                    entry ? <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} /> : null
+                                                ))}
                                             </Bar>
                                         </BarChart>
                                     </ResponsiveContainer>
@@ -403,7 +413,9 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                                                 labelLine={false}
                                                 label={renderCustomLabel}
                                             >
-                                                {(analytics.utmTermRanking ?? []).slice(0, 10).map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                                                {(analytics.utmTermRanking ?? []).slice(0, 10).map((entry, i) => (
+                                                    entry ? <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} /> : null
+                                                ))}
                                             </Pie>
                                             <RechartsTooltip
                                                 contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f1f5f9' }}
@@ -427,7 +439,9 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                                                 contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f1f5f9' }}
                                             />
                                             <Bar dataKey="value" radius={[4, 4, 0, 0]} name="Leads">
-                                                {(analytics.utmContentRanking ?? []).slice(0, 8).map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                                                {(analytics.utmContentRanking ?? []).slice(0, 8).map((entry, i) => (
+                                                    entry ? <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} /> : null
+                                                ))}
                                             </Bar>
                                         </BarChart>
                                     </ResponsiveContainer>
@@ -531,11 +545,14 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                         <h4 className="text-sm font-bold uppercase tracking-wide text-slate-400 mb-4">📋 Análise por Coluna do Formulário</h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                             {(analytics.columnCharts ?? []).length > 0 ? (
-                                (analytics.columnCharts ?? []).map((chart, i) => (
-                                    <DashSection key={i} title={chart.displayName}>
-                                        <ColumnChart chart={chart} />
-                                    </DashSection>
-                                ))
+                                (analytics.columnCharts ?? []).map((chart, i) => {
+                                    if (!chart) return null;
+                                    return (
+                                        <DashSection key={i} title={chart.displayName ?? "Coluna"}>
+                                            <ColumnChart chart={chart} />
+                                        </DashSection>
+                                    );
+                                })
                             ) : (
                                 <>
                                     <DashSection title="Exemplo: Múltipla Escolha">
