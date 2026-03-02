@@ -120,6 +120,8 @@ export const launchLeads = pgTable("launch_leads", {
   utmSource: text("utm_source"),
   utmMedium: text("utm_medium"),
   utmCampaign: text("utm_campaign"),
+  utmTerm: text("utm_term"),
+  utmContent: text("utm_content"),
   leadId: uuid("lead_id").references(() => leads.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

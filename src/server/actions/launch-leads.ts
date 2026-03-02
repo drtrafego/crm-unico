@@ -28,7 +28,36 @@ export async function getLaunchAnalyticsData(organizationId: string) {
             columns: { utmSource: true, utmMedium: true, utmTerm: true, utmContent: true, utmCampaign: true, createdAt: true }
         });
 
-        const totalLeads = baseLeads.length;
+        // Fetch synced launch leads to include in analytics
+        const syncedLeads = await db.query.launchLeads.findMany({
+            where: eq(launchLeads.organizationId, organizationId),
+            columns: { utmSource: true, utmMedium: true, utmTerm: true, utmContent: true, utmCampaign: true, createdAt: true }
+        });
+
+        // Combine and de-duplicate leads by email
+        const leadsMap = new Map<string, any>();
+
+        baseLeads.forEach(l => {
+            if (l.email) leadsMap.set(l.email.toLowerCase(), { ...l, type: 'crm' });
+            else leadsMap.set(`no-email-${Math.random()}`, { ...l, type: 'crm' });
+        });
+
+        syncedLeads.forEach(l => {
+            if (l.email) {
+                const lowerEmail = l.email.toLowerCase();
+                const existing = leadsMap.get(lowerEmail);
+                // Prefer synced lead if it has more UTM info or if no record exists
+                if (!existing || (!existing.utmSource && (l.utmSource || (l.formData as any)?.utm_source))) {
+                    leadsMap.set(lowerEmail, { ...l, type: 'launch' });
+                }
+            } else {
+                leadsMap.set(`no-email-sync-${Math.random()}`, { ...l, type: 'launch' });
+            }
+        });
+
+        const combinedLeads = Array.from(leadsMap.values());
+
+        const totalLeads = combinedLeads.length;
         let trackedLeadsCount = 0;
         let p1Count = 0;
         let p2Count = 0;
@@ -41,10 +70,28 @@ export async function getLaunchAnalyticsData(organizationId: string) {
         const utmCampaignCounts: Record<string, number> = {};
         const dailyCounts: Record<string, number> = {};
 
-        baseLeads.forEach(l => {
-            if (l.utmSource) {
+        combinedLeads.forEach(l => {
+            const formData = (l as any).formData as Record<string, any> | null;
+
+            // Helper to get UTM from column or formData fallback
+            const getUtm = (col: string | null | undefined, keys: string[]) => {
+                if (col && col.trim()) return col.trim();
+                if (!formData) return null;
+                for (const key of keys) {
+                    const val = formData[key] || formData[key.toLowerCase()] || formData[key.toUpperCase()];
+                    if (val && String(val).trim()) return String(val).trim();
+                }
+                return null;
+            };
+
+            const source = getUtm(l.utmSource, ['utm_source', 'source', 'origem']);
+            const medium = getUtm(l.utmMedium, ['utm_medium', 'medium', 'mídia']);
+            const term = getUtm(l.utmTerm, ['utm_term', 'term', 'termo']);
+            const content = getUtm(l.utmContent, ['utm_content', 'content', 'conteúdo']);
+            const campaign = getUtm(l.utmCampaign, ['utm_campaign', 'campaign', 'campanha']);
+
+            if (source) {
                 trackedLeadsCount++;
-                const source = l.utmSource;
                 utmSourceCounts[source] = (utmSourceCounts[source] || 0) + 1;
 
                 const lowerSource = source.toLowerCase();
@@ -55,17 +102,17 @@ export async function getLaunchAnalyticsData(organizationId: string) {
                 outrosCount++;
             }
 
-            if (l.utmMedium) {
-                utmMediumCounts[l.utmMedium] = (utmMediumCounts[l.utmMedium] || 0) + 1;
+            if (medium) {
+                utmMediumCounts[medium] = (utmMediumCounts[medium] || 0) + 1;
             }
-            if (l.utmTerm) {
-                utmTermCounts[l.utmTerm] = (utmTermCounts[l.utmTerm] || 0) + 1;
+            if (term) {
+                utmTermCounts[term] = (utmTermCounts[term] || 0) + 1;
             }
-            if (l.utmContent) {
-                utmContentCounts[l.utmContent] = (utmContentCounts[l.utmContent] || 0) + 1;
+            if (content) {
+                utmContentCounts[content] = (utmContentCounts[content] || 0) + 1;
             }
-            if (l.utmCampaign) {
-                utmCampaignCounts[l.utmCampaign] = (utmCampaignCounts[l.utmCampaign] || 0) + 1;
+            if (campaign) {
+                utmCampaignCounts[campaign] = (utmCampaignCounts[campaign] || 0) + 1;
             }
 
             // Daily aggregation for timeline chart
@@ -277,6 +324,13 @@ export async function syncLaunchLeadsFromSheet(organizationId: string) {
         const emailIdx = headers.findIndex(h => h.includes("e-mail") || h === "email");
         const phoneIdx = headers.findIndex(h => h.includes("telefone") || h.includes("whatsapp") || h === "phone");
 
+        // UTM mappings
+        const utmSourceIdx = headers.findIndex(h => h.includes("utm_source") || h === "source" || h === "origem");
+        const utmMediumIdx = headers.findIndex(h => h.includes("utm_medium") || h === "medium" || h === "mídia");
+        const utmCampaignIdx = headers.findIndex(h => h.includes("utm_campaign") || h === "campaign" || h === "campanha");
+        const utmTermIdx = headers.findIndex(h => h.includes("utm_term") || h === "term" || h === "termo");
+        const utmContentIdx = headers.findIndex(h => h.includes("utm_content") || h === "content" || h === "conteúdo");
+
         if (emailIdx === -1) {
             return { success: false, error: "Coluna 'E-mail' não encontrada na planilha. Ela é obrigatória para sincronização." };
         }
@@ -299,11 +353,20 @@ export async function syncLaunchLeadsFromSheet(organizationId: string) {
 
             if (!email) continue;
 
+            // Extract UTM values
+            const utmSource = utmSourceIdx !== -1 ? String(row[utmSourceIdx] || "").trim() : null;
+            const utmMedium = utmMediumIdx !== -1 ? String(row[utmMediumIdx] || "").trim() : null;
+            const utmCampaign = utmCampaignIdx !== -1 ? String(row[utmCampaignIdx] || "").trim() : null;
+            const utmTerm = utmTermIdx !== -1 ? String(row[utmTermIdx] || "").trim() : null;
+            const utmContent = utmContentIdx !== -1 ? String(row[utmContentIdx] || "").trim() : null;
+
             // Build dynamic formData for any remaining header column
             const formData: Record<string, string> = {};
             headers.forEach((headerName, idx) => {
                 const lowerHeader = headerName.toLowerCase();
                 const isExcluded = idx === nameIdx || idx === emailIdx || idx === phoneIdx ||
+                    idx === utmSourceIdx || idx === utmMediumIdx || idx === utmCampaignIdx ||
+                    idx === utmTermIdx || idx === utmContentIdx ||
                     lowerHeader.includes("carimbo") ||
                     lowerHeader.includes("data") ||
                     lowerHeader.includes("hora") ||
@@ -331,6 +394,11 @@ export async function syncLaunchLeadsFromSheet(organizationId: string) {
                     name,
                     email,
                     whatsapp,
+                    utmSource,
+                    utmMedium,
+                    utmCampaign,
+                    utmTerm,
+                    utmContent,
                     formData,
                     createdAt: rowDate,
                 });
@@ -342,6 +410,11 @@ export async function syncLaunchLeadsFromSheet(organizationId: string) {
                     .set({
                         name,
                         whatsapp: whatsapp || undefined,
+                        utmSource: utmSource || undefined,
+                        utmMedium: utmMedium || undefined,
+                        utmCampaign: utmCampaign || undefined,
+                        utmTerm: utmTerm || undefined,
+                        utmContent: utmContent || undefined,
                         formData,
                     })
                     .where(eq(launchLeads.id, existingId));
