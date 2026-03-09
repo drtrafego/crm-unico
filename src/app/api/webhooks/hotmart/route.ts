@@ -7,10 +7,11 @@ const HOTMART_HOTTOK = process.env.HOTMART_HOTTOK || "";
 
 export async function POST(req: Request) {
     try {
-        // Validate Hottok
+        // Validate Hottok (Optional based on user preference)
         const hottok = req.headers.get("x-hotmart-hottok");
         if (HOTMART_HOTTOK && hottok !== HOTMART_HOTTOK) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            console.warn(`Webhook received with invalid/missing Hottok: ${hottok}`);
+            // Not blocking the request since you mentioned you usually just use the webhook URL
         }
 
         const payload = await req.json();
