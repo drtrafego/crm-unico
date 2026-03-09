@@ -214,7 +214,7 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
         }, {} as Record<string, { name: string, source: string, medium: string, campaign: string, term: string, size: number }>);
         const utmTableData = Object.values(utmStatsMap).sort((a, b) => b.size - a.size).slice(0, 30);
 
-        // Time of Day Analysis (Fuso +3)
+        // Time of Day Analysis (UTC-3 / Fuso -3)
         const timeOfDayData = [
             { name: 'Manhã (06h-12h)', value: 0, fill: '#f59e0b' },
             { name: 'Tarde (12h-18h)', value: 0, fill: '#0ea5e9' },
@@ -225,8 +225,8 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
             if (!lead.createdAt) return;
             const date = new Date(lead.createdAt);
             const utcHours = date.getUTCHours();
-            // Offset for Fuso +3 as requested
-            const localHours = (utcHours + 3) % 24;
+            // Offset for UTC-3 (Buenos Aires / Brasilia)
+            const localHours = (utcHours - 3 + 24) % 24;
 
             if (localHours >= 6 && localHours < 12) {
                 timeOfDayData[0].value += 1;
@@ -429,7 +429,7 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                 <Card className="bg-white dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-white/10 overflow-hidden shadow-2xl h-[350px]">
                     <CardHeader className="py-4 border-b border-slate-100 dark:border-white/5">
                         <CardTitle className="text-xs font-black uppercase tracking-widest flex items-center gap-2 text-slate-500 dark:text-slate-400">
-                            <Clock className="w-3.5 h-3.5 text-indigo-500" /> Horário de Entrada (Fuso +3)
+                            <Clock className="w-3.5 h-3.5 text-indigo-500" /> Horário de Entrada (UTC-3 / BsAs)
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="h-[250px] pt-6 pb-2 px-2">
