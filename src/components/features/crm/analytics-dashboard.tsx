@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
-    AreaChart, Area
+    AreaChart, Area, PieChart, Pie, Legend
 } from "recharts";
 import { format, subDays, startOfDay, endOfDay, isWithinInterval, eachDayOfInterval, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -214,10 +214,32 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
         }, {} as Record<string, { name: string, source: string, medium: string, campaign: string, term: string, size: number }>);
         const utmTableData = Object.values(utmStatsMap).sort((a, b) => b.size - a.size).slice(0, 30);
 
+        // Time of Day Analysis (Fuso +3)
+        const timeOfDayData = [
+            { name: 'Manhã (06h-12h)', value: 0, fill: '#f59e0b' },
+            { name: 'Tarde (12h-18h)', value: 0, fill: '#f97316' },
+            { name: 'Noite (18h-06h)', value: 0, fill: '#6366f1' },
+        ];
+
+        activeLeads.forEach(lead => {
+            if (!lead.createdAt) return;
+            const date = new Date(lead.createdAt);
+            const utcHours = date.getUTCHours();
+            const localHours = (utcHours + 3) % 24;
+
+            if (localHours >= 6 && localHours < 12) {
+                timeOfDayData[0].value += 1;
+            } else if (localHours >= 12 && localHours < 18) {
+                timeOfDayData[1].value += 1;
+            } else {
+                timeOfDayData[2].value += 1;
+            }
+        });
+
         return {
             uniqueOrigins, states,
             kpis: { revenue, pipeline, totalLeads: totalLeadsCount, conversionRate, averageTicket, avgCycle, followUpsCount },
-            charts: { monthlyData, regionalData, dailyData, funnelData },
+            charts: { monthlyData, regionalData, dailyData, funnelData, timeOfDayData },
             newMetrics: { ...processedNewMetrics, conversionData },
             intelligence: { staleAlerts, funnel, velocity, followUp, health },
             utmStats: utmTableData
@@ -393,6 +415,48 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                                     ))}
                                 </Bar>
                             </BarChart>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* Time of Day Pie Chart */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card className="bg-white dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-white/10 overflow-hidden shadow-2xl h-[350px]">
+                    <CardHeader className="py-4 border-b border-slate-100 dark:border-white/5">
+                        <CardTitle className="text-xs font-black uppercase tracking-widest flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                            <Clock className="w-3.5 h-3.5 text-indigo-500" /> Horário de Entrada (Fuso +3)
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="h-[250px] pt-6 pb-2 px-2">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    data={charts.timeOfDayData}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={50}
+                                    outerRadius={80}
+                                    paddingAngle={5}
+                                    dataKey="value"
+                                    stroke="none"
+                                >
+                                    {charts.timeOfDayData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                                    ))}
+                                </Pie>
+                                <Tooltip
+                                    contentStyle={{
+                                        backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.95)',
+                                        backdropFilter: 'blur(8px)',
+                                        border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)',
+                                        borderRadius: '12px',
+                                        color: isDark ? '#fff' : '#0f172a'
+                                    }}
+                                    itemStyle={{ color: '#fff' }}
+                                />
+                                <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '12px', color: isDark ? '#94a3b8' : '#64748b' }} />
+                            </PieChart>
                         </ResponsiveContainer>
                     </CardContent>
                 </Card>
