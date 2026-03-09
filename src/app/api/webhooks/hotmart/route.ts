@@ -15,6 +15,7 @@ export async function POST(req: Request) {
         }
 
         const payload = await req.json();
+        console.log("HOTMART PAYLOAD RECEBIDO:", JSON.stringify(payload, null, 2));
 
         // Hotmart Webhook 2.0 format
         const event = payload.event;
