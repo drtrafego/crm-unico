@@ -95,7 +95,7 @@ export function Sidebar({ isCollapsed = false, toggle }: SidebarProps) {
 
   const items = [
     { title: "Kanban", url: `/org/${orgSlug}/kanban`, icon: KanbanSquare },
-    ...(hasLaunchDashboard ? [{ title: "Lançamentos", url: `/org/${orgSlug}/launch-leads`, icon: Rocket }] : []),
+    ...(hasLaunchDashboard ? [{ title: "Lançamento Captação", url: `/org/${orgSlug}/launch-leads`, icon: Rocket }] : []),
     { title: "Analytics", url: `/org/${orgSlug}/analytics`, icon: LineChart },
     { title: "Calendário", url: `/org/${orgSlug}/kanban/calendar`, icon: CalendarDays },
     { title: "Configurações", url: `/org/${orgSlug}/settings`, icon: Settings },
@@ -129,32 +129,63 @@ export function Sidebar({ isCollapsed = false, toggle }: SidebarProps) {
       <nav className="flex-1 p-4 space-y-2">
         {items.map((item) => {
           const isActive = pathname === item.url || pathname?.startsWith(item.url);
+          const isLaunchMenu = item.title === "Lançamento Captação";
+
           return (
-            <Link
-              key={item.url}
-              href={item.url}
-              className={cn(
-                "group relative flex items-center gap-3 px-3 py-3 rounded-2xl text-sm font-bold transition-all duration-300",
-                isCollapsed ? "justify-center" : "",
-                isActive
-                  ? "bg-slate-100 dark:bg-white/15 text-slate-900 dark:text-white shadow-sm dark:shadow-[0_0_20px_rgba(255,255,255,0.05)] border border-slate-200 dark:border-white/10"
-                  : "text-slate-700 dark:text-white/90 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5"
-              )}
-            >
-              {isActive && (
-                <div className="absolute left-0 w-1 h-6 bg-indigo-500 rounded-r-full shadow-[0_0_15px_rgba(99,102,241,0.8)]" />
-              )}
-              <item.icon className={cn(
-                "!h-5 !w-5 shrink-0 transition-transform duration-300",
-                isActive ? "scale-110 text-indigo-400" : "group-hover:scale-110"
-              )} />
-              {!isCollapsed && item.title}
-              {isCollapsed && (
-                <div className="absolute left-24 px-3 py-1 bg-slate-900 text-white text-xs font-bold rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:translate-x-2 transition-all duration-300 whitespace-nowrap shadow-2xl border border-white/10">
-                  {item.title}
+            <div key={item.url} className="w-full">
+              <Link
+                href={item.url}
+                className={cn(
+                  "group relative flex items-center gap-3 px-3 py-3 rounded-2xl text-sm font-bold transition-all duration-300",
+                  isCollapsed ? "justify-center" : "",
+                  isActive
+                    ? "bg-slate-100 dark:bg-white/15 text-slate-900 dark:text-white shadow-sm dark:shadow-[0_0_20px_rgba(255,255,255,0.05)] border border-slate-200 dark:border-white/10"
+                    : "text-slate-700 dark:text-white/90 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5"
+                )}
+              >
+                {isActive && (
+                  <div className="absolute left-0 w-1 h-6 bg-indigo-500 rounded-r-full shadow-[0_0_15px_rgba(99,102,241,0.8)]" />
+                )}
+                <item.icon className={cn(
+                  "!h-5 !w-5 shrink-0 transition-transform duration-300",
+                  isActive ? "scale-110 text-indigo-400" : "group-hover:scale-110"
+                )} />
+                {!isCollapsed && item.title}
+                {isCollapsed && (
+                  <div className="absolute left-24 px-3 py-1 bg-slate-900 text-white text-xs font-bold rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:translate-x-2 transition-all duration-300 whitespace-nowrap shadow-2xl border border-white/10">
+                    {item.title}
+                  </div>
+                )}
+              </Link>
+
+              {/* Render sub-items if it's the Launch Menu and not collapsed */}
+              {!isCollapsed && isLaunchMenu && isActive && (
+                <div className="pl-6 mt-1 space-y-1 border-l-2 border-slate-200 dark:border-white/10 ml-5 relative z-10 transition-all duration-300">
+                  <Link
+                    href={`/org/${orgSlug}/launch-leads/vendas-hotmart`}
+                    className={cn(
+                      "group flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-300",
+                      pathname === `/org/${orgSlug}/launch-leads/vendas-hotmart`
+                        ? "text-emerald-500 shadow-sm"
+                        : "text-slate-500 dark:text-white/60 hover:text-emerald-500 dark:hover:text-emerald-400 hover:bg-slate-50 dark:hover:bg-white/5"
+                    )}
+                  >
+                    Vendas Hotmart
+                  </Link>
+                  <Link
+                    href={`/org/${orgSlug}/launch-leads/respostas-alunas`}
+                    className={cn(
+                      "group flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-300",
+                      pathname === `/org/${orgSlug}/launch-leads/respostas-alunas`
+                        ? "text-indigo-500 shadow-sm"
+                        : "text-slate-500 dark:text-white/60 hover:text-indigo-500 dark:hover:text-indigo-400 hover:bg-slate-50 dark:hover:bg-white/5"
+                    )}
+                  >
+                    Respostas Alunas
+                  </Link>
                 </div>
               )}
-            </Link>
+            </div>
           );
         })}
       </nav>

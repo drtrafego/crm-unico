@@ -128,3 +128,27 @@ export const launchLeads = pgTable("launch_leads", {
 
 export type LaunchLead = typeof launchLeads.$inferSelect;
 export type NewLaunchLead = typeof launchLeads.$inferInsert;
+
+// --- Vendas Hotmart Table ---
+
+export const vendasHotmart = pgTable("vendas_hotmart", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  organizationId: text("organization_id").notNull(),
+  transaction: text("transaction").notNull(),
+  status: text("status").notNull(),
+  paymentType: text("payment_type"),
+  currency: text("currency"),
+  price: decimal("price", { precision: 12, scale: 2 }),
+  buyerEmail: text("buyer_email").notNull(),
+  buyerName: text("buyer_name"),
+  buyerPhone: text("buyer_phone"),
+  productId: text("product_id"),
+  productName: text("product_name"),
+  productOffer: text("product_offer"),
+  purchaseDate: timestamp("purchase_date"),
+  approvedDate: timestamp("approved_date"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type VendaHotmart = typeof vendasHotmart.$inferSelect;
+export type NewVendaHotmart = typeof vendasHotmart.$inferInsert;
