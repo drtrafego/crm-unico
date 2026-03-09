@@ -217,7 +217,7 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
         // Time of Day Analysis (Fuso +3)
         const timeOfDayData = [
             { name: 'Manhã (06h-12h)', value: 0, fill: '#f59e0b' },
-            { name: 'Tarde (12h-18h)', value: 0, fill: '#f97316' },
+            { name: 'Tarde (12h-18h)', value: 0, fill: '#0ea5e9' },
             { name: 'Noite (18h-06h)', value: 0, fill: '#6366f1' },
         ];
 
