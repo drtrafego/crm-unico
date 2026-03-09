@@ -145,6 +145,8 @@ export const vendasHotmart = pgTable("vendas_hotmart", {
   productId: text("product_id"),
   productName: text("product_name"),
   productOffer: text("product_offer"),
+  utmSource: text("utm_source"),
+  utmCampaign: text("utm_campaign"),
   purchaseDate: timestamp("purchase_date"),
   approvedDate: timestamp("approved_date"),
   createdAt: timestamp("created_at").defaultNow().notNull(),

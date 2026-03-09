@@ -38,6 +38,20 @@ export async function POST(req: Request) {
         const purchaseDate = data.purchase?.order_date ? new Date(data.purchase.order_date) : new Date();
         const approvedDate = data.purchase?.approved_date ? new Date(data.purchase.approved_date) : undefined;
 
+        // --- UTM Tracking Logic ---
+        let utmSource = null;
+        let utmCampaign = null;
+
+        // 1. Try to get tracking from sckPaymentLink (e.g. facebook_C1)
+        const sckLink = data.purchase?.sckPaymentLink;
+        if (sckLink && sckLink.includes("_")) {
+            const parts = sckLink.split("_");
+            utmSource = parts[0];
+            utmCampaign = parts.slice(1).join("_");
+        } else if (sckLink) {
+            utmSource = sckLink;
+        }
+
         // Need an organization to link this sale to. 
         // For MVPs, we might hardcode, or look up by a configured product ID, or use the first org.
         let orgId;
@@ -63,6 +77,8 @@ export async function POST(req: Request) {
             productId,
             productName,
             productOffer,
+            utmSource,
+            utmCampaign,
             purchaseDate,
             approvedDate
         });
