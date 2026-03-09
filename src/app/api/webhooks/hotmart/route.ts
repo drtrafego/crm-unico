@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { db } from "@/server/db";
+import { db } from "@/lib/db";
 import { vendasHotmart, organizations } from "@/server/db/schema";
-import { eq } from "drizzle-orm";
 
 // Hottok is Hotmart's way of authenticating webhooks
 const HOTMART_HOTTOK = process.env.HOTMART_HOTTOK || "";
