@@ -180,7 +180,7 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
             name: col.title,
             value: filtered.filter(l => l.columnId === col.id).length,
             fill: PIPELINE_COLORS[columns.indexOf(col) % PIPELINE_COLORS.length]
-        })).filter(d => d.value > 0);
+        })).filter(d => d.value > 0).sort((a, b) => b.value - a.value);
 
         // New Metrics
         const processedNewMetrics = processAnalyticsData(activeLeads);
@@ -235,6 +235,9 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                 timeOfDayData[2].value += 1;
             }
         });
+
+        // Sort descending
+        timeOfDayData.sort((a, b) => b.value - a.value);
 
         return {
             uniqueOrigins, states,
@@ -455,7 +458,7 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                                     }}
                                     itemStyle={{ color: '#fff' }}
                                 />
-                                <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '12px', color: isDark ? '#94a3b8' : '#64748b' }} />
+                                <Legend layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{ fontSize: '12px', color: isDark ? '#94a3b8' : '#64748b', paddingLeft: '20px' }} iconType="circle" />
                             </PieChart>
                         </ResponsiveContainer>
                     </CardContent>
