@@ -17,9 +17,13 @@ export async function POST(req: Request) {
         const payload = await req.json();
         console.log("HOTMART PAYLOAD RECEBIDO:", JSON.stringify(payload, null, 2));
 
-        // O teste da Hotmart (Painel -> "Enviar prueba de configuración") geralmente não envia o objeto "purchase" e simula outros eventos.
+        // Hotmart Webhook 2.0 format
+        const event = payload.event;
+        const data = payload.data;
+
+        // O teste da Hotmart (Painel -> "Enviar prueba de configuração") geralmente não envia o objeto "purchase" e simula outros eventos.
         // Se `data.purchase` estiver vazio, vamos tentar preencher com dados mockados para o teste passar.
-        const isTestEvent = !data.purchase;
+        const isTestEvent = !data?.purchase;
 
         const transaction = data.purchase?.transaction || (isTestEvent ? "TESTE_HOTMART_XYZ" : "unknown");
         const status = data.purchase?.status || event;
