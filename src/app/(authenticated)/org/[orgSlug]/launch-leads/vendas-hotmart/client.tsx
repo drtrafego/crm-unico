@@ -143,7 +143,7 @@ export function VendasHotmartClient({ data }: VendasHotmartClientProps) {
         });
         return Object.entries(counts)
             .map(([name, d]) => ({ name, count: d.count, value: d.value }))
-            .sort((a, b) => b.count - a.count);
+            .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
     };
 
     const sourceDist = getDistribution("utmSource");
@@ -342,9 +342,9 @@ export function VendasHotmartClient({ data }: VendasHotmartClientProps) {
             </div>
 
             {/* ── SECTION 3: ATTRIBUTION & UTM TABLES ── */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 {/* Main Pie Chart & P1/P2 KPI Detail */}
-                <div className="space-y-6">
+                <div className="lg:col-span-4 space-y-6">
                     <DashSection title="Distribuição de Vendas (UTM Source)" icon={Link2}>
                         <div className="h-[400px]">
                             <ResponsiveContainer width="100%" height="100%">
@@ -390,7 +390,7 @@ export function VendasHotmartClient({ data }: VendasHotmartClientProps) {
                 </div>
 
                 {/* Detailed UTM Tables */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
                      {[
                         { title: "UTM Medium", data: mediumDist, key: "utmMedium" as const },
                         { title: "UTM Campaign", data: campaignDist, key: "utmCampaign" as const },
@@ -410,7 +410,7 @@ export function VendasHotmartClient({ data }: VendasHotmartClientProps) {
                                                 className={`cursor-pointer transition-colors border-slate-800/50 ${filters[sec.key] === row.name ? 'bg-indigo-500/10' : 'hover:bg-slate-800/20'}`}
                                                 onClick={() => toggleFilter(sec.key, row.name)}
                                             >
-                                                <TableCell className="text-[11px] font-medium py-2 truncate max-w-[120px] text-slate-300">{row.name}</TableCell>
+                                                <TableCell className="text-[11px] font-medium py-2 text-slate-300">{row.name}</TableCell>
                                                 <TableCell className="text-right text-[10px] font-black py-2 text-slate-500">{row.count}</TableCell>
                                             </TableRow>
                                         ))}

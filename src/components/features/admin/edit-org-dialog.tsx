@@ -37,6 +37,8 @@ interface EditOrgDialogProps {
             hasLaunchDashboard?: boolean;
             launchSheetId?: string;
             launchSheetTabName?: string;
+            studentsSheetId?: string;
+            studentsSheetTabName?: string;
         } | null;
     };
     open: boolean;
@@ -70,6 +72,12 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
     );
     const [launchSheetTabName, setLaunchSheetTabName] = useState(
         organization.features?.launchSheetTabName || ""
+    );
+    const [studentsSheetId, setStudentsSheetId] = useState(
+        organization.features?.studentsSheetId || ""
+    );
+    const [studentsSheetTabName, setStudentsSheetTabName] = useState(
+        organization.features?.studentsSheetTabName || ""
     );
     const [activeTab, setActiveTab] = useState<TabType>("general");
     const [isLoading, setIsLoading] = useState(false);
@@ -108,7 +116,13 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
             const res = await updateOrganization(organization.id, {
                 name,
                 slug,
-                features: { hasLaunchDashboard, launchSheetId, launchSheetTabName },
+                features: { 
+                    hasLaunchDashboard, 
+                    launchSheetId, 
+                    launchSheetTabName,
+                    studentsSheetId,
+                    studentsSheetTabName
+                },
             });
 
             if (res.success) {
@@ -514,6 +528,39 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
                                                 placeholder="ex: Página1 ou Respostas"
                                                 className="bg-white/5 border-indigo-500/20 text-white placeholder:text-slate-500 focus:border-indigo-500 h-9 text-sm"
                                             />
+                                        </div>
+                                    </div>
+
+                                    {/* Google Sheets Alunas integration */}
+                                    <div className="pt-4 border-t border-indigo-500/10 space-y-4">
+                                        <div className="flex gap-2 text-indigo-300 items-center">
+                                            <div className="bg-indigo-500/20 p-1.5 rounded-lg flex items-center justify-center">
+                                                <Users className="w-4 h-4" />
+                                            </div>
+                                            <h4 className="text-sm font-semibold">Integração Google Sheets Alunas</h4>
+                                        </div>
+                                        <div className="space-y-3">
+                                            <div className="space-y-1.5">
+                                                <Label className="text-xs font-semibold text-slate-400">ID da Planilha</Label>
+                                                <Input
+                                                    value={studentsSheetId}
+                                                    onChange={(e) => setStudentsSheetId(e.target.value)}
+                                                    placeholder="ex: 1BxiMvs0XRYFgwnAKnZJ-ZjC..."
+                                                    className="bg-white/5 border-indigo-500/20 text-white placeholder:text-slate-500 focus:border-indigo-500 h-9 text-sm"
+                                                />
+                                                <p className="text-[10px] text-slate-500 mt-1">
+                                                    O código da planilha de respostas das alunas
+                                                </p>
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <Label className="text-xs font-semibold text-slate-400">Nome da Aba</Label>
+                                                <Input
+                                                    value={studentsSheetTabName}
+                                                    onChange={(e) => setStudentsSheetTabName(e.target.value)}
+                                                    placeholder="ex: Página1 ou Respostas"
+                                                    className="bg-white/5 border-indigo-500/20 text-white placeholder:text-slate-500 focus:border-indigo-500 h-9 text-sm"
+                                                />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

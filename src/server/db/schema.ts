@@ -25,6 +25,8 @@ export const organizations = pgTable("organizations", {
     hasLaunchDashboard?: boolean;
     launchSheetId?: string;
     launchSheetTabName?: string;
+    studentsSheetId?: string;
+    studentsSheetTabName?: string;
   }>(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

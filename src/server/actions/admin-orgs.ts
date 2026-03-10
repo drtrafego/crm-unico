@@ -25,6 +25,8 @@ export async function updateOrganization(
             hasLaunchDashboard?: boolean;
             launchSheetId?: string;
             launchSheetTabName?: string;
+            studentsSheetId?: string;
+            studentsSheetTabName?: string;
         };
     }
 ) {

@@ -162,7 +162,7 @@ export async function getLaunchAnalyticsData(organizationId: string) {
             { name: "P1 Frio", value: p1Count },
             { name: "P2 Quente", value: p2Count },
             { name: "Outros", value: outrosCount },
-        ].filter(d => d.value > 0);
+        ].filter(d => d.value > 0).sort((a, b) => b.value - a.value);
 
         // Fetch all launch_leads with full formData for form column analysis
         const launchLeadsList = await db.query.launchLeads.findMany({
