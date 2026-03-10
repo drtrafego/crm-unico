@@ -62,14 +62,24 @@ export async function POST(req: Request) {
         }
 
         // Need an organization to link this sale to. 
-        // For MVPs, we might hardcode, or look up by a configured product ID, or use the first org.
-        let orgId;
-        const orgs = await db.select().from(organizations).limit(1);
-        if (orgs.length > 0) {
-            orgId = orgs[0].id;
-        } else {
-            console.warn("Hotmart Webhook: No organization found to assign the sale.");
-            throw new Error("No organization found to assign the sale to.");
+        // 1. Check for orgId in query params
+        const { searchParams } = new URL(req.url);
+        let orgId = searchParams.get("orgId");
+        
+        if (!orgId) {
+            // 2. Specific mapping for Dona Doméstica (as requested)
+            if (productId === "7336724") {
+                orgId = "8f6eed8c-ce0d-472e-9531-aa4e76149be0";
+            } else {
+                // Fallback to first org if none provided and no specific mapping
+                const orgs = await db.select().from(organizations).limit(1);
+                if (orgs.length > 0) {
+                    orgId = orgs[0].id;
+                } else {
+                    console.warn("Hotmart Webhook: No organization found to assign the sale.");
+                    throw new Error("No organization found to assign the sale to.");
+                }
+            }
         }
 
         // Insert into database
