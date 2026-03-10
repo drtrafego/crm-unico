@@ -42,6 +42,11 @@ export async function POST(req: Request) {
         const purchaseDate = data.purchase?.order_date ? new Date(data.purchase.order_date) : new Date();
         const approvedDate = data.purchase?.approved_date ? new Date(data.purchase.approved_date) : undefined;
 
+        const city = data.buyer?.address?.city;
+        const state = data.buyer?.address?.state;
+        const sck = data.purchase?.sck;
+        const scr = data.purchase?.src;
+
         // --- UTM Tracking Logic ---
         let utmSource = null;
         let utmCampaign = null;
@@ -83,6 +88,10 @@ export async function POST(req: Request) {
             productOffer,
             utmSource,
             utmCampaign,
+            city,
+            state,
+            sck,
+            scr,
             purchaseDate,
             approvedDate
         });
