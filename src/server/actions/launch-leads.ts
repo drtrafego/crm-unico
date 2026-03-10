@@ -243,7 +243,7 @@ export async function getLaunchAnalyticsData(organizationId: string) {
                 const boolData = [
                     { name: 'Sim', value: values.filter(v => ['sim', 'yes', 'true'].includes(v.toLowerCase())).length },
                     { name: 'Não', value: values.filter(v => ['não', 'nao', 'no', 'false'].includes(v.toLowerCase())).length },
-                ].filter(d => d.value > 0);
+                ].filter(d => d.value > 0).sort((a, b) => b.value - a.value);
                 columnCharts.push({ columnName: colName, displayName, type: 'boolean', data: boolData });
             } else if (isOpenText) {
                 const wc: Record<string, number> = {};

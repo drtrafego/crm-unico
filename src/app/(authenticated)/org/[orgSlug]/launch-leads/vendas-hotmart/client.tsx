@@ -275,7 +275,7 @@ export function VendasHotmartClient({ data }: VendasHotmartClientProps) {
                                     data={paymentDist}
                                     dataKey="count"
                                     nameKey="name"
-                                    cx="50%"
+                                    cx="40%"
                                     cy="50%"
                                     outerRadius={100}
                                     onClick={(data) => toggleFilter("paymentType", data.name)}
@@ -288,6 +288,7 @@ export function VendasHotmartClient({ data }: VendasHotmartClientProps) {
                                 <RechartsTooltip 
                                     contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', fontSize: '10px' }}
                                 />
+                                <Legend layout="vertical" align="right" verticalAlign="middle" wrapperStyle={{ fontSize: '10px', paddingLeft: '10px' }} />
                             </PieChart>
                         </ResponsiveContainer>
                     </div>
@@ -320,7 +321,7 @@ export function VendasHotmartClient({ data }: VendasHotmartClientProps) {
                                     data={sckDist.slice(0, 8)}
                                     dataKey="count"
                                     nameKey="name"
-                                    cx="50%"
+                                    cx="40%"
                                     cy="50%"
                                     outerRadius={100}
                                     onClick={(data) => toggleFilter("sck", data.name)}
@@ -333,6 +334,7 @@ export function VendasHotmartClient({ data }: VendasHotmartClientProps) {
                                 <RechartsTooltip 
                                     contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', fontSize: '10px' }}
                                 />
+                                <Legend layout="vertical" align="right" verticalAlign="middle" wrapperStyle={{ fontSize: '10px', paddingLeft: '10px' }} />
                             </PieChart>
                         </ResponsiveContainer>
                     </div>
@@ -351,7 +353,7 @@ export function VendasHotmartClient({ data }: VendasHotmartClientProps) {
                                         data={sourceDist}
                                         dataKey="count"
                                         nameKey="name"
-                                        cx="50%"
+                                        cx="35%"
                                         cy="50%"
                                         innerRadius={100}
                                         outerRadius={160}
@@ -366,7 +368,7 @@ export function VendasHotmartClient({ data }: VendasHotmartClientProps) {
                                     <RechartsTooltip 
                                         contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '12px', color: '#fff' }}
                                     />
-                                    <Legend />
+                                    <Legend layout="vertical" align="right" verticalAlign="middle" wrapperStyle={{ fontSize: '10px', paddingLeft: '10px' }} />
                                 </PieChart>
                             </ResponsiveContainer>
                         </div>
