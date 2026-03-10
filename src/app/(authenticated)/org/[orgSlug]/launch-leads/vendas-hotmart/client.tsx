@@ -206,74 +206,145 @@ export function VendasHotmartClient({ data }: VendasHotmartClientProps) {
             <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-5 gap-6">
                 {/* Status Table */}
                 <DashSection title="Status" icon={Activity} className="xl:col-span-1">
-                    <Table>
-                        <TableBody>
-                            {statusDist.map((row, j) => (
-                                <TableRow key={j} className="border-slate-800 hover:bg-slate-800/40 cursor-pointer" onClick={() => toggleFilter("status", row.name)}>
-                                    <TableCell className="text-xs py-2 pr-0 font-medium text-slate-200">{row.name}</TableCell>
-                                    <TableCell className="text-right text-xs py-2 font-black text-slate-400">{row.count}</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                    <div className="max-h-[200px] overflow-y-auto custom-scrollbar">
+                        <Table>
+                            <TableBody>
+                                {statusDist.map((row, j) => (
+                                    <TableRow key={j} className={`border-slate-800 hover:bg-slate-800/40 cursor-pointer ${filters.status === row.name ? 'bg-indigo-500/10' : ''}`} onClick={() => toggleFilter("status", row.name)}>
+                                        <TableCell className="text-[10px] py-1.5 pr-0 font-medium text-slate-300">{row.name}</TableCell>
+                                        <TableCell className="text-right text-[10px] py-1.5 font-black text-slate-500">{row.count}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
                 </DashSection>
 
-                {/* Payment Type Table */}
-                <DashSection title="Pagamento" icon={CreditCard} className="xl:col-span-1">
-                    <Table>
-                        <TableBody>
-                            {paymentDist.map((row, j) => (
-                                <TableRow key={j} className="border-slate-800 hover:bg-slate-800/40 cursor-pointer" onClick={() => toggleFilter("paymentType", row.name)}>
-                                    <TableCell className="text-xs py-2 pr-0 font-medium text-slate-200">{row.name}</TableCell>
-                                    <TableCell className="text-right text-xs py-2 font-black text-slate-400">{row.count}</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                {/* Payment Type Pie Chart */}
+                <DashSection title="Tipo de Pagamento" icon={CreditCard} className="xl:col-span-1">
+                    <div className="h-[180px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    data={paymentDist}
+                                    dataKey="count"
+                                    nameKey="name"
+                                    cx="50%"
+                                    cy="50%"
+                                    outerRadius={60}
+                                    onClick={(data) => toggleFilter("paymentType", data.name)}
+                                    className="cursor-pointer"
+                                >
+                                    {paymentDist.map((entry, i) => (
+                                        <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} stroke="rgba(0,0,0,0)" />
+                                    ))}
+                                </Pie>
+                                <RechartsTooltip 
+                                    contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', fontSize: '10px' }}
+                                />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
                 </DashSection>
 
-                {/* Value by Origin (Table for "Somatória Valor" details) */}
+                {/* Value by Origin */}
                 <DashSection title="Valor por Check" icon={DollarSign} className="xl:col-span-1">
-                     <Table>
-                        <TableBody>
-                            {sourceDist.slice(0, 5).map((row, j) => (
-                                <TableRow key={j} className="border-slate-800 hover:bg-slate-800/40 cursor-pointer" onClick={() => toggleFilter("utmSource", row.name)}>
-                                    <TableCell className="text-xs py-2 pr-0 font-medium text-slate-200 truncate max-w-[80px]">{row.name}</TableCell>
-                                    <TableCell className="text-right text-[10px] py-2 font-black text-emerald-400">
-                                        {row.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })}
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                     <div className="max-h-[200px] overflow-y-auto custom-scrollbar">
+                        <Table>
+                            <TableBody>
+                                {sourceDist.slice(0, 10).map((row, j) => (
+                                    <TableRow key={j} className={`border-slate-800 hover:bg-slate-800/40 cursor-pointer ${filters.utmSource === row.name ? 'bg-indigo-500/10' : ''}`} onClick={() => toggleFilter("utmSource", row.name)}>
+                                        <TableCell className="text-[10px] py-1.5 pr-0 font-medium text-slate-300 truncate max-w-[70px]">{row.name}</TableCell>
+                                        <TableCell className="text-right text-[9px] py-1.5 font-black text-emerald-400">
+                                            {row.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })}
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
                 </DashSection>
 
-                {/* SCK Details */}
-                <DashSection title="SCK" icon={Search} className="xl:col-span-1">
-                    <Table>
-                        <TableBody>
-                            {sckDist.slice(0, 5).map((row, j) => (
-                                <TableRow key={j} className="border-slate-800 hover:bg-slate-800/40 cursor-pointer" onClick={() => toggleFilter("sck", row.name)}>
-                                    <TableCell className="text-xs py-2 pr-0 font-medium text-slate-200 truncate max-w-[80px]">{row.name}</TableCell>
-                                    <TableCell className="text-right text-xs py-2 font-black text-slate-400">{row.count}</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                {/* SCK Pie Chart */}
+                <DashSection title="SCK (Origem)" icon={Search} className="xl:col-span-1">
+                    <div className="h-[180px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    data={sckDist.slice(0, 8)}
+                                    dataKey="count"
+                                    nameKey="name"
+                                    cx="50%"
+                                    cy="50%"
+                                    outerRadius={60}
+                                    onClick={(data) => toggleFilter("sck", data.name)}
+                                    className="cursor-pointer"
+                                >
+                                    {sckDist.slice(0, 8).map((entry, i) => (
+                                        <Cell key={i} fill={CHART_COLORS[(i + 2) % CHART_COLORS.length]} stroke="rgba(0,0,0,0)" />
+                                    ))}
+                                </Pie>
+                                <RechartsTooltip 
+                                    contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', fontSize: '10px' }}
+                                />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
                 </DashSection>
 
-                {/* Geo Table */}
-                <DashSection title="Estado / Geo" icon={MapPin} className="xl:col-span-1">
-                    <Table>
-                        <TableBody>
-                            {getDistribution("state").slice(0, 5).map((row, j) => (
-                                <TableRow key={j} className="border-slate-800 hover:bg-slate-800/40 cursor-pointer" onClick={() => toggleFilter("state", row.name)}>
-                                    <TableCell className="text-xs py-2 pr-0 font-medium text-slate-200">{row.name}</TableCell>
-                                    <TableCell className="text-right text-xs py-2 font-black text-slate-400">{row.count}</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                {/* Geo Heatmap Table */}
+                <DashSection title="Estado / Cidade" icon={MapPin} className="xl:col-span-1">
+                    <div className="max-h-[200px] overflow-y-auto custom-scrollbar text-[10px]">
+                        {(() => {
+                            const stateDist = getDistribution("state");
+                            const cityDist = getDistribution("city");
+                            const maxState = stateDist[0]?.count || 1;
+                            const maxCity = cityDist[0]?.count || 1;
+                            
+                            return (
+                                <div className="space-y-4">
+                                    <Table>
+                                        <TableBody>
+                                            {stateDist.slice(0, 5).map((row, j) => {
+                                                const intensity = Math.min(row.count / maxState, 1);
+                                                return (
+                                                    <TableRow 
+                                                        key={j} 
+                                                        className="border-slate-800 hover:opacity-80 cursor-pointer" 
+                                                        style={{ backgroundColor: `rgba(99, 102, 241, ${intensity * 0.4})` }}
+                                                        onClick={() => toggleFilter("state", row.name)}
+                                                    >
+                                                        <TableCell className="py-1 font-bold text-white">{row.name}</TableCell>
+                                                        <TableCell className="text-right py-1 font-black">{row.count}</TableCell>
+                                                    </TableRow>
+                                                );
+                                            })}
+                                        </TableBody>
+                                    </Table>
+                                    <div className="border-t border-slate-800 pt-2">
+                                        <Table>
+                                            <TableBody>
+                                                {cityDist.slice(0, 5).map((row, j) => {
+                                                    const intensity = Math.min(row.count / maxCity, 1);
+                                                    return (
+                                                        <TableRow 
+                                                            key={j} 
+                                                            className="border-slate-800 hover:opacity-80 cursor-pointer" 
+                                                            style={{ backgroundColor: `rgba(16, 185, 129, ${intensity * 0.4})` }}
+                                                            onClick={() => toggleFilter("city", row.name)}
+                                                        >
+                                                            <TableCell className="py-1 font-bold text-white">{row.name}</TableCell>
+                                                            <TableCell className="text-right py-1 font-black">{row.count}</TableCell>
+                                                        </TableRow>
+                                                    );
+                                                })}
+                                            </TableBody>
+                                        </Table>
+                                    </div>
+                                </div>
+                            );
+                        })()}
+                    </div>
                 </DashSection>
             </div>
 
