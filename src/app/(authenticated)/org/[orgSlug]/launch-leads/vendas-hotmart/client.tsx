@@ -184,7 +184,7 @@ export function VendasHotmartClient({ data }: VendasHotmartClientProps) {
                                     paddingAngle={2}
                                     onClick={(data) => toggleFilter("utmSource", data.name)}
                                     className="cursor-pointer"
-                                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(1)}%`}
+                                    label={({ name, percent }) => `${name} ${(percent ? percent * 100 : 0).toFixed(1)}%`}
                                 >
                                     {sourceDist.map((entry, i) => (
                                         <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} stroke="rgba(255,255,255,0.1)" />
