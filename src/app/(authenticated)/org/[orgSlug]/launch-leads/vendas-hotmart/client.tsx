@@ -205,10 +205,10 @@ export function VendasHotmartClient({ data }: VendasHotmartClientProps) {
             </div>
 
             {/* ── SECTION 2: GEO, PAYMENT, VALUE, SCK ── */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {/* States Heatmap Table */}
                 <DashSection title="Estados" icon={MapPin} className="xl:col-span-1">
-                    <div className="max-h-[200px] overflow-y-auto custom-scrollbar text-[10px]">
+                    <div className="h-[280px] overflow-y-auto custom-scrollbar text-[11px]">
                         {(() => {
                             const stateDist = getDistribution("state");
                             const maxState = stateDist[0]?.count || 1;
@@ -238,7 +238,7 @@ export function VendasHotmartClient({ data }: VendasHotmartClientProps) {
 
                 {/* Cities Heatmap Table */}
                 <DashSection title="Cidades" icon={MapPin} className="xl:col-span-1">
-                    <div className="max-h-[200px] overflow-y-auto custom-scrollbar text-[10px]">
+                    <div className="h-[280px] overflow-y-auto custom-scrollbar text-[11px]">
                         {(() => {
                             const cityDist = getDistribution("city");
                             const maxCity = cityDist[0]?.count || 1;
@@ -268,7 +268,7 @@ export function VendasHotmartClient({ data }: VendasHotmartClientProps) {
 
                 {/* Payment Type Pie Chart */}
                 <DashSection title="Pagamento" icon={CreditCard} className="xl:col-span-1">
-                    <div className="h-[180px]">
+                    <div className="h-[280px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie
@@ -277,7 +277,7 @@ export function VendasHotmartClient({ data }: VendasHotmartClientProps) {
                                     nameKey="name"
                                     cx="50%"
                                     cy="50%"
-                                    outerRadius={60}
+                                    outerRadius={100}
                                     onClick={(data) => toggleFilter("paymentType", data.name)}
                                     className="cursor-pointer"
                                 >
@@ -295,13 +295,13 @@ export function VendasHotmartClient({ data }: VendasHotmartClientProps) {
 
                 {/* Value by Origin */}
                 <DashSection title="Valor por Check" icon={DollarSign} className="xl:col-span-1">
-                     <div className="max-h-[200px] overflow-y-auto custom-scrollbar">
+                     <div className="h-[280px] overflow-y-auto custom-scrollbar">
                         <Table>
                             <TableBody>
-                                {sourceDist.slice(0, 10).map((row, j) => (
+                                {sourceDist.slice(0, 15).map((row, j) => (
                                     <TableRow key={j} className={`border-slate-800 hover:bg-slate-800/40 cursor-pointer ${filters.utmSource === row.name ? 'bg-indigo-500/10' : ''}`} onClick={() => toggleFilter("utmSource", row.name)}>
-                                        <TableCell className="text-[10px] py-1.5 pr-0 font-medium text-slate-300 truncate max-w-[70px]">{row.name}</TableCell>
-                                        <TableCell className="text-right text-[9px] py-1.5 font-black text-emerald-400">
+                                        <TableCell className="text-[11px] py-1.5 pr-0 font-medium text-slate-300 truncate max-w-[150px]">{row.name}</TableCell>
+                                        <TableCell className="text-right text-[10px] py-1.5 font-black text-emerald-400">
                                             {row.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })}
                                         </TableCell>
                                     </TableRow>
@@ -313,7 +313,7 @@ export function VendasHotmartClient({ data }: VendasHotmartClientProps) {
 
                 {/* SCK Pie Chart */}
                 <DashSection title="SCK (Origem)" icon={Search} className="xl:col-span-1">
-                    <div className="h-[180px]">
+                    <div className="h-[280px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie
@@ -322,7 +322,7 @@ export function VendasHotmartClient({ data }: VendasHotmartClientProps) {
                                     nameKey="name"
                                     cx="50%"
                                     cy="50%"
-                                    outerRadius={60}
+                                    outerRadius={100}
                                     onClick={(data) => toggleFilter("sck", data.name)}
                                     className="cursor-pointer"
                                 >
@@ -340,11 +340,11 @@ export function VendasHotmartClient({ data }: VendasHotmartClientProps) {
             </div>
 
             {/* ── SECTION 3: ATTRIBUTION & UTM TABLES ── */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Main Pie Chart & P1/P2 KPI Detail */}
-                <div className="lg:col-span-5 space-y-6">
+                <div className="space-y-6">
                     <DashSection title="Distribuição de Vendas (UTM Source)" icon={Link2}>
-                        <div className="h-[300px]">
+                        <div className="h-[400px]">
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
                                     <Pie
@@ -353,8 +353,8 @@ export function VendasHotmartClient({ data }: VendasHotmartClientProps) {
                                         nameKey="name"
                                         cx="50%"
                                         cy="50%"
-                                        innerRadius={60}
-                                        outerRadius={100}
+                                        innerRadius={100}
+                                        outerRadius={160}
                                         paddingAngle={5}
                                         onClick={(data) => toggleFilter("utmSource", data.name)}
                                         className="cursor-pointer"
@@ -388,13 +388,13 @@ export function VendasHotmartClient({ data }: VendasHotmartClientProps) {
                 </div>
 
                 {/* Detailed UTM Tables */}
-                <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                      {[
                         { title: "UTM Medium", data: mediumDist, key: "utmMedium" as const },
                         { title: "UTM Campaign", data: campaignDist, key: "utmCampaign" as const },
                         { title: "UTM Content", data: contentDist, key: "utmContent" as const },
                     ].map((sec, i) => (
-                        <div key={i} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden flex flex-col h-[230px]">
+                        <div key={i} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden flex flex-col h-[400px]">
                             <div className="px-4 py-3 bg-slate-800/40 border-b border-slate-800 flex items-center justify-between">
                                 <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">{sec.title}</span>
                                 {filters[sec.key] && <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />}
