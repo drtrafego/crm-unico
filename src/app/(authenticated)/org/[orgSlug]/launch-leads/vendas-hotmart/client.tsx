@@ -58,7 +58,9 @@ interface AnalyticsData {
     summary: {
         totalValue: number;
         salesCount: number;
-        totalLeads?: number;
+        totalLeads: number;
+        capturedCount: number;
+        formCount: number;
         matchedCount: number;
     };
     allSales: MatchedSale[];
@@ -126,7 +128,9 @@ export function VendasHotmartClient({ data }: VendasHotmartClientProps) {
     const totalValue = filteredSales.reduce((acc, s) => acc + s.price, 0);
     const salesCount = filteredSales.length;
     const totalLeads = data.summary.totalLeads || 0;
-    const conversionRate = totalLeads > 0 ? (salesCount / totalLeads) * 100 : 0;
+    const capturedCount = data.summary.capturedCount || 0;
+    const formCount = data.summary.formCount || 0;
+    const conversionRate = capturedCount > 0 ? (salesCount / capturedCount) * 100 : 0;
 
     // Aggregations for Charts
     const getDistribution = (key: keyof MatchedSale) => {
@@ -180,11 +184,12 @@ export function VendasHotmartClient({ data }: VendasHotmartClientProps) {
             </div>
 
             {/* ── SECTION 1: PRIMARY KPIs ── */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
                 {[
+                    { label: "Leads CRM", value: capturedCount.toLocaleString('pt-BR'), sub: "Total captado ( rastreamento )", icon: Filter, color: "text-blue-400", bg: "bg-blue-400/10" },
+                    { label: "Formulários", value: formCount.toLocaleString('pt-BR'), sub: "Pessoas que responderam", icon: Search, color: "text-amber-400", bg: "bg-amber-400/10" },
                     { label: "Quantidade de Vendas", value: salesCount.toLocaleString('pt-BR'), sub: "Total de transações", icon: ShoppingCart, color: "text-indigo-400", bg: "bg-indigo-400/10" },
-                    { label: "Somatória das Vendas", value: totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), sub: "Faturamento bruto", icon: DollarSign, color: "text-emerald-400", bg: "bg-emerald-400/10" },
-                    { label: "Taxa de Conversão", value: `${conversionRate.toFixed(2)}%`, sub: `Baseado em ${totalLeads} leads totais`, icon: TrendingUp, color: "text-violet-400", bg: "bg-violet-400/10" },
+                    { label: "Taxa de Conversão", value: `${conversionRate.toFixed(2)}%`, sub: `Baseado em ${capturedCount} leads captados`, icon: TrendingUp, color: "text-violet-400", bg: "bg-violet-400/10" },
                 ].map((kpi, i) => (
                     <div key={i} className="rounded-2xl border border-slate-700/60 bg-slate-900/60 p-6 backdrop-blur flex items-center justify-between group hover:border-slate-500/50 transition-all duration-300">
                         <div>

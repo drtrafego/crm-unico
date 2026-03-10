@@ -51,7 +51,8 @@ import {
 // ----------- Types -----------
 interface AnalyticsData {
     totalLeads: number;
-    totalForms: number;
+    capturedCount: number;
+    formCount: number;
     trackingRate: number;
     trackedLeadsCount: number;
     utmRanking: { name: string; value: number }[];
@@ -366,10 +367,10 @@ export function LaunchLeadsClient({ data, organizationId, analytics }: LaunchLea
                     {/* ── KPI Cards ── */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {(analytics?.totalLeads !== undefined) && [
-                            { label: "Total de Leads", value: (analytics.totalLeads ?? 0).toLocaleString('pt-BR'), sub: "Captação via páginas", icon: Users, color: "indigo" },
-                            { label: "Leads Rastreados", value: (analytics.trackedLeadsCount ?? 0).toLocaleString('pt-BR'), sub: "Com UTM Source", icon: Activity, color: "violet" },
-                            { label: "Taxa de Rastreio", value: `${analytics.trackingRate ?? 0}%`, sub: "Leads com UTM / Total", icon: TrendingUp, color: "purple" },
-                            { label: "Respostas do Form", value: (analytics.totalForms ?? 0).toLocaleString('pt-BR'), sub: "Sincronizados da planilha", icon: FileText, color: "fuchsia" },
+                            { label: "Leads CRM", value: (analytics.capturedCount ?? 0).toLocaleString('pt-BR'), sub: "Total rastreado via URL", icon: Users, color: "blue" },
+                            { label: "Respostas do Form", value: (analytics.formCount ?? 0).toLocaleString('pt-BR'), sub: "Sincronizados da planilha", icon: FileText, color: "amber" },
+                            { label: "Leads Totais", value: (analytics.totalLeads ?? 0).toLocaleString('pt-BR'), sub: "Pessoas únicas", icon: Activity, color: "indigo" },
+                            { label: "Taxa de Rastreio", value: `${analytics.trackingRate ?? 0}%`, sub: "CRM / Totais", icon: TrendingUp, color: "purple" },
                         ].map((card, i) => (
                             <div
                                 key={i}

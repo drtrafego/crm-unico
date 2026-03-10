@@ -77,12 +77,10 @@ export async function getLaunchAnalyticsData(organizationId: string) {
 
         const combinedLeads = Array.from(leadsMap.values());
 
-        // 3. Calculate Total Unique Leads (CRM captures + All Form Respondents)
-        // Rule: Count everyone in syncedLeads (Forms) + anyone in baseLeads (CRM) who IS NOT in syncedLeads.
-        const syncedEmails = new Set(syncedLeads.map(l => l.email?.toLowerCase()).filter(Boolean));
-        const crmOnlyLeads = baseLeads.filter(l => !l.email || !syncedEmails.has(l.email.toLowerCase()));
-        
-        const totalLeads = syncedLeads.length + crmOnlyLeads.length;
+        const totalLeads = Array.from(leadsMap.values()).length;
+        const capturedCount = baseLeads.length;
+        const formCount = syncedLeads.length;
+
         let trackedLeadsCount = 0;
         let p1Count = 0;
         let p2Count = 0;
@@ -292,6 +290,8 @@ export async function getLaunchAnalyticsData(organizationId: string) {
             success: true,
             data: {
                 totalLeads,
+                capturedCount,
+                formCount,
                 totalForms,
                 trackingRate,
                 trackedLeadsCount,
