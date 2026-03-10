@@ -15,7 +15,6 @@ import { Badge } from "@/components/ui/badge";
 import {
     Filter,
     X,
-    Activity,
     CreditCard,
     MapPin,
     DollarSign,
@@ -147,10 +146,8 @@ export function VendasHotmartClient({ data }: VendasHotmartClientProps) {
     const mediumDist = getDistribution("utmMedium");
     const campaignDist = getDistribution("utmCampaign");
     const contentDist = getDistribution("utmContent");
-    const statusDist = getDistribution("status");
     const paymentDist = getDistribution("paymentType");
     const sckDist = getDistribution("sck");
-    const scrDist = getDistribution("scr");
 
     // P1/P2 Metrics
     const p1Sales = filteredSales.filter(s => s.utmSource.includes("P1"));
@@ -202,26 +199,70 @@ export function VendasHotmartClient({ data }: VendasHotmartClientProps) {
                 ))}
             </div>
 
-            {/* ── SECTION 2: STATUS, PAYMENT, VALUE, SCK, GEO ── */}
+            {/* ── SECTION 2: GEO, PAYMENT, VALUE, SCK ── */}
             <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-                {/* Status Table */}
-                <DashSection title="Status" icon={Activity} className="xl:col-span-1">
-                    <div className="max-h-[200px] overflow-y-auto custom-scrollbar">
-                        <Table>
-                            <TableBody>
-                                {statusDist.map((row, j) => (
-                                    <TableRow key={j} className={`border-slate-800 hover:bg-slate-800/40 cursor-pointer ${filters.status === row.name ? 'bg-indigo-500/10' : ''}`} onClick={() => toggleFilter("status", row.name)}>
-                                        <TableCell className="text-[10px] py-1.5 pr-0 font-medium text-slate-300">{row.name}</TableCell>
-                                        <TableCell className="text-right text-[10px] py-1.5 font-black text-slate-500">{row.count}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                {/* States Heatmap Table */}
+                <DashSection title="Estados" icon={MapPin} className="xl:col-span-1">
+                    <div className="max-h-[200px] overflow-y-auto custom-scrollbar text-[10px]">
+                        {(() => {
+                            const stateDist = getDistribution("state");
+                            const maxState = stateDist[0]?.count || 1;
+                            return (
+                                <Table>
+                                    <TableBody>
+                                        {stateDist.slice(0, 10).map((row, j) => {
+                                            const intensity = Math.min(row.count / maxState, 1);
+                                            return (
+                                                <TableRow 
+                                                    key={j} 
+                                                    className={`border-slate-800 hover:opacity-80 cursor-pointer ${filters.state === row.name ? 'ring-1 ring-white/20' : ''}`} 
+                                                    style={{ backgroundColor: `rgba(99, 102, 241, ${intensity * 0.4})` }}
+                                                    onClick={() => toggleFilter("state", row.name)}
+                                                >
+                                                    <TableCell className="py-1.5 font-bold text-white">{row.name}</TableCell>
+                                                    <TableCell className="text-right py-1.5 font-black">{row.count}</TableCell>
+                                                </TableRow>
+                                            );
+                                        })}
+                                    </TableBody>
+                                </Table>
+                            );
+                        })()}
+                    </div>
+                </DashSection>
+
+                {/* Cities Heatmap Table */}
+                <DashSection title="Cidades" icon={MapPin} className="xl:col-span-1">
+                    <div className="max-h-[200px] overflow-y-auto custom-scrollbar text-[10px]">
+                        {(() => {
+                            const cityDist = getDistribution("city");
+                            const maxCity = cityDist[0]?.count || 1;
+                            return (
+                                <Table>
+                                    <TableBody>
+                                        {cityDist.slice(0, 10).map((row, j) => {
+                                            const intensity = Math.min(row.count / maxCity, 1);
+                                            return (
+                                                <TableRow 
+                                                    key={j} 
+                                                    className={`border-slate-800 hover:opacity-80 cursor-pointer ${filters.city === row.name ? 'ring-1 ring-white/20' : ''}`} 
+                                                    style={{ backgroundColor: `rgba(16, 185, 129, ${intensity * 0.4})` }}
+                                                    onClick={() => toggleFilter("city", row.name)}
+                                                >
+                                                    <TableCell className="py-1.5 font-bold text-white">{row.name}</TableCell>
+                                                    <TableCell className="text-right py-1.5 font-black">{row.count}</TableCell>
+                                                </TableRow>
+                                            );
+                                        })}
+                                    </TableBody>
+                                </Table>
+                            );
+                        })()}
                     </div>
                 </DashSection>
 
                 {/* Payment Type Pie Chart */}
-                <DashSection title="Tipo de Pagamento" icon={CreditCard} className="xl:col-span-1">
+                <DashSection title="Pagamento" icon={CreditCard} className="xl:col-span-1">
                     <div className="h-[180px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
@@ -291,61 +332,6 @@ export function VendasHotmartClient({ data }: VendasHotmartClientProps) {
                         </ResponsiveContainer>
                     </div>
                 </DashSection>
-
-                {/* Geo Heatmap Table */}
-                <DashSection title="Estado / Cidade" icon={MapPin} className="xl:col-span-1">
-                    <div className="max-h-[200px] overflow-y-auto custom-scrollbar text-[10px]">
-                        {(() => {
-                            const stateDist = getDistribution("state");
-                            const cityDist = getDistribution("city");
-                            const maxState = stateDist[0]?.count || 1;
-                            const maxCity = cityDist[0]?.count || 1;
-                            
-                            return (
-                                <div className="space-y-4">
-                                    <Table>
-                                        <TableBody>
-                                            {stateDist.slice(0, 5).map((row, j) => {
-                                                const intensity = Math.min(row.count / maxState, 1);
-                                                return (
-                                                    <TableRow 
-                                                        key={j} 
-                                                        className="border-slate-800 hover:opacity-80 cursor-pointer" 
-                                                        style={{ backgroundColor: `rgba(99, 102, 241, ${intensity * 0.4})` }}
-                                                        onClick={() => toggleFilter("state", row.name)}
-                                                    >
-                                                        <TableCell className="py-1 font-bold text-white">{row.name}</TableCell>
-                                                        <TableCell className="text-right py-1 font-black">{row.count}</TableCell>
-                                                    </TableRow>
-                                                );
-                                            })}
-                                        </TableBody>
-                                    </Table>
-                                    <div className="border-t border-slate-800 pt-2">
-                                        <Table>
-                                            <TableBody>
-                                                {cityDist.slice(0, 5).map((row, j) => {
-                                                    const intensity = Math.min(row.count / maxCity, 1);
-                                                    return (
-                                                        <TableRow 
-                                                            key={j} 
-                                                            className="border-slate-800 hover:opacity-80 cursor-pointer" 
-                                                            style={{ backgroundColor: `rgba(16, 185, 129, ${intensity * 0.4})` }}
-                                                            onClick={() => toggleFilter("city", row.name)}
-                                                        >
-                                                            <TableCell className="py-1 font-bold text-white">{row.name}</TableCell>
-                                                            <TableCell className="text-right py-1 font-black">{row.count}</TableCell>
-                                                        </TableRow>
-                                                    );
-                                                })}
-                                            </TableBody>
-                                        </Table>
-                                    </div>
-                                </div>
-                            );
-                        })()}
-                    </div>
-                </DashSection>
             </div>
 
             {/* ── SECTION 3: ATTRIBUTION & UTM TABLES ── */}
@@ -397,9 +383,8 @@ export function VendasHotmartClient({ data }: VendasHotmartClientProps) {
                 </div>
 
                 {/* Detailed UTM Tables */}
-                <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-4">
                      {[
-                        { title: "UTM Source", data: sourceDist, key: "utmSource" as const },
                         { title: "UTM Medium", data: mediumDist, key: "utmMedium" as const },
                         { title: "UTM Campaign", data: campaignDist, key: "utmCampaign" as const },
                         { title: "UTM Content", data: contentDist, key: "utmContent" as const },
