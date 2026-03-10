@@ -49,7 +49,7 @@ interface MatchedSale {
     scr: string;
     state: string;
     city: string;
-    purchaseDate: string | null;
+    purchaseDate: Date | null;
     buyerName: string | null;
     buyerEmail: string;
 }
