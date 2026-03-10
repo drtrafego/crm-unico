@@ -154,7 +154,7 @@ export async function getHotmartVendasAnalytics(organizationId: string) {
                 summary: {
                     totalValue,
                     salesCount,
-                    totalLeads: crmLeads.length + sheetLeads.length,
+                    totalLeads: sheetLeads.length + crmLeads.filter(l => !l.email || !new Set(sheetLeads.map(s => s.email?.toLowerCase()).filter(Boolean)).has(l.email.toLowerCase())).length,
                     matchedCount: allMatchedSales.filter(s => s.utmSource !== "Desconhecido").length
                 },
                 allSales: allMatchedSales,
