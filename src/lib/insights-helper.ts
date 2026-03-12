@@ -28,6 +28,10 @@ export interface DashboardInsights {
       sales: number;
       conversionRate: number;
     }[];
+    sourceStageMatrix: {
+      source: string;
+      stages: { name: string; count: number; percentage: number }[];
+    }[];
     paretoSummary: {
       topSourceCount: number;
       topRevenuePercentage: number;
@@ -208,12 +212,30 @@ export function calculateAdvancedInsights(
   const bestDayIdx = Object.entries(dayCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 1;
   const bestHourIdx = Object.entries(hourCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 14;
 
+  // 5. Deep Funnel Matrix (Traffic -> Specific Stages)
+  const topSources = roiBySource.slice(0, 5).map(s => s.name);
+  const relevantStages = columns.sort((a, b) => a.order - b.order); // Order columns by funnel order
+
+  const sourceStageMatrix = topSources.map(sourceName => {
+    const sourceLeads = leads.filter(l => (l.utmSource || "Outros") === sourceName);
+    const stagesPerformance = relevantStages.map(col => {
+      const count = sourceLeads.filter(l => l.columnId === col.id).length;
+      return {
+        name: col.title,
+        count,
+        percentage: sourceLeads.length > 0 ? (count / sourceLeads.length) * 100 : 0
+      };
+    });
+    return { source: sourceName, stages: stagesPerformance };
+  });
+
   return {
     leadScoreStats: { avgScore, distribution, conversionsByGrade },
     stagnationMetrics: { averageDaysToWin, stdDevDaysToWin, highRiskLeads },
     attributionMetrics: { 
       roiBySource, 
       roiByTerm,
+      sourceStageMatrix,
       paretoSummary: { 
         topSourceCount: Math.max(1, topSourceCount), 
         topRevenuePercentage,

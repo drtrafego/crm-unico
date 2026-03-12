@@ -104,23 +104,24 @@ export function Sidebar({ isCollapsed = false, toggle }: SidebarProps) {
   return (
     <div className={cn(
       "fixed left-4 top-4 bottom-4 z-50 transition-all duration-500 ease-in-out",
-      "bg-white/80 dark:bg-slate-950/40 backdrop-blur-xl border border-slate-200 dark:border-white/10 shadow-2xl rounded-3xl flex flex-col overflow-hidden",
-      isCollapsed ? "w-20" : "w-64"
+      "bg-white/80 dark:bg-slate-950/40 backdrop-blur-xl border-r lg:border border-slate-200 dark:border-white/10 shadow-2xl lg:rounded-3xl flex flex-col overflow-hidden",
+      isCollapsed ? "w-20" : "w-64 lg:w-72",
+      "h-full lg:h-auto"
     )}>
       <div className={cn(
         "flex items-center border-b border-white/5",
         isCollapsed ? "h-20 justify-center p-0" : "h-20 p-6 justify-between"
       )}>
         {!isCollapsed && (
-          <h1 className="font-black text-xl bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent tracking-tighter">
-            CRM CASAL DO TRÁFEGO
+          <h1 className="font-black text-xl bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent tracking-tighter uppercase italic">
+            CRM ÚNICO
           </h1>
         )}
         <Button
           variant="ghost"
           size="icon"
           onClick={toggle}
-          className={cn("text-slate-500 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10", isCollapsed ? "h-8 w-8" : "h-8 w-8")}
+          className={cn("hidden lg:flex text-slate-500 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10", isCollapsed ? "h-8 w-8" : "h-8 w-8")}
         >
           {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </Button>
