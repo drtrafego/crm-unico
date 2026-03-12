@@ -11,9 +11,9 @@ import {
 import { format, subDays, startOfDay, endOfDay, isWithinInterval, eachDayOfInterval, differenceInDays, subHours } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-    TrendingUp, Users, Target, Clock, CalendarClock,
-    RotateCcw, BrainCircuit, Link2,
-    AlertTriangle, Activity, Zap, Timer, Filter,
+    Wallet, TrendingUp, Users, Target, Clock, CalendarClock,
+    RotateCcw, Gem, BrainCircuit, Link2,
+    AlertTriangle, Activity, Zap, Timer, DollarSign, Filter,
     CheckCircle2, ArrowRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
