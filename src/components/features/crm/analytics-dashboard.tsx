@@ -451,57 +451,49 @@ export function AnalyticsDashboard({ initialLeads, columns, initialSales }: Anal
                 </CardContent>
             </Card>
 
-            {/* ===== DEEP FUNNEL PERFORMANCE (TRAFFIC VS STAGES) ===== */}
-            <Card className="bg-slate-900/90 backdrop-blur-2xl border border-white/10 shadow-3xl overflow-hidden glass-card">
-                <CardHeader className="py-5 px-6 border-b border-white/5 bg-slate-950/40">
-                    <div>
-                        <CardTitle className="text-lg font-black text-white flex items-center gap-3 uppercase tracking-[0.2em] italic">
-                            <Target className="h-5 w-5 text-emerald-400" /> Deep Funnel Performance
-                        </CardTitle>
-                        <CardDescription className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Cruzamento de Origem de Tráfego vs Etapas do Pipeline (Conversão Real)</CardDescription>
-                    </div>
-                </CardHeader>
-                <CardContent className="p-0">
-                    <div className="overflow-x-auto custom-scrollbar">
-                        <table className="w-full text-left border-collapse min-w-[600px] lg:min-w-full">
-                            <thead>
-                                <tr className="border-b border-white/5 bg-white/[0.01]">
-                                    <th className="py-4 px-6 text-[10px] font-black text-slate-500 uppercase tracking-widest sticky left-0 bg-slate-900 z-10">Origem</th>
-                                    {intelligence.advanced.attributionMetrics.sourceStageMatrix[0]?.stages.map((stage, i) => (
-                                        <th key={i} className="py-4 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">{stage.name}</th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {intelligence.advanced.attributionMetrics.sourceStageMatrix.map((row, i) => (
-                                    <tr key={i} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors group">
-                                        <td className="py-4 px-6 sticky left-0 bg-slate-900/90 backdrop-blur-md z-10 border-r border-white/5">
-                                            <div className="flex flex-col min-w-[120px]">
-                                                <span className="text-xs font-black text-white uppercase italic group-hover:text-emerald-400 transition-colors truncate">{row.source}</span>
-                                                <span className="text-[9px] font-bold text-slate-500 whitespace-nowrap">{kpis.totalLeads > 0 ? ((row.stages[0]?.count / kpis.totalLeads) * 100).toFixed(1) : 0}% share</span>
+            {/* ===== MILESTONE KEYWORD WINNERS (GRANULAR ATTRIBUTION) ===== */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                {intelligence.advanced.attributionMetrics.milestoneKeywordPerformance.map((milestone, idx) => (
+                    <Card key={idx} className="bg-slate-900/90 backdrop-blur-2xl border border-white/10 shadow-3xl overflow-hidden glass-card">
+                        <CardHeader className="py-4 px-6 border-b border-white/5 bg-slate-950/40">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <CardTitle className="text-sm font-black text-white flex items-center gap-3 uppercase tracking-widest italic">
+                                        <TrendingUp className="h-4 w-4 text-emerald-400" /> Vencedores: {milestone.stageName}
+                                    </CardTitle>
+                                    <CardDescription className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Keywords que mais convertem para este marco</CardDescription>
+                                </div>
+                                <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[9px] font-black italic">TOP CONV</Badge>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                            <div className="divide-y divide-white/5">
+                                {milestone.keywords.map((kw, kidx) => (
+                                    <div key={kidx} className="flex items-center justify-between py-3 px-6 hover:bg-white/[0.02] transition-colors group">
+                                        <div className="flex flex-col">
+                                            <span className="text-xs font-black text-white uppercase italic group-hover:text-emerald-400 transition-colors truncate max-w-[200px]">
+                                                {kw.name}
+                                            </span>
+                                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter">Termo da Campanha</span>
+                                        </div>
+                                        <div className="flex items-center gap-6">
+                                            <div className="flex flex-col items-end">
+                                                <span className="text-sm font-black text-white italic tabular-nums">{kw.count}</span>
+                                                <span className="text-[9px] font-bold text-slate-500 uppercase">Leads</span>
                                             </div>
-                                        </td>
-                                        {row.stages.map((stage, j) => (
-                                            <td key={j} className="py-4 px-4 text-center">
-                                                <div className="flex flex-col items-center">
-                                                    <span className={`text-sm font-black italic ${stage.count > 0 ? 'text-white' : 'text-slate-700'}`}>{stage.count}</span>
-                                                    <div className="w-12 h-1 bg-slate-800 rounded-full mt-1.5 overflow-hidden">
-                                                        <div 
-                                                            className={`h-full transition-all duration-1000 ${j > 3 ? 'bg-emerald-500' : 'bg-indigo-500'}`} 
-                                                            style={{ width: `${stage.percentage}%` }}
-                                                        />
-                                                    </div>
-                                                    <span className="text-[8px] font-bold text-slate-500 mt-1 uppercase">{stage.percentage.toFixed(0)}%</span>
-                                                </div>
-                                            </td>
-                                        ))}
-                                    </tr>
+                                            <div className="h-8 w-[1px] bg-white/5" />
+                                            <div className="flex flex-col items-end min-w-[60px]">
+                                                <span className="text-sm font-black text-emerald-400 italic tabular-nums">{kw.rate.toFixed(1)}%</span>
+                                                <span className="text-[9px] font-bold text-slate-500 uppercase underline decoration-emerald-500/30">Taxa Cnv</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </CardContent>
-            </Card>
+                            </div>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
 
             {/* ===== TRAFFIC PERFORMANCE & ROI INTEL (CONDITIONAL FOR LAUNCH DASHBOARD) ===== */}
             {initialSales?.length > 0 && (

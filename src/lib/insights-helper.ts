@@ -32,6 +32,10 @@ export interface DashboardInsights {
       source: string;
       stages: { name: string; count: number; percentage: number }[];
     }[];
+    milestoneKeywordPerformance: {
+      stageName: string;
+      keywords: { name: string; count: number; rate: number }[];
+    }[];
     paretoSummary: {
       topSourceCount: number;
       topRevenuePercentage: number;
@@ -229,6 +233,36 @@ export function calculateAdvancedInsights(
     return { source: sourceName, stages: stagesPerformance };
   });
 
+  // 6. Milestone Keyword Attribution ( Granular Keyword Intelligence )
+  // We look for terms that specifically push leads to high-value stages
+  const milestoneStages = relevantStages.filter(s => 
+    /(call|agendada|vídeo|reunião|contrato|fechado|venda)/.test(s.title.toLowerCase())
+  );
+
+  const milestoneKeywordPerformance = milestoneStages.map(stage => {
+    const stageKeywords = new Map<string, number>();
+    const keywordTotalLeads = new Map<string, number>();
+
+    leads.forEach(l => {
+      const term = l.utmTerm || "Direto/Geral";
+      keywordTotalLeads.set(term, (keywordTotalLeads.get(term) || 0) + 1);
+      if (l.columnId === stage.id) {
+        stageKeywords.set(term, (stageKeywords.get(term) || 0) + 1);
+      }
+    });
+
+    const topKeywords = Array.from(stageKeywords.entries())
+      .map(([name, count]) => ({
+        name,
+        count,
+        rate: keywordTotalLeads.get(name) ? (count / keywordTotalLeads.get(name)!) * 100 : 0
+      }))
+      .sort((a, b) => b.count - a.count || b.rate - a.rate)
+      .slice(0, 5);
+
+    return { stageName: stage.title, keywords: topKeywords };
+  }).filter(m => m.keywords.length > 0);
+
   return {
     leadScoreStats: { avgScore, distribution, conversionsByGrade },
     stagnationMetrics: { averageDaysToWin, stdDevDaysToWin, highRiskLeads },
@@ -236,6 +270,7 @@ export function calculateAdvancedInsights(
       roiBySource, 
       roiByTerm,
       sourceStageMatrix,
+      milestoneKeywordPerformance,
       paretoSummary: { 
         topSourceCount: Math.max(1, topSourceCount), 
         topRevenuePercentage,
