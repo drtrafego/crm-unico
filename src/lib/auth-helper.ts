@@ -1,8 +1,8 @@
 
 import { stackServerApp } from "@/stack";
 import { db } from "@/lib/db";
-import { users } from "@/server/db/schema";
-import { eq } from "drizzle-orm";
+import { users, invitations, members } from "@/server/db/schema";
+import { eq, and } from "drizzle-orm";
 
 export async function getAuthenticatedUser() {
     const stackUser = await stackServerApp.getUser();
@@ -12,25 +12,48 @@ export async function getAuthenticatedUser() {
     if (!email) return null;
 
     // Sync: Find existing user in Neon DB
-    const dbUser = await db.query.users.findFirst({
+    let dbUser = await db.query.users.findFirst({
         where: eq(users.email, email),
     });
 
-    if (dbUser) {
-        return { ...dbUser, stackId: stackUser.id };
+    if (!dbUser) {
+        // Auto-Sync: Create user in Neon DB if not found
+        try {
+            const [newUser] = await db.insert(users).values({
+                email,
+                name: stackUser.displayName || email.split('@')[0],
+                image: stackUser.profileImageUrl,
+            }).returning();
+            dbUser = newUser;
+        } catch (error) {
+            console.error("Failed to sync user to DB:", error);
+            return null;
+        }
     }
 
-    // Auto-Sync: Create user in Neon DB if not found
+    // Auto-accept pending invitations (created by portal when company was registered)
     try {
-        const [newUser] = await db.insert(users).values({
-            email,
-            name: stackUser.displayName || email.split('@')[0],
-            image: stackUser.profileImageUrl,
-        }).returning();
+        const pending = await db.query.invitations.findMany({
+            where: and(
+                eq(invitations.email, email),
+                eq(invitations.status, 'pending')
+            )
+        });
 
-        return { ...newUser, stackId: stackUser.id };
+        for (const inv of pending) {
+            await db.insert(members).values({
+                userId: dbUser.id,
+                organizationId: inv.organizationId,
+                role: inv.role as 'owner' | 'admin' | 'editor' | 'viewer',
+            }).onConflictDoNothing();
+
+            await db.update(invitations)
+                .set({ status: 'accepted' })
+                .where(eq(invitations.id, inv.id));
+        }
     } catch (error) {
-        console.error("Failed to sync user to DB:", error);
-        return null;
+        console.error("Failed to accept pending invitations:", error);
     }
+
+    return { ...dbUser, stackId: stackUser.id };
 }
