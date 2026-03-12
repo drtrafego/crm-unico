@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Lead, Column } from "@/server/db/schema";
+import { Lead, Column, VendaHotmart } from "@/server/db/schema";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
@@ -13,7 +13,7 @@ import { ptBR } from "date-fns/locale";
 import {
     Wallet, TrendingUp, Users, Target, Clock, CalendarClock,
     RotateCcw, FileText, MousePointerClick, Gem, BrainCircuit, Link2,
-    AlertTriangle, Activity, Zap, Bell
+    AlertTriangle, Activity, Zap, Award, Timer
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -21,7 +21,8 @@ import { DateRangePickerWithPresets } from "./date-range-picker";
 import { DateRange } from "react-day-picker";
 import { KPI } from "./analytics-components";
 import { getLeadSource } from "@/lib/leads-helper";
-import { processAnalyticsData, calculateConversionBySource, getStaleAlerts, getFunnelData, getVelocityMetrics, getFollowUpMetrics, getHealthScore } from "@/lib/analytics-helper";
+import { processAnalyticsData, getStaleAlerts, getFunnelData, getVelocityMetrics, getFollowUpMetrics, getHealthScore } from "@/lib/analytics-helper";
+import { calculateAdvancedInsights } from "@/lib/insights-helper";
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
 
@@ -59,9 +60,10 @@ const formatCurrency = (val: number) => new Intl.NumberFormat('pt-BR', { style: 
 interface AnalyticsDashboardProps {
     initialLeads: Lead[];
     columns: Column[];
+    initialSales: VendaHotmart[];
 }
 
-export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboardProps) {
+export function AnalyticsDashboard({ initialLeads, columns, initialSales }: AnalyticsDashboardProps) {
     const { theme } = useTheme();
     const isDark = theme === "dark";
     const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -78,7 +80,7 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
     const [selectedPage, setSelectedPage] = useState<string | null>(null);
 
     const {
-        kpis, charts, uniqueOrigins, states, newMetrics,
+        kpis, charts, uniqueOrigins, states, 
         intelligence, utmStats
     } = useMemo(() => {
         const checkStatus = (title: string, type: 'won' | 'lost') => {
@@ -110,7 +112,6 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
             if (selectedOrigin !== "all" && getLeadSource(lead) !== selectedOrigin) return false;
             if (selectedState !== "all" && getStateFromPhone(lead.whatsapp) !== selectedState) return false;
 
-            // Cross-filters
             if (selectedUTMSource && lead.utmSource !== selectedUTMSource) return false;
             if (selectedUTMTerm && lead.utmTerm !== selectedUTMTerm) return false;
             if (selectedPage) {
@@ -139,15 +140,15 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
 
         // KPIs
         const totalLeadsCount = activeLeads.length;
-        const wonLeads = activeLeads.filter(isLeadWon);
-        const openLeads = activeLeads.filter(l => !isLeadWon(l) && !isLeadLost(l));
+        const wonLeadsList = activeLeads.filter(isLeadWon);
+        const openLeadsList = activeLeads.filter(l => !isLeadWon(l) && !isLeadLost(l));
 
-        const revenue = wonLeads.reduce((acc, l) => acc + parseValue(l.value), 0);
-        const pipeline = openLeads.reduce((acc, l) => acc + parseValue(l.value), 0);
-        const conversionRate = totalLeadsCount ? (wonLeads.length / totalLeadsCount) * 100 : 0;
-        const averageTicket = wonLeads.length ? revenue / wonLeads.length : 0;
-        const avgCycle = wonLeads.length
-            ? Math.round(wonLeads.reduce((acc, l) => acc + differenceInDays(new Date(), l.createdAt ? new Date(l.createdAt) : new Date()), 0) / wonLeads.length)
+        const revenue = wonLeadsList.reduce((acc, l) => acc + parseValue(l.value), 0);
+        const pipeline = openLeadsList.reduce((acc, l) => acc + parseValue(l.value), 0);
+        const conversionRate = totalLeadsCount ? (wonLeadsList.length / totalLeadsCount) * 100 : 0;
+        const averageTicket = wonLeadsList.length ? revenue / wonLeadsList.length : 0;
+        const avgCycle = wonLeadsList.length
+            ? Math.round(wonLeadsList.reduce((acc, l) => acc + differenceInDays(new Date(), l.createdAt ? new Date(l.createdAt) : new Date()), 0) / wonLeadsList.length)
             : 0;
         const followUpsCount = activeLeads.filter(l => l.followUpDate && startOfDay(new Date(l.followUpDate)) >= startOfDay(new Date())).length;
 
@@ -182,21 +183,18 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
             fill: PIPELINE_COLORS[columns.indexOf(col) % PIPELINE_COLORS.length]
         })).filter(d => d.value > 0).sort((a, b) => b.value - a.value);
 
-        // New Metrics
-        const processedNewMetrics = processAnalyticsData(activeLeads);
-        const conversionData = calculateConversionBySource(activeLeads, isLeadWon);
-
-        // === INTELLIGENCE v3 ===
+        // Intelligence
+        const analytics = processAnalyticsData(activeLeads);
         const staleAlerts = getStaleAlerts(activeLeads, columns, isLeadWon, isLeadLost);
         const funnel = getFunnelData(activeLeads, columns);
         const velocity = getVelocityMetrics(activeLeads, columns, isLeadWon, isLeadLost);
         const followUp = getFollowUpMetrics(activeLeads, isLeadWon, isLeadLost);
-        const health = getHealthScore(staleAlerts, followUp, velocity, totalLeadsCount, wonLeads.length);
+        const health = getHealthScore(staleAlerts, followUp, velocity, totalLeadsCount, wonLeadsList.length);
+        const advanced = calculateAdvancedInsights(activeLeads, columns, initialSales || []);
 
-        // UTM
+        // UTM Stats
         const utmStatsMap = activeLeads.reduce((acc, lead) => {
             if (lead.utmSource || lead.utmMedium || lead.utmCampaign || lead.utmTerm) {
-                // Key MUST include term and campaign for accuracy
                 const key = `${lead.utmSource || 'N/A'}|${lead.utmMedium || 'N/A'}|${lead.utmCampaign || 'N/A'}|${lead.utmTerm || 'N/A'}`;
                 if (!acc[key]) {
                     acc[key] = {
@@ -214,41 +212,30 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
         }, {} as Record<string, { name: string, source: string, medium: string, campaign: string, term: string, size: number }>);
         const utmTableData = Object.values(utmStatsMap).sort((a, b) => b.size - a.size).slice(0, 30);
 
-        // Time of Day Analysis (UTC-3 / Fuso -3)
+        // Time of Day Analysis
         const timeOfDayData = [
-            { name: 'Manhã (06h-12h)', value: 0, fill: '#f59e0b' },
-            { name: 'Tarde (12h-18h)', value: 0, fill: '#0ea5e9' },
-            { name: 'Noite (18h-06h)', value: 0, fill: '#6366f1' },
+            { name: 'Manhã', value: 0, fill: '#f59e0b' },
+            { name: 'Tarde', value: 0, fill: '#0ea5e9' },
+            { name: 'Noite', value: 0, fill: '#6366f1' },
         ];
 
         activeLeads.forEach(lead => {
             if (!lead.createdAt) return;
             const date = new Date(lead.createdAt);
-            const utcHours = date.getUTCHours();
-            // Offset for UTC-3 (Buenos Aires / Brasilia)
-            const localHours = (utcHours - 3 + 24) % 24;
-
-            if (localHours >= 6 && localHours < 12) {
-                timeOfDayData[0].value += 1;
-            } else if (localHours >= 12 && localHours < 18) {
-                timeOfDayData[1].value += 1;
-            } else {
-                timeOfDayData[2].value += 1;
-            }
+            const localHours = (date.getUTCHours() - 3 + 24) % 24;
+            if (localHours >= 6 && localHours < 12) timeOfDayData[0].value += 1;
+            else if (localHours >= 12 && localHours < 18) timeOfDayData[1].value += 1;
+            else timeOfDayData[2].value += 1;
         });
-
-        // Sort descending
-        timeOfDayData.sort((a, b) => b.value - a.value);
 
         return {
             uniqueOrigins, states,
             kpis: { revenue, pipeline, totalLeads: totalLeadsCount, conversionRate, averageTicket, avgCycle, followUpsCount },
-            charts: { monthlyData, regionalData, dailyData, funnelData, timeOfDayData },
-            newMetrics: { ...processedNewMetrics, conversionData },
-            intelligence: { staleAlerts, funnel, velocity, followUp, health },
+            charts: { monthlyData, regionalData, dailyData, funnelData, timeOfDayData, analytics },
+            intelligence: { ...staleAlerts, funnel, velocity, followUp, health, advanced },
             utmStats: utmTableData
         };
-    }, [initialLeads, columns, dateRange, selectedOrigin, selectedState, selectedColumn, selectedUTMSource, selectedUTMTerm, selectedPage]);
+    }, [initialLeads, columns, initialSales, dateRange, selectedOrigin, selectedState, selectedColumn, selectedUTMSource, selectedUTMTerm, selectedPage]);
 
     const handleReset = () => {
         setDateRange({ from: subDays(new Date(), 90), to: new Date() });
@@ -259,9 +246,6 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
         setSelectedUTMTerm(null);
         setSelectedPage(null);
     };
-
-    const gradeColors: Record<string, string> = { A: 'text-emerald-400', B: 'text-green-400', C: 'text-amber-400', D: 'text-orange-400', F: 'text-red-400' };
-    const gradeBg: Record<string, string> = { A: 'bg-emerald-500/20', B: 'bg-green-500/20', C: 'bg-amber-500/20', D: 'bg-orange-500/20', F: 'bg-red-500/20' };
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-1000 pb-10">
@@ -396,7 +380,7 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                     </CardHeader>
                     <CardContent className="h-[220px] pt-6 pb-2 px-2">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={newMetrics.termData}>
+                            <BarChart data={charts.analytics?.termData || []}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"} />
                                 <XAxis dataKey="name" tick={{ fill: isDark ? '#64748b' : '#94a3b8', fontSize: 9 }} axisLine={false} tickLine={false} tickFormatter={(v) => v.length > 12 ? v.substring(0, 10) + '...' : v} />
                                 <YAxis tick={{ fill: isDark ? '#64748b' : '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} />
@@ -414,7 +398,7 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                                 <Bar dataKey="leads" fill="#f59e0b" radius={[6, 6, 0, 0]} barSize={25} className="cursor-pointer"
                                     onClick={(data) => { if (data && data.name) setSelectedUTMTerm(data.name === selectedUTMTerm ? null : data.name) }}
                                 >
-                                    {newMetrics.termData.map((entry, index) => (
+                                    {(charts.analytics?.termData || []).map((entry: any, index: number) => (
                                         <Cell key={index} fill={entry.name === selectedUTMTerm ? (isDark ? '#ffffff' : '#4f46e5') : '#f59e0b'} fillOpacity={isDark ? 0.3 : 0.8} />
                                     ))}
                                 </Bar>
@@ -476,7 +460,7 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                     </CardHeader>
                     <CardContent className="h-[220px] pt-4 pb-4 px-2">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={newMetrics.sourceData} layout="vertical" margin={{ left: -10, right: 20 }}>
+                            <BarChart data={charts.analytics?.sourceData || []} layout="vertical" margin={{ left: -10, right: 20 }}>
                                 <XAxis type="number" hide />
                                 <YAxis dataKey="name" type="category" tick={{ fill: isDark ? '#64748b' : '#94a3b8', fontSize: 9 }} width={80} axisLine={false} tickLine={false} />
                                 <Tooltip
@@ -493,7 +477,7 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                                 <Bar dataKey="value" fill="#3b82f6" radius={[0, 6, 6, 0]} barSize={12} className="cursor-pointer"
                                     onClick={(data) => { if (data && data.name) setSelectedUTMSource(data.name === selectedUTMSource ? null : data.name) }}
                                 >
-                                    {newMetrics.sourceData.map((entry, index) => (
+                                    {(charts.analytics?.sourceData || []).map((entry: any, index: number) => (
                                         <Cell key={index} fill={entry.name === selectedUTMSource ? (isDark ? '#ffffff' : '#4f46e5') : '#3b82f6'} />
                                     ))}
                                 </Bar>
@@ -510,7 +494,7 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                     </CardHeader>
                     <CardContent className="h-[220px] pt-4 pb-4 px-2">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={newMetrics.pageData} layout="vertical" margin={{ left: -10, right: 20 }}>
+                            <BarChart data={charts.analytics?.pageData || []} layout="vertical" margin={{ left: -10, right: 20 }}>
                                 <XAxis type="number" hide />
                                 <YAxis dataKey="name" type="category" tick={{ fill: isDark ? '#64748b' : '#94a3b8', fontSize: 9 }} width={100} axisLine={false} tickLine={false} tickFormatter={(v) => v.length > 20 ? v.substring(0, 18) + '...' : v} />
                                 <Tooltip
@@ -527,7 +511,7 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                                 <Bar dataKey="leads" fill="#10b981" radius={[0, 6, 6, 0]} barSize={12} className="cursor-pointer"
                                     onClick={(data) => { if (data && data.name) setSelectedPage(data.name === selectedPage ? null : data.name) }}
                                 >
-                                    {newMetrics.pageData.map((entry, index) => (
+                                    {(charts.analytics?.pageData || []).map((entry: any, index: number) => (
                                         <Cell key={index} fill={entry.name === selectedPage ? (isDark ? '#ffffff' : '#4f46e5') : '#10b981'} />
                                     ))}
                                 </Bar>
@@ -558,7 +542,7 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                         <div className="col-span-2 text-right pr-4 italic">Leads</div>
                     </div>
                     <div className="divide-y divide-slate-100 dark:divide-white/5 max-h-[300px] overflow-y-auto custom-scrollbar bg-white dark:bg-transparent">
-                        {newMetrics.termPageRelation.map((rel, i) => (
+                        {(charts.analytics?.termPageRelation || []).map((rel: any, i: number) => (
                             <div key={i} className="grid grid-cols-12 p-3 text-[11px] hover:bg-slate-50 dark:hover:bg-white/5 transition-all group/row">
                                 <div className="col-span-6 pl-2 font-black text-slate-700 dark:text-slate-200 truncate pr-2 border-l-2 border-purple-500/30 group-hover/row:border-purple-500 transition-colors uppercase tracking-tight">{rel.term}</div>
                                 <div className="col-span-4 text-slate-500 dark:text-slate-400 truncate text-[10px] italic">{rel.page}</div>
@@ -603,87 +587,109 @@ export function AnalyticsDashboard({ initialLeads, columns }: AnalyticsDashboard
                 </Card>
             )}
 
-            {/* Sales Intelligence v3 (Lower Priority Now) */}
+            {/* Sales Intelligence v3.5 */}
             <Card className="bg-slate-900/60 backdrop-blur-xl border border-white/10 shadow-3xl overflow-hidden glass-card">
-                <CardHeader className="pb-4 border-b border-white/5 bg-white/5">
+                <CardHeader className="py-4 px-6 border-b border-white/5 bg-slate-950/20 backdrop-blur-md">
                     <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-slate-950 rounded-xl border border-white/5 shadow-inner">
-                                <BrainCircuit className="h-5 w-5 text-indigo-400 animate-pulse" />
-                            </div>
-                            <div>
-                                <CardTitle className="text-white text-xs font-black uppercase tracking-[0.2em]">Saúde do Pipeline</CardTitle>
-                                <CardDescription className="text-[10px] text-slate-500 font-bold uppercase tracking-tight mt-0.5">
-                                    Inteligência Artificial & Insights Reais
-                                </CardDescription>
-                            </div>
+                        <div>
+                            <CardTitle className="text-sm font-black text-white flex items-center gap-2 uppercase tracking-widest italic">
+                                <Activity className="h-4 w-4 text-purple-400 animate-pulse" /> Statistical Intelligence v3.5
+                            </CardTitle>
+                            <CardDescription className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Machine Learning Insights & Pipeline Health Analysis</CardDescription>
                         </div>
-                        <div className={cn("flex items-center gap-2 px-4 py-1.5 rounded-2xl shadow-lg border border-white/5", gradeBg[intelligence.health.grade])}>
-                            <Activity className={cn("h-4 w-4", gradeColors[intelligence.health.grade])} />
-                            <span className={cn("text-lg font-black tracking-tighter", gradeColors[intelligence.health.grade])}>
-                                {intelligence.health.score}
-                            </span>
+                        <div className="flex items-center gap-2 px-4 py-1.5 rounded-2xl shadow-lg border border-white/5 bg-slate-950/40">
+                             <div className="flex flex-col items-end">
+                                <span className="text-[10px] font-black text-slate-500 uppercase">Health Score</span>
+                                <span className={cn("text-lg font-black italic", 
+                                    intelligence.health.score > 80 ? "text-emerald-400" : 
+                                    intelligence.health.score > 50 ? "text-amber-400" : "text-rose-400"
+                                )}>{intelligence.health.score}% | {intelligence.health.grade}</span>
+                             </div>
                         </div>
                     </div>
                 </CardHeader>
                 <CardContent className="p-0">
-                    <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-white/5">
-                        {/* Stale Alerts */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-white/5">
+                        {/* 1. Lead Quality - ML Score */}
+                        <div className="p-6 space-y-4 hover:bg-white/5 transition-colors group relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-4 opacity-5">
+                                <Award className="h-20 w-20 text-indigo-400" />
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <TrendingUp className="h-4 w-4 text-emerald-400" />
+                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[.2em]">Qualidade de Leads</h4>
+                            </div>
+                            <div className="space-y-4">
+                                <div className="flex justify-between items-end">
+                                    <div className="text-3xl font-black text-white tabular-nums">{intelligence.advanced.leadScoreStats.avgScore}</div>
+                                    <div className="text-[10px] font-bold text-emerald-400 uppercase">Avg Score</div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div className="bg-slate-950/40 rounded-lg p-2 border border-white/5">
+                                        <div className="text-xs font-black text-emerald-400">{intelligence.advanced.leadScoreStats.conversionsByGrade.A || 0}%</div>
+                                        <div className="text-[8px] font-bold text-slate-600 uppercase">Conv. Grade A</div>
+                                    </div>
+                                    <div className="bg-slate-950/40 rounded-lg p-2 border border-white/5">
+                                        <div className="text-xs font-black text-red-400">{intelligence.advanced.leadScoreStats.conversionsByGrade.F || 0}%</div>
+                                        <div className="text-[8px] font-bold text-slate-600 uppercase">Conv. Grade F</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 2. Stagnation Risk & Stability */}
+                        <div className="p-6 space-y-4 hover:bg-white/5 transition-colors group">
+                            <div className="flex items-center gap-2">
+                                <Timer className="h-4 w-4 text-rose-400" />
+                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[.2em]">Risco de Estagnação</h4>
+                            </div>
+                            <div className="space-y-4">
+                                <div className="flex justify-between items-end">
+                                    <div className="text-3xl font-black text-rose-400 tabular-nums">{intelligence.advanced.stagnationMetrics.highRiskLeads}</div>
+                                    <div className="text-[10px] font-bold text-rose-400/70 uppercase">Leads em Risco</div>
+                                </div>
+                                <div className="text-[9px] text-slate-500 font-medium leading-relaxed">
+                                    Ciclo médio de {intelligence.advanced.stagnationMetrics.averageDaysToWin} dias. Desvio de {intelligence.advanced.stagnationMetrics.stdDevDaysToWin.toFixed(1)}d indica {intelligence.advanced.stagnationMetrics.stdDevDaysToWin > 10 ? 'alta instabilidade' : 'processo previsível'}.
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 3. Pipeline Hygiene */}
                         <div className="p-6 space-y-4 hover:bg-white/5 transition-colors group">
                             <div className="flex items-center gap-2">
                                 <AlertTriangle className="h-4 w-4 text-amber-500" />
-                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[.2em]">Leads Parados</h4>
+                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[.2em]">Higiene de Pipeline</h4>
                             </div>
                             <div className="grid grid-cols-3 gap-3 text-center">
                                 <div className="bg-red-500/10 rounded-xl p-2 border border-red-500/20 shadow-lg">
-                                    <div className="text-xl font-black text-red-400 tabular-nums">{intelligence.staleAlerts.critical.length}</div>
+                                    <div className="text-xl font-black text-red-400 tabular-nums">{intelligence.critical?.length || 0}</div>
                                     <div className="text-[9px] font-black text-red-400/70 uppercase tracking-tighter">+15d</div>
                                 </div>
                                 <div className="bg-amber-500/10 rounded-xl p-2 border border-amber-500/20 shadow-lg">
-                                    <div className="text-xl font-black text-amber-400 tabular-nums">{intelligence.staleAlerts.warning.length}</div>
+                                    <div className="text-xl font-black text-amber-400 tabular-nums">{intelligence.warning?.length || 0}</div>
                                     <div className="text-[9px] font-black text-amber-400/70 uppercase tracking-tighter">7-15d</div>
                                 </div>
                                 <div className="bg-emerald-500/10 rounded-xl p-2 border border-emerald-500/20 shadow-lg">
-                                    <div className="text-xl font-black text-emerald-400 tabular-nums">{intelligence.staleAlerts.healthy}</div>
+                                    <div className="text-xl font-black text-emerald-400 tabular-nums">{intelligence.healthy || 0}</div>
                                     <div className="text-[9px] font-black text-emerald-400/70 uppercase tracking-tighter">OK</div>
                                 </div>
                             </div>
+                            <div className="text-[9px] text-slate-500 text-center italic">Compliance Follow-up: {intelligence.followUp.complianceRate}%</div>
                         </div>
 
-                        {/* Velocity */}
+                        {/* 4. ROI & Pareto Concentration */}
                         <div className="p-6 space-y-4 hover:bg-white/5 transition-colors group">
                             <div className="flex items-center gap-2">
-                                <Zap className="h-4 w-4 text-blue-500" />
-                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[.2em]">Velocidade</h4>
+                                <Gem className="h-4 w-4 text-amber-400" />
+                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[.2em]">Concentração ROI</h4>
                             </div>
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="bg-slate-950/50 rounded-xl p-3 text-center border border-white/5 shadow-inner group-hover:border-blue-500/20 transition-colors">
-                                    <div className="text-2xl font-black text-blue-400 tabular-nums">{intelligence.velocity.avgDaysToClose || '—'}d</div>
-                                    <div className="text-[9px] font-black text-slate-600 uppercase tracking-widest">p/ fechar</div>
+                            <div className="space-y-4">
+                                <div className="flex justify-between items-end">
+                                    <div className="text-3xl font-black text-amber-500 tabular-nums">{intelligence.advanced.attributionMetrics.roiBySource[0]?.roi.toFixed(1) || 0}x</div>
+                                    <div className="text-[10px] font-bold text-amber-500/70 uppercase">Top Source ROI</div>
                                 </div>
-                                <div className="bg-slate-950/50 rounded-xl p-3 text-center border border-white/5 shadow-inner group-hover:border-rose-500/20 transition-colors">
-                                    <div className="text-2xl font-black text-rose-400 tabular-nums">{intelligence.velocity.avgDaysToLose || '—'}d</div>
-                                    <div className="text-[9px] font-black text-slate-600 uppercase tracking-widest">p/ perder</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Follow-up */}
-                        <div className="p-6 space-y-4 hover:bg-white/5 transition-colors group">
-                            <div className="flex items-center gap-2">
-                                <Bell className="h-4 w-4 text-purple-500" />
-                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[.2em]">Follow-ups</h4>
-                            </div>
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className={cn("rounded-xl p-3 text-center border shadow-lg group-hover:scale-105 transition-transform", intelligence.followUp.overdueLeads.length > 0 ? "bg-red-500/10 border-red-500/20" : "bg-emerald-500/10 border-emerald-500/20")}>
-                                    <div className={cn("text-2xl font-black tabular-nums", intelligence.followUp.overdueLeads.length > 0 ? "text-red-400" : "text-emerald-400")}>
-                                        {intelligence.followUp.overdueLeads.length}
-                                    </div>
-                                    <div className="text-[9px] font-black text-slate-600 uppercase tracking-tighter">vencidos</div>
-                                </div>
-                                <div className="bg-slate-950/50 rounded-xl p-3 text-center border border-white/5 shadow-inner group-hover:border-purple-500/20 transition-colors">
-                                    <div className="text-2xl font-black text-purple-400 tabular-nums">{intelligence.followUp.complianceRate}%</div>
-                                    <div className="text-[9px] font-black text-slate-600 uppercase tracking-tighter">em dia</div>
+                                <div className="text-[9px] text-slate-500 font-medium italic">
+                                    Pareto: {intelligence.advanced.attributionMetrics.paretoSummary.topSourceCount} origens geram {intelligence.advanced.attributionMetrics.paretoSummary.topRevenuePercentage.toFixed(0)}% da receita total.
                                 </div>
                             </div>
                         </div>
