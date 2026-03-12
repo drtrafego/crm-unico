@@ -147,25 +147,23 @@ export function LeadCard({ lead, index }: LeadCardProps) {
                   const isToday = followUpDateLocal.getTime() === today.getTime();
 
                   return (
-                    return (
-                      <Badge
-                        variant="secondary"
-                        className={cn(
-                          "px-2 py-0.5 text-[10px] font-black uppercase tracking-wider border flex items-center gap-1.5 transition-all",
-                          isOverdue && "bg-red-500/10 text-red-500 border-red-500/20",
-                          isToday && "bg-amber-500/10 text-amber-500 border-amber-500/20",
-                          !isOverdue && !isToday && "bg-blue-500/10 text-blue-500 border-blue-500/20"
-                        )}
-                      >
-                        <span className={cn(
-                          "h-1 w-1 rounded-full",
-                          isOverdue && "bg-red-500 animate-pulse",
-                          isToday && "bg-amber-500 animate-pulse",
-                          !isOverdue && !isToday && "bg-blue-500"
-                        )} />
-                        {followUpDateLocal.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
-                      </Badge>
-                    );
+                    <Badge
+                      variant="secondary"
+                      className={cn(
+                        "px-2 py-0.5 text-[10px] font-black uppercase tracking-wider border flex items-center gap-1.5 transition-all",
+                        isOverdue && "bg-red-500/10 text-red-500 border-red-500/20",
+                        isToday && "bg-amber-500/10 text-amber-500 border-amber-500/20",
+                        !isOverdue && !isToday && "bg-blue-500/10 text-blue-500 border-blue-500/20"
+                      )}
+                    >
+                      <span className={cn(
+                        "h-1 w-1 rounded-full",
+                        isOverdue && "bg-red-500 animate-pulse",
+                        isToday && "bg-amber-500 animate-pulse",
+                        !isOverdue && !isToday && "bg-blue-500"
+                      )} />
+                      {followUpDateLocal.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                    </Badge>
                   );
                 })()}
               </div>
