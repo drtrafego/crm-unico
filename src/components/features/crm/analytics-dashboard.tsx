@@ -596,57 +596,37 @@ export function AnalyticsDashboard({ initialLeads, columns, initialSales }: Anal
                 </Card>
             )}
 
-            {/* CHARTS GRID */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* CHARTS GRID - ROW 1: Volume & Behavioral */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 {/* Volume de Leads Diários */}
                 <Card className="bg-white dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-white/10 overflow-hidden shadow-2xl">
-                    <CardHeader className="py-4 border-b border-slate-100 dark:border-white/5"><CardTitle className="text-xs font-black uppercase tracking-widest flex items-center gap-2 text-slate-500 dark:text-slate-400"><CalendarClock className="w-3.5 h-3.5 text-purple-500" /> Volume de Leads Diários</CardTitle></CardHeader>
-                    <CardContent className="h-[280px] pt-6 pb-2 px-2">
+                    <CardHeader className="py-4 border-b border-slate-100 dark:border-white/5"><CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-slate-500 dark:text-slate-400"><CalendarClock className="w-4 h-4 text-purple-500" /> Volume de Leads Diários</CardTitle></CardHeader>
+                    <CardContent className="h-[300px] pt-6 pb-2 px-2">
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart data={charts.dailyData}>
                                 <defs><linearGradient id="gradLeads" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#a855f7" stopOpacity={isDark ? 0.4 : 0.6} /><stop offset="95%" stopColor="#a855f7" stopOpacity={0} /></linearGradient></defs>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"} />
-                                <XAxis dataKey="day" tick={{ fill: isDark ? '#64748b' : '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} />
-                                <YAxis tick={{ fill: isDark ? '#64748b' : '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} />
-                                <Tooltip contentStyle={{ backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(8px)', border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)', borderRadius: '12px', color: isDark ? '#fff' : '#0f172a' }} itemStyle={{ color: '#a855f7', fontWeight: 'bold' }} />
+                                <XAxis dataKey="day" tick={{ fill: isDark ? '#64748b' : '#94a3b8', fontSize: 13 }} axisLine={false} tickLine={false} />
+                                <YAxis tick={{ fill: isDark ? '#64748b' : '#94a3b8', fontSize: 13 }} axisLine={false} tickLine={false} />
+                                <Tooltip contentStyle={{ backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(8px)', border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)', borderRadius: '12px', color: isDark ? '#fff' : '#0f172a', fontSize: '13px' }} itemStyle={{ color: '#a855f7', fontWeight: 'bold' }} />
                                 <Area type="monotone" dataKey="leads" stroke="#a855f7" strokeWidth={3} fillOpacity={1} fill="url(#gradLeads)" animationDuration={2000} />
                             </AreaChart>
                         </ResponsiveContainer>
                     </CardContent>
                 </Card>
 
-                {/* Top UTM Terms (Keywords) - RESTORED */}
-                <Card className="bg-white dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-white/10 overflow-hidden shadow-2xl">
-                    <CardHeader className="py-4 border-b border-slate-100 dark:border-white/5"><CardTitle className="text-xs font-black uppercase tracking-widest flex items-center gap-2 text-slate-500 dark:text-slate-400"><Zap className="w-3.5 h-3.5 text-amber-500" /> Top UTM Terms (Adwords)</CardTitle></CardHeader>
-                    <CardContent className="h-[280px] pt-6 pb-2 px-2">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={charts.analytics?.termData || []}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"} />
-                                <XAxis dataKey="name" tick={{ fill: isDark ? '#64748b' : '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => v.length > 12 ? v.substring(0, 10) + '...' : v} />
-                                <YAxis tick={{ fill: isDark ? '#64748b' : '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
-                                <Tooltip cursor={{ fill: isDark ? 'rgba(245, 158, 11, 0.05)' : 'rgba(245, 158, 11, 0.1)' }} contentStyle={{ backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(8px)', border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)', borderRadius: '12px', color: isDark ? '#fff' : '#0f172a', fontSize: '11px' }} />
-                                <Bar dataKey="leads" fill="#f59e0b" radius={[6, 6, 0, 0]} barSize={25} onClick={(data) => { if (data && data.name) setSelectedUTMTerm(data.name === selectedUTMTerm ? null : data.name) }}>
-                                    {(charts.analytics?.termData || []).map((entry: any, index: number) => (
-                                        <Cell key={index} fill={entry.name === selectedUTMTerm ? (isDark ? '#ffffff' : '#4f46e5') : '#f59e0b'} fillOpacity={isDark ? 0.3 : 0.8} />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </CardContent>
-                </Card>
-
                 {/* Behavioral Peaks (Day/Time) - FIXED LAYOUT */}
                 <Card className="bg-white dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-white/10 overflow-hidden shadow-2xl">
-                    <CardHeader className="py-4 border-b border-slate-100 dark:border-white/5"><CardTitle className="text-xs font-black uppercase tracking-widest flex items-center gap-2 text-slate-500 dark:text-slate-400"><Clock className="w-3.5 h-3.5 text-amber-500" /> Picos Comportamentais</CardTitle></CardHeader>
-                    <CardContent className="h-[280px] pt-2 pb-0 px-4">
+                    <CardHeader className="py-4 border-b border-slate-100 dark:border-white/5"><CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-slate-500 dark:text-slate-400"><Clock className="w-4 h-4 text-amber-500" /> Picos Comportamentais</CardTitle></CardHeader>
+                    <CardContent className="h-[300px] pt-2 pb-0 px-4">
                         <div className="flex flex-col h-full">
-                            <div className="flex-1 min-h-[180px]">
+                            <div className="flex-1 min-h-[200px]">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <PieChart>
                                         <Pie
                                             data={charts.timeOfDayData}
-                                            innerRadius={65}
-                                            outerRadius={90}
+                                            innerRadius={70}
+                                            outerRadius={100}
                                             paddingAngle={8}
                                             dataKey="value"
                                             animationDuration={1500}
@@ -658,24 +638,46 @@ export function AnalyticsDashboard({ initialLeads, columns, initialSales }: Anal
                                             ))}
                                         </Pie>
                                         <Tooltip 
-                                            contentStyle={{ backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.95)', border: 'none', borderRadius: '12px', fontSize: '11px' }}
+                                            contentStyle={{ backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.95)', border: 'none', borderRadius: '12px', fontSize: '13px' }}
                                         />
                                         <Legend 
                                             verticalAlign="bottom" 
                                             align="center"
                                             iconType="circle"
-                                            wrapperStyle={{ fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase', paddingBottom: '20px' }} 
+                                            wrapperStyle={{ fontSize: '13px', fontWeight: 'bold', textTransform: 'uppercase', paddingBottom: '20px' }} 
                                         />
                                     </PieChart>
                                 </ResponsiveContainer>
                             </div>
                             <div className="pb-4 text-center">
-                                <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest">
+                                <p className="text-sm text-slate-500 font-bold uppercase tracking-widest">
                                     Pico: {((Math.max(...charts.timeOfDayData.map(d => d.value)) / kpis.totalLeads) * 100 || 0).toFixed(0)}% no período 
                                     <span className="text-emerald-500 ml-1 italic">{[...charts.timeOfDayData].sort((a,b) => b.value - a.value)[0]?.name}</span>
                                 </p>
                             </div>
                         </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* CHARTS GRID - ROW 2: Adwords (Full Width) */}
+            <div className="mb-6">
+                <Card className="bg-white dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-white/10 overflow-hidden shadow-2xl">
+                    <CardHeader className="py-4 border-b border-slate-100 dark:border-white/5"><CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-slate-500 dark:text-slate-400"><Zap className="w-4 h-4 text-amber-500" /> Performance por Termos (Adwords)</CardTitle></CardHeader>
+                    <CardContent className="h-[350px] pt-8 pb-4 px-6">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={charts.analytics?.termData || []}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"} />
+                                <XAxis dataKey="name" tick={{ fill: isDark ? '#64748b' : '#94a3b8', fontSize: 13 }} axisLine={false} tickLine={false} tickFormatter={(v) => v.length > 20 ? v.substring(0, 18) + '...' : v} />
+                                <YAxis tick={{ fill: isDark ? '#64748b' : '#94a3b8', fontSize: 13 }} axisLine={false} tickLine={false} />
+                                <Tooltip cursor={{ fill: isDark ? 'rgba(245, 158, 11, 0.05)' : 'rgba(245, 158, 11, 0.1)' }} contentStyle={{ backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(8px)', border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)', borderRadius: '12px', color: isDark ? '#fff' : '#0f172a', fontSize: '13px' }} />
+                                <Bar dataKey="leads" fill="#f59e0b" radius={[8, 8, 0, 0]} barSize={40} onClick={(data) => { if (data && data.name) setSelectedUTMTerm(data.name === selectedUTMTerm ? null : data.name) }}>
+                                    {(charts.analytics?.termData || []).map((entry: any, index: number) => (
+                                        <Cell key={index} fill={entry.name === selectedUTMTerm ? (isDark ? '#ffffff' : '#4f46e5') : '#f59e0b'} fillOpacity={isDark ? 0.3 : 0.8} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
                     </CardContent>
                 </Card>
             </div>
