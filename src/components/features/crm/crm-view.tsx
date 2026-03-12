@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { DateRange } from "react-day-picker";
 import { subDays, isWithinInterval, startOfDay, endOfDay } from "date-fns";
-import { Column as DbColumn, Lead } from "@/server/db/schema";
+import { Column as DbColumn, Lead, VendaHotmart } from "@/server/db/schema";
 import { Board } from "@/components/features/kanban/board";
 import { LeadsList } from "@/components/features/crm/leads-list";
 import { DateRangePickerWithPresets } from "./date-range-picker";
@@ -23,13 +23,14 @@ import { CRMActionOverrides } from "@/types/crm-actions";
 interface CrmViewProps {
   initialLeads: Lead[];
   columns: DbColumn[];
+  initialSales?: VendaHotmart[];
   companyName?: string | null;
   initialViewMode?: string | null;
   orgId: string;
   overrides?: CRMActionOverrides;
 }
 
-export function CrmView({ initialLeads, columns, companyName, initialViewMode, orgId, overrides }: CrmViewProps) {
+export function CrmView({ initialLeads, columns, initialSales = [], companyName, initialViewMode, orgId, overrides }: CrmViewProps) {
   const searchParams = useSearchParams();
 
   const initialView = (searchParams.get("view") as "board" | "list" | "analytics") || (initialViewMode as "board" | "list" | "analytics") || "board";
@@ -258,7 +259,7 @@ export function CrmView({ initialLeads, columns, companyName, initialViewMode, o
           </div>
         ) : (
           <div className="h-full overflow-y-auto custom-scrollbar px-4">
-            <AnalyticsDashboard initialLeads={filteredLeads} columns={columns} />
+            <AnalyticsDashboard initialLeads={filteredLeads} columns={columns} initialSales={initialSales} />
           </div>
         )}
       </div>

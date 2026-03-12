@@ -1,5 +1,6 @@
 import { getLeads, getColumns } from "@/server/actions/leads";
 import { getSettings } from "@/server/actions/settings";
+import { getHotmartVendasAnalytics } from "@/server/actions/hotmart-analytics";
 import { CrmView } from "@/components/features/crm/crm-view";
 import { db } from "@/lib/db";
 import { organizations } from "@/server/db/schema";
@@ -23,10 +24,11 @@ export default async function CRMPage({
     notFound();
   }
 
-  const [leads, columns, settings] = await Promise.all([
+  const [leads, columns, settings, hotmartData] = await Promise.all([
     getLeads(org.id),
     getColumns(org.id),
-    getSettings(org.id)
+    getSettings(org.id),
+    getHotmartVendasAnalytics(org.id)
   ]);
 
   return (
@@ -34,6 +36,7 @@ export default async function CRMPage({
       <CrmView
         initialLeads={leads}
         columns={columns}
+        initialSales={hotmartData.success ? hotmartData.data?.allSales as any : []}
         companyName={org.name}
         initialViewMode={settings?.viewMode || 'kanban'}
         orgId={org.id}
