@@ -68,8 +68,8 @@ export function LeadCard({ lead, index }: LeadCardProps) {
         <Card
           className={cn(
             "relative overflow-hidden transition-all duration-300",
-            "bg-white/95 dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-lg",
-            "hover:shadow-xl dark:hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5)] hover:-translate-y-1.5 hover:bg-white dark:hover:bg-slate-900/60 hover:border-slate-300 dark:hover:border-white/20",
+            "relative overflow-hidden transition-all duration-300",
+            "glass-card hover:glass-panel hover:shadow-2xl hover:-translate-y-1.5",
             "cursor-grab active:cursor-grabbing",
             snapshot.isDragging && "shadow-2xl ring-2 ring-indigo-500/50 bg-white dark:bg-slate-900 !opacity-100 border-indigo-400/50 shadow-indigo-500/40 !transition-none"
           )}
@@ -147,23 +147,25 @@ export function LeadCard({ lead, index }: LeadCardProps) {
                   const isToday = followUpDateLocal.getTime() === today.getTime();
 
                   return (
-                    <Badge
-                      variant="secondary"
-                      className={cn(
-                        "px-2 py-0.5 text-[10px] font-black uppercase tracking-widest border flex items-center gap-1.5 transition-all",
-                        isOverdue && "bg-red-500/20 text-red-300 border-red-500/30 shadow-[0_0_10px_rgba(239,68,68,0.2)]",
-                        isToday && "bg-amber-500/20 text-amber-300 border-amber-500/30 shadow-[0_0_10px_rgba(245,158,11,0.2)]",
-                        !isOverdue && !isToday && "bg-blue-500/20 text-blue-300 border-blue-500/30 shadow-[0_0_10px_rgba(59,130,246,0.2)]"
-                      )}
-                    >
-                      <span className={cn(
-                        "h-1.5 w-1.5 rounded-full animate-pulse",
-                        isOverdue && "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]",
-                        isToday && "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.8)]",
-                        !isOverdue && !isToday && "bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]"
-                      )} />
-                      {followUpDateLocal.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
-                    </Badge>
+                    return (
+                      <Badge
+                        variant="secondary"
+                        className={cn(
+                          "px-2 py-0.5 text-[10px] font-black uppercase tracking-wider border flex items-center gap-1.5 transition-all",
+                          isOverdue && "bg-red-500/10 text-red-500 border-red-500/20",
+                          isToday && "bg-amber-500/10 text-amber-500 border-amber-500/20",
+                          !isOverdue && !isToday && "bg-blue-500/10 text-blue-500 border-blue-500/20"
+                        )}
+                      >
+                        <span className={cn(
+                          "h-1 w-1 rounded-full",
+                          isOverdue && "bg-red-500 animate-pulse",
+                          isToday && "bg-amber-500 animate-pulse",
+                          !isOverdue && !isToday && "bg-blue-500"
+                        )} />
+                        {followUpDateLocal.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                      </Badge>
+                    );
                   );
                 })()}
               </div>
@@ -218,16 +220,16 @@ export function LeadCard({ lead, index }: LeadCardProps) {
             {/* Title & Description */}
             <div className="space-y-1.5">
               <div className="flex justify-between items-start gap-2">
-                <h4 className="text-sm font-black text-slate-900 dark:text-white tracking-tight leading-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors duration-300">
+                <h4 className="text-[13px] font-black text-slate-900 dark:text-white tracking-tight leading-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors duration-300">
                   {lead.name}
                 </h4>
                 {lead.value && (
-                  <div className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)] shrink-0">
+                  <div className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-lg border border-emerald-500/20 shadow-sm shrink-0">
                     R$ {lead.value}
                   </div>
                 )}
               </div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-white/40">
+              <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-slate-500 dark:text-slate-400">
                 {lead.company}
               </p>
               <p className="text-xs text-slate-600 dark:text-white/50 line-clamp-2 min-h-[2.5em] leading-relaxed group-hover:text-slate-800 dark:group-hover:text-white/70 transition-colors duration-300">
@@ -247,7 +249,7 @@ export function LeadCard({ lead, index }: LeadCardProps) {
                   </Avatar>
                   <div className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full border border-white bg-emerald-500 shadow-sm" />
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-white/40 px-2 py-0.5 bg-slate-100 dark:bg-white/5 rounded-full">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 px-2 py-0.5 bg-slate-100 dark:bg-white/5 rounded-lg border border-slate-200/50 dark:border-white/5">
                   Lead
                 </span>
               </div>

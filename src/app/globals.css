@@ -2,17 +2,21 @@
 
 @variant dark (&:where(.dark, .dark *));
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-  color-scheme: light;
-}
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: "Inter", "Outfit", var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
+}
+
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  color-scheme: light;
 }
 
 .dark {
@@ -29,40 +33,44 @@ body {
   overscroll-behavior: none;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
 }
 
+/* Premium Glass & Layout Utilities */
+.glass-panel {
+  @apply bg-white/70 dark:bg-slate-950/40 backdrop-blur-xl border border-slate-200/60 dark:border-white/10 shadow-xl;
+}
+
+.glass-card {
+  @apply bg-white/90 dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-white/10 shadow-sm transition-all duration-300;
+}
+
+.premium-gradient {
+  background: radial-gradient(circle at top left, rgba(99, 102, 241, 0.05), transparent 40%),
+              radial-gradient(circle at bottom right, rgba(139, 92, 246, 0.05), transparent 40%);
+}
 
 .custom-scrollbar::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.05);
+  background: transparent;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgba(156, 163, 175, 0.5);
-  /* Higher opacity */
+  background-color: rgba(156, 163, 175, 0.3);
   border-radius: 20px;
   border: 2px solid transparent;
-  /* adds 'padding' around thumb */
   background-clip: content-box;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(156, 163, 175, 0.8);
-}
-
-.dark .custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.dark .custom-scrollbar::-webkit-scrollbar-thumb {
   background-color: rgba(156, 163, 175, 0.5);
 }
 
-.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(156, 163, 175, 0.8);
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.2);
 }

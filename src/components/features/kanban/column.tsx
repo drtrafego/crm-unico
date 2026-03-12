@@ -77,7 +77,7 @@ export function Column({ column, leads, index, orgId, overrides }: ColumnProps) 
             "w-[340px] min-w-[340px] flex flex-col rounded-3xl shrink-0 h-fit",
             // Disable transitions during drag to prevent jumping
             !snapshot.isDragging && "transition-all duration-500",
-            "bg-white/80 dark:bg-slate-950/20 backdrop-blur-xl border border-slate-200 dark:border-white/5 shadow-xl dark:shadow-2xl",
+            "glass-panel border-slate-200/40 dark:border-white/5 shadow-2xl",
             isDeleting && "opacity-50 pointer-events-none",
             snapshot.isDragging && "opacity-90 rotate-2 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.6)] ring-2 ring-indigo-500/20 bg-white dark:bg-slate-900/40 z-[9999]"
           )}
@@ -86,7 +86,7 @@ export function Column({ column, leads, index, orgId, overrides }: ColumnProps) 
           <div
             {...provided.dragHandleProps}
             className={cn(
-              "p-5 cursor-grab active:cursor-grabbing sticky top-0 bg-slate-50/80 dark:bg-slate-900/40 backdrop-blur-md border-b border-slate-200 dark:border-white/5 rounded-t-3xl",
+              "p-5 cursor-grab active:cursor-grabbing sticky top-0 bg-white/50 dark:bg-slate-900/60 backdrop-blur-md border-b border-slate-200/40 dark:border-white/10 rounded-t-3xl",
               isEditing && "cursor-default",
               snapshot.isDragging && "z-[10000]"
             )}
@@ -113,8 +113,8 @@ export function Column({ column, leads, index, orgId, overrides }: ColumnProps) 
             ) : (
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-3">
-                  <span className="text-xs font-black uppercase tracking-widest text-slate-900 dark:text-white/90">{column.title}</span>
-                  <span className="bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-white/60 px-2.5 py-0.5 rounded-full text-[10px] font-black border border-slate-300 dark:border-white/5 shadow-inner">
+                  <span className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-800 dark:text-white/90">{column.title}</span>
+                  <span className="bg-indigo-500/10 dark:bg-white/10 text-indigo-600 dark:text-white/60 px-2.5 py-0.5 rounded-lg text-[10px] font-black border border-indigo-500/10 dark:border-white/5 shadow-sm">
                     {leads.length}
                   </span>
                 </div>

@@ -30,8 +30,8 @@ export function CrmSidebar() {
   return (
     <aside className={cn(
       "hidden sm:flex flex-col items-center",
-      "w-20 py-6 gap-6 h-[calc(100vh-2rem)] fixed left-4 top-4 z-50",
-      "bg-white/80 dark:bg-slate-950/40 backdrop-blur-xl border border-slate-200 dark:border-white/10 shadow-2xl rounded-3xl transition-all duration-500 hover:bg-white dark:hover:bg-slate-950/60"
+      "w-20 py-8 gap-8 h-[calc(100vh-2rem)] fixed left-4 top-4 z-50",
+      "glass-panel rounded-[2rem] transition-all duration-500 hover:bg-white dark:hover:bg-slate-900/60"
     )}>
       <div className="mb-2">
         <div className="size-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white font-black shadow-[0_0_20px_rgba(79,70,229,0.4)] transition-transform hover:scale-110 active:scale-95 duration-300">

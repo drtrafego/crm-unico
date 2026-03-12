@@ -188,32 +188,32 @@ export function CrmView({ initialLeads, columns, companyName, initialViewMode, o
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="flex items-center gap-3 w-full sm:w-auto">
           <div className="hidden sm:block">
-            <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100 leading-tight">{companyName || "Dashboard"}</h1>
-            <p className="text-[10px] text-slate-500 dark:text-slate-400">Gerencie seus leads</p>
+            <h1 className="text-xl font-black text-slate-900 dark:text-slate-100 leading-tight tracking-tight">{companyName || "Dashboard"}</h1>
+            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Gerencie seus leads e pipeline</p>
           </div>
           <div className="relative w-full sm:w-[240px]">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
             <Input
-              placeholder="Pesquisar..."
+              placeholder="Pesquisar leads..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 bg-white dark:bg-slate-950 h-8 text-xs border-slate-200 dark:border-slate-800"
+              className="pl-9 bg-white dark:bg-slate-950 h-10 text-sm border-slate-200 dark:border-slate-800 rounded-xl shadow-sm focus:ring-indigo-500/20"
             />
           </div>
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+        <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
           {mounted && (
-            <div className="flex items-center gap-2">
-              <DateRangePickerWithPresets date={dateRange} setDate={setDateRange} className="h-8 text-xs" />
+            <div className="flex items-center gap-3">
+              <DateRangePickerWithPresets date={dateRange} setDate={setDateRange} className="h-10 text-sm rounded-xl" />
               <NewLeadDialog orgId={orgId} overrides={overrides} />
             </div>
           )}
         </div>
       </div>
 
-      {/* Stats Cards - Smaller and More Compact */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+      {/* Stats Cards - Redesigned for impact */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatsCard
           title="Total de Leads"
           value={totalLeads}
@@ -284,30 +284,35 @@ function StatsCard({
   badge?: { text: string; variant: 'success' | 'warning' | 'neutral' }
 }) {
   return (
-    <Card className={cn("bg-white dark:bg-[#0f172a] border-slate-200 dark:border-slate-800", className)}>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0.5 p-2.5">
-        <CardTitle className="text-[9px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest truncate">
+    <Card className={cn("glass-card group overflow-hidden hover:scale-[1.02] border-slate-200/60 dark:border-white/5", className)}>
+      <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+        <Icon className="h-12 w-12" />
+      </div>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 p-5">
+        <CardTitle className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.15em] truncate">
           {title}
         </CardTitle>
-        <div className="bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
-          <Icon className={cn("h-3.5 w-3.5 text-slate-600 dark:text-slate-400", iconClassName)} />
+        <div className="bg-indigo-500/10 dark:bg-white/5 p-2 rounded-xl transition-colors group-hover:bg-indigo-500 group-hover:text-white">
+          <Icon className={cn("h-4 w-4 transition-all", iconClassName)} />
         </div>
       </CardHeader>
-      <CardContent className="p-2.5 pt-0">
-        <div className="text-lg font-black text-slate-900 dark:text-slate-100 truncate mb-0.5">{value}</div>
-        <div className="flex items-center gap-1.5 flex-wrap">
+      <CardContent className="p-5 pt-0">
+        <div className="text-2xl font-black text-slate-900 dark:text-white truncate mb-1.5 tracking-tight italic">
+          {value}
+        </div>
+        <div className="flex items-center gap-2.5 flex-wrap">
           {badge && (
             <span className={cn(
-              "text-[9px] font-black px-1.5 py-0.5 rounded-full",
-              badge.variant === 'success' && "text-emerald-500 bg-emerald-500/10",
-              badge.variant === 'warning' && "text-amber-500 bg-amber-500/10",
-              badge.variant === 'neutral' && "text-slate-400 bg-slate-400/10",
+              "text-[10px] font-black px-2 py-0.5 rounded-lg border",
+              badge.variant === 'success' && "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
+              badge.variant === 'warning' && "text-amber-500 bg-amber-500/10 border-amber-500/20",
+              badge.variant === 'neutral' && "text-slate-400 bg-slate-400/10 border-slate-400/20",
             )}>
               {badge.text}
             </span>
           )}
           {description && (
-            <p className="text-[9px] font-medium text-slate-500 dark:text-slate-400 truncate tracking-tight">
+            <p className="text-xs font-semibold text-slate-500 dark:text-white/30 truncate">
               {description}
             </p>
           )}
