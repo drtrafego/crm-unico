@@ -8,7 +8,7 @@ import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
     AreaChart, Area, PieChart, Pie, Legend
 } from "recharts";
-import { format, subDays, startOfDay, endOfDay, isWithinInterval, eachDayOfInterval, differenceInDays } from "date-fns";
+import { format, subDays, startOfDay, endOfDay, isWithinInterval, eachDayOfInterval, differenceInDays, subHours } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
     TrendingUp, Users, Target, Clock, CalendarClock,
@@ -161,7 +161,8 @@ export function AnalyticsDashboard({ initialLeads, columns, initialSales }: Anal
         const monthlyDataMap: Record<string, { month: string, leads: number, revenue: number, sortDate: Date }> = {};
         activeLeads.forEach(l => {
             if (!l.createdAt) return;
-            const date = new Date(l.createdAt);
+            // Apply UTC-3 offset (Buenos Aires/Brazil)
+            const date = subHours(new Date(l.createdAt), 3);
             const m = format(date, 'MMM/yy', { locale: ptBR });
             if (!monthlyDataMap[m]) monthlyDataMap[m] = { month: m, leads: 0, revenue: 0, sortDate: startOfDay(date) };
             monthlyDataMap[m].leads++;
@@ -178,7 +179,11 @@ export function AnalyticsDashboard({ initialLeads, columns, initialSales }: Anal
             const daysInterval = eachDayOfInterval({ start: dateRange.from, end: dateRange.to || dateRange.from });
             return (daysInterval.length > 90 ? daysInterval.filter((_, i) => i % 3 === 0) : daysInterval).map(d => ({
                 day: format(d, 'dd/MM'),
-                leads: activeLeads.filter(l => l.createdAt && format(new Date(l.createdAt), 'yyyy-MM-dd') === format(d, 'yyyy-MM-dd')).length
+                leads: activeLeads.filter(l => {
+                    if (!l.createdAt) return false;
+                    const lDate = subHours(new Date(l.createdAt), 3);
+                    return format(lDate, 'yyyy-MM-dd') === format(d, 'yyyy-MM-dd');
+                }).length
             }));
         })();
 
