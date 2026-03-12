@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Lead } from "@/server/db/schema";
 import { cn } from "@/lib/utils";
-import { Calendar, MessageCircle, Pencil } from "lucide-react";
+import { Calendar, Pencil } from "lucide-react";
 import { useState } from "react";
 import { EditLeadDialog } from "./edit-lead-dialog";
 import { Button } from "@/components/ui/button";
@@ -93,7 +93,7 @@ export function LeadCard({ lead, index }: LeadCardProps) {
                         <Badge
                           variant="secondary"
                           className={cn(
-                            "px-2 py-0.5 text-[10px] font-black uppercase tracking-widest border transition-all duration-300",
+                            "px-2 py-0.5 text-[11px] font-black uppercase tracking-widest border transition-all duration-300",
                             source === "Google" && "bg-rose-500/20 text-rose-300 border-rose-500/30 shadow-[0_0_10px_rgba(244,63,94,0.2)]",
                             source === "Meta" && "bg-sky-500/20 text-sky-300 border-sky-500/30 shadow-[0_0_10px_rgba(14,165,233,0.2)]",
                             source === "Captação Ativa" && "bg-amber-500/20 text-amber-300 border-amber-500/30 shadow-[0_0_10px_rgba(245,158,11,0.2)]",
@@ -106,7 +106,7 @@ export function LeadCard({ lead, index }: LeadCardProps) {
                       ) : (
                         <Badge
                           variant="outline"
-                          className="px-2 py-0.5 text-[10px] font-bold border-dashed border-white/20 text-white/40 cursor-pointer hover:border-indigo-400/50 hover:text-indigo-300 transition-colors"
+                          className="px-2 py-0.5 text-[11px] font-bold border-dashed border-white/20 text-white/40 cursor-pointer hover:border-indigo-400/50 hover:text-indigo-300 transition-colors"
                         >
                           + Origem
                         </Badge>
@@ -119,7 +119,7 @@ export function LeadCard({ lead, index }: LeadCardProps) {
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div className="space-y-1.5">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-2 px-1">Origem do Lead</p>
+                      <p className="text-xs font-black uppercase tracking-widest text-white/40 mb-2 px-1">Origem do Lead</p>
                       {ORIGIN_OPTIONS.map((opt) => (
                         <button
                           key={opt.value}
@@ -150,7 +150,7 @@ export function LeadCard({ lead, index }: LeadCardProps) {
                     <Badge
                       variant="secondary"
                       className={cn(
-                        "px-2 py-0.5 text-[10px] font-black uppercase tracking-wider border flex items-center gap-1.5 transition-all",
+                        "px-2 py-0.5 text-[11px] font-black uppercase tracking-wider border flex items-center gap-1.5 transition-all",
                         isOverdue && "bg-red-500/10 text-red-500 border-red-500/20",
                         isToday && "bg-amber-500/10 text-amber-500 border-amber-500/20",
                         !isOverdue && !isToday && "bg-blue-500/10 text-blue-500 border-blue-500/20"
@@ -218,16 +218,16 @@ export function LeadCard({ lead, index }: LeadCardProps) {
             {/* Title & Description */}
             <div className="space-y-1.5">
               <div className="flex justify-between items-start gap-2">
-                <h4 className="text-[13px] font-black text-slate-900 dark:text-white tracking-tight leading-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors duration-300">
+                <h4 className="text-sm font-black text-slate-900 dark:text-white tracking-tight leading-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors duration-300">
                   {lead.name}
                 </h4>
                 {lead.value && (
-                  <div className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-lg border border-emerald-500/20 shadow-sm shrink-0">
+                  <div className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-lg border border-emerald-500/20 shadow-sm shrink-0">
                     R$ {lead.value}
                   </div>
                 )}
               </div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-slate-500 dark:text-slate-400">
+              <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-500 dark:text-slate-400">
                 {lead.company}
               </p>
               <p className="text-xs text-slate-600 dark:text-white/50 line-clamp-2 min-h-[2.5em] leading-relaxed group-hover:text-slate-800 dark:group-hover:text-white/70 transition-colors duration-300">
@@ -241,20 +241,20 @@ export function LeadCard({ lead, index }: LeadCardProps) {
               <div className="flex items-center gap-2">
                 <div className="relative">
                   <Avatar className="h-6 w-6 border border-white/20 shadow-sm">
-                    <AvatarFallback className="text-[8px] bg-indigo-500 text-white font-black">
+                    <AvatarFallback className="text-[10px] bg-indigo-500 text-white font-black">
                       {lead.name?.substring(0, 2).toUpperCase() || "UN"}
                     </AvatarFallback>
                   </Avatar>
                   <div className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full border border-white bg-emerald-500 shadow-sm" />
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 px-2 py-0.5 bg-slate-100 dark:bg-white/5 rounded-lg border border-slate-200/50 dark:border-white/5">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 px-2 py-0.5 bg-slate-100 dark:bg-white/5 rounded-lg border border-slate-200/50 dark:border-white/5">
                   Lead
                 </span>
               </div>
 
               {/* Meta Stats */}
               <div className="flex items-center gap-3 text-slate-400 dark:text-white/30">
-                <div className="flex items-center gap-1.5 text-[10px] font-bold">
+                <div className="flex items-center gap-1.5 text-[11px] font-bold">
                   <Calendar className="h-3 w-3" />
                   <span>
                     {(() => {

@@ -11,9 +11,9 @@ import {
 import { format, subDays, startOfDay, endOfDay, isWithinInterval, eachDayOfInterval, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-    Wallet, TrendingUp, Users, Target, Clock, CalendarClock,
-    RotateCcw, FileText, MousePointerClick, Gem, BrainCircuit, Link2,
-    AlertTriangle, Activity, Zap, Award, Timer, DollarSign, Filter,
+    TrendingUp, Users, Target, Clock, CalendarClock,
+    RotateCcw, BrainCircuit, Link2,
+    AlertTriangle, Activity, Zap, Timer, Filter,
     CheckCircle2, ArrowRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -227,10 +227,11 @@ export function AnalyticsDashboard({ initialLeads, columns, initialSales }: Anal
         activeLeads.forEach(lead => {
             if (!lead.createdAt) return;
             const date = new Date(lead.createdAt);
+            // Brasília is UTC-3. If lead arrives at 00:00 UTC, it's 21:00 BRT.
             const localHours = (date.getUTCHours() - 3 + 24) % 24;
             if (localHours >= 6 && localHours < 12) timeOfDayData[0].value += 1;
             else if (localHours >= 12 && localHours < 18) timeOfDayData[1].value += 1;
-            else timeOfDayData[2].value += 1;
+            else timeOfDayData[2].value += 1; // 18h to 06h (Noite/Madrugada)
         });
 
         // Relationship Table: Keyword vs Page
@@ -461,9 +462,9 @@ export function AnalyticsDashboard({ initialLeads, columns, initialSales }: Anal
                                     <CardTitle className="text-sm font-black text-white flex items-center gap-3 uppercase tracking-widest italic">
                                         <TrendingUp className="h-4 w-4 text-emerald-400" /> Vencedores: {milestone.stageName}
                                     </CardTitle>
-                                    <CardDescription className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Keywords que mais convertem para este marco</CardDescription>
+                                    <CardDescription className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-0.5">Keywords que mais convertem para este marco</CardDescription>
                                 </div>
-                                <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[9px] font-black italic">TOP CONV</Badge>
+                                <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-xs font-black italic">TOP CONV</Badge>
                             </div>
                         </CardHeader>
                         <CardContent className="p-0">
@@ -474,17 +475,17 @@ export function AnalyticsDashboard({ initialLeads, columns, initialSales }: Anal
                                             <span className="text-xs font-black text-white uppercase italic group-hover:text-emerald-400 transition-colors truncate max-w-[200px]">
                                                 {kw.name}
                                             </span>
-                                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter">Termo da Campanha</span>
+                                            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-tighter">Termo da Campanha</span>
                                         </div>
                                         <div className="flex items-center gap-6">
                                             <div className="flex flex-col items-end">
                                                 <span className="text-sm font-black text-white italic tabular-nums">{kw.count}</span>
-                                                <span className="text-[9px] font-bold text-slate-500 uppercase">Leads</span>
+                                                <span className="text-[11px] font-bold text-slate-500 uppercase">Leads</span>
                                             </div>
                                             <div className="h-8 w-[1px] bg-white/5" />
                                             <div className="flex flex-col items-end min-w-[60px]">
                                                 <span className="text-sm font-black text-emerald-400 italic tabular-nums">{kw.rate.toFixed(1)}%</span>
-                                                <span className="text-[9px] font-bold text-slate-500 uppercase underline decoration-emerald-500/30">Taxa Cnv</span>
+                                                <span className="text-[11px] font-bold text-slate-500 uppercase underline decoration-emerald-500/30">Taxa Cnv</span>
                                             </div>
                                         </div>
                                     </div>
@@ -504,11 +505,11 @@ export function AnalyticsDashboard({ initialLeads, columns, initialSales }: Anal
                                 <CardTitle className="text-lg font-black text-white flex items-center gap-3 uppercase tracking-[0.2em] italic">
                                     <Activity className="h-5 w-5 text-indigo-400 animate-pulse" /> Traffic Performance & ROI Intel
                                 </CardTitle>
-                                <CardDescription className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Matriz de Conversão e Atribuição de Receita por Canal</CardDescription>
+                                <CardDescription className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">Matriz de Conversão e Atribuição de Receita por Canal</CardDescription>
                             </div>
                             <div className="flex items-center gap-3 bg-white/5 p-2 rounded-2xl border border-white/10">
                                 <div className="flex flex-col">
-                                    <span className="text-[9px] font-black text-slate-500 uppercase px-2">Custo Médio por Lead (BRL)</span>
+                                    <span className="text-xs font-black text-slate-500 uppercase px-2">Custo Médio por Lead (BRL)</span>
                                     <div className="flex items-center gap-2 px-2">
                                         <span className="text-xs text-slate-400">R$</span>
                                         <Input type="number" value={cpaValue} onChange={(e) => setCpaValue(Number(e.target.value))} className="h-7 w-16 bg-transparent border-none p-0 text-white font-black text-sm focus-visible:ring-0" />
@@ -516,7 +517,7 @@ export function AnalyticsDashboard({ initialLeads, columns, initialSales }: Anal
                                 </div>
                                 <div className="h-8 w-[1px] bg-white/10" />
                                 <div className="flex flex-col items-center justify-center px-4">
-                                    <span className="text-[9px] font-black text-indigo-400 uppercase">Simulador de ROI</span>
+                                    <span className="text-xs font-black text-indigo-400 uppercase">Simulador de ROI</span>
                                     <span className="text-xl font-black text-white italic tabular-nums">{kpis.revenue > 0 ? ((kpis.revenue / (kpis.totalLeads * cpaValue)).toFixed(1)) : '0.0'}x</span>
                                 </div>
                             </div>
@@ -609,21 +610,38 @@ export function AnalyticsDashboard({ initialLeads, columns, initialSales }: Anal
                 </Card>
 
                 <Card className="bg-white dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-white/10 overflow-hidden shadow-2xl">
-                    <CardHeader className="py-4 border-b border-slate-100 dark:border-white/5"><CardTitle className="text-xs font-black uppercase tracking-widest flex items-center gap-2 text-slate-500 dark:text-slate-400"><Zap className="w-3.5 h-3.5 text-amber-500" /> Top UTM Terms (Keywords)</CardTitle></CardHeader>
-                    <CardContent className="h-[220px] pt-6 pb-2 px-2">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={charts.analytics?.termData || []}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"} />
-                                <XAxis dataKey="name" tick={{ fill: isDark ? '#64748b' : '#94a3b8', fontSize: 9 }} axisLine={false} tickLine={false} tickFormatter={(v) => v.length > 12 ? v.substring(0, 10) + '...' : v} />
-                                <YAxis tick={{ fill: isDark ? '#64748b' : '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} />
-                                <Tooltip cursor={{ fill: isDark ? 'rgba(245, 158, 11, 0.05)' : 'rgba(245, 158, 11, 0.1)' }} contentStyle={{ backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(8px)', border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)', borderRadius: '12px', color: isDark ? '#fff' : '#0f172a', fontSize: '10px' }} />
-                                <Bar dataKey="leads" fill="#f59e0b" radius={[6, 6, 0, 0]} barSize={25} onClick={(data) => { if (data && data.name) setSelectedUTMTerm(data.name === selectedUTMTerm ? null : data.name) }}>
-                                    {(charts.analytics?.termData || []).map((entry: any, index: number) => (
-                                        <Cell key={index} fill={entry.name === selectedUTMTerm ? (isDark ? '#ffffff' : '#4f46e5') : '#f59e0b'} fillOpacity={isDark ? 0.3 : 0.8} />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
+                    <CardHeader className="py-4 border-b border-slate-100 dark:border-white/5"><CardTitle className="text-xs font-black uppercase tracking-widest flex items-center gap-2 text-slate-500 dark:text-slate-400"><Clock className="w-3.5 h-3.5 text-amber-500" /> Behavioral Peaks (Day/Time)</CardTitle></CardHeader>
+                    <CardContent className="h-[220px] pt-6 pb-2 px-6">
+                        <div className="flex flex-col h-full gap-4">
+                            <div className="flex-1">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie
+                                            data={charts.timeOfDayData}
+                                            innerRadius={60}
+                                            outerRadius={80}
+                                            paddingAngle={5}
+                                            dataKey="value"
+                                            animationDuration={1500}
+                                        >
+                                            {charts.timeOfDayData.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={entry.fill} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip 
+                                            contentStyle={{ backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.95)', border: 'none', borderRadius: '12px' }}
+                                        />
+                                        <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase' }} />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
+                            <div className="text-center">
+                                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">
+                                    Concentração: {((Math.max(...charts.timeOfDayData.map(d => d.value)) / kpis.totalLeads) * 100 || 0).toFixed(0)}% no período 
+                                    <span className="text-white ml-1 italic">{charts.timeOfDayData.sort((a,b) => b.value - a.value)[0]?.name}</span>
+                                </p>
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
             </div>
@@ -632,18 +650,18 @@ export function AnalyticsDashboard({ initialLeads, columns, initialSales }: Anal
             <Card className="bg-white dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-white/10 shadow-2xl overflow-hidden group">
                 <CardHeader className="py-4 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5">
                     <div className="flex items-center justify-between">
-                        <div><CardTitle className="text-xs font-black uppercase tracking-widest flex items-center gap-2 text-slate-500 dark:text-slate-400"><BrainCircuit className="w-4 h-4 text-purple-600 dark:text-purple-400" /> Relacionamento: Keywords vs Páginas</CardTitle><CardDescription className="text-[10px] text-slate-500 font-bold uppercase tracking-tight mt-1">Quais termos levam a quais páginas e qual a volumetria?</CardDescription></div>
-                        <Badge variant="outline" className="text-[10px] bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20">Top 20 Relações</Badge>
+                        <div><CardTitle className="text-xs font-black uppercase tracking-widest flex items-center gap-2 text-slate-500 dark:text-slate-400"><BrainCircuit className="w-4 h-4 text-purple-600 dark:text-purple-400" /> Relacionamento: Keywords vs Páginas</CardTitle><CardDescription className="text-xs text-slate-500 font-bold uppercase tracking-tight mt-1">Quais termos levam a quais páginas e qual a volumetria?</CardDescription></div>
+                        <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20">Top 20 Relações</Badge>
                     </div>
                 </CardHeader>
                 <CardContent className="p-0">
-                    <div className="grid grid-cols-12 bg-slate-50 dark:bg-slate-950/50 p-3 text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] border-b border-slate-100 dark:border-white/5"><div className="col-span-6 pl-4 font-mono">UTM Term (Palavra-chave)</div><div className="col-span-4">Página (Slug)</div><div className="col-span-2 text-right pr-4 italic">Leads</div></div>
+                    <div className="grid grid-cols-12 bg-slate-50 dark:bg-slate-950/50 p-3 text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] border-b border-slate-100 dark:border-white/5"><div className="col-span-6 pl-4 font-mono">UTM Term (Palavra-chave)</div><div className="col-span-4">Página (Slug)</div><div className="col-span-2 text-right pr-4 italic">Leads</div></div>
                     <div className="divide-y divide-slate-100 dark:divide-white/5 max-h-[300px] overflow-y-auto custom-scrollbar bg-white dark:bg-transparent">
                         {(charts.termPageRelation || []).map((rel: any, i: number) => (
                             <div key={i} className="grid grid-cols-12 p-3 text-[11px] hover:bg-slate-50 dark:hover:bg-white/5 transition-all group/row">
                                 <div className="col-span-6 pl-2 font-black text-slate-700 dark:text-slate-200 truncate pr-2 border-l-2 border-purple-500/30 group-hover/row:border-purple-500 transition-colors uppercase tracking-tight">{rel.term}</div>
-                                <div className="col-span-4 text-slate-500 dark:text-slate-400 truncate text-[10px] italic">{rel.page}</div>
-                                <div className="col-span-2 text-right pr-4 font-black text-purple-600 dark:text-purple-400 text-lg tabular-nums">{rel.leads}</div>
+                                <div className="col-span-4 text-slate-500 dark:text-slate-400 truncate text-[11px] italic">{rel.page}</div>
+                                <div className="col-span-2 text-right pr-4 font-black text-purple-600 dark:text-purple-400 text-xl tabular-nums">{rel.leads}</div>
                             </div>
                         ))}
                     </div>
@@ -656,14 +674,14 @@ export function AnalyticsDashboard({ initialLeads, columns, initialSales }: Anal
                     <CardHeader className="border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 py-4"><CardTitle className="text-xs font-black uppercase tracking-widest flex items-center gap-2 text-slate-500 dark:text-slate-400"><Link2 className="w-4 h-4 text-blue-600 dark:text-blue-500" /> Detalhamento de Campanhas (UTMs)</CardTitle></CardHeader>
                     <CardContent className="p-0">
                         <div className="overflow-hidden bg-white dark:bg-transparent">
-                            <div className="grid grid-cols-12 bg-slate-50 dark:bg-slate-950/50 p-3 text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] border-b border-slate-100 dark:border-white/5"><div className="col-span-2">Source</div><div className="col-span-2">Medium</div><div className="col-span-4">Campaign</div><div className="col-span-3">Term (Keyword)</div><div className="col-span-1 text-right pr-2">Leads</div></div>
+                            <div className="grid grid-cols-12 bg-slate-50 dark:bg-slate-950/50 p-3 text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] border-b border-slate-100 dark:border-white/5"><div className="col-span-2">Source</div><div className="col-span-2">Medium</div><div className="col-span-4">Campaign</div><div className="col-span-3">Term (Keyword)</div><div className="col-span-1 text-right pr-2">Leads</div></div>
                             <div className="divide-y divide-slate-100 dark:divide-white/5 max-h-[400px] overflow-y-auto custom-scrollbar">
                                 {utmStats.map((item, idx) => (
                                     <div key={idx} className="grid grid-cols-12 p-3 text-[11px] text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group">
                                         <div className="col-span-2 truncate pr-2 opacity-60 group-hover:opacity-100">{item.source}</div>
-                                        <div className="col-span-2 truncate pr-2 text-slate-400 dark:text-slate-500 text-[10px]">{item.medium}</div>
+                                        <div className="col-span-2 truncate pr-2 text-slate-400 dark:text-slate-500 text-[11px]">{item.medium}</div>
                                         <div className="col-span-4 truncate pr-2 font-bold text-blue-600 dark:text-blue-400/80 group-hover:text-blue-500">{item.campaign}</div>
-                                        <div className="col-span-3 truncate pr-2 text-slate-500 dark:text-slate-400 font-mono italic text-[10px]">{item.term}</div>
+                                        <div className="col-span-3 truncate pr-2 text-slate-500 dark:text-slate-400 font-mono italic text-[11px]">{item.term}</div>
                                         <div className="col-span-1 text-right font-black pr-2 text-slate-900 dark:text-white">{item.size}</div>
                                     </div>
                                 ))}
@@ -676,12 +694,12 @@ export function AnalyticsDashboard({ initialLeads, columns, initialSales }: Anal
             {/* Bottom Regions/Pipeline Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-10 border-t border-slate-200 dark:border-white/5">
                 <Card className="bg-white/40 dark:bg-white/5 backdrop-blur-sm border border-slate-200 dark:border-white/5 shadow-sm opacity-80 hover:opacity-100 transition-opacity">
-                    <CardHeader className="py-2 border-b border-slate-100 dark:border-white/5"><CardTitle className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Regional (Ativos)</CardTitle></CardHeader>
-                    <CardContent className="h-[200px] pt-4"><ResponsiveContainer width="100%" height="100%"><BarChart data={charts.regionalData} layout="vertical"><YAxis dataKey="name" type="category" tick={{ fill: isDark ? '#64748b' : '#94a3b8', fontSize: 9 }} width={25} axisLine={false} tickLine={false} /><Tooltip cursor={{ fill: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }} contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#fff', border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)', borderRadius: '8px', color: isDark ? '#fff' : '#0f172a', fontSize: '10px' }} /><Bar dataKey="value" fill={isDark ? "#475569" : "#94a3b8"} radius={[0, 4, 4, 0]} barSize={8} /></BarChart></ResponsiveContainer></CardContent>
+                    <CardHeader className="py-2 border-b border-slate-100 dark:border-white/5"><CardTitle className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Regional (Ativos)</CardTitle></CardHeader>
+                    <CardContent className="h-[200px] pt-4"><ResponsiveContainer width="100%" height="100%"><BarChart data={charts.regionalData} layout="vertical"><YAxis dataKey="name" type="category" tick={{ fill: isDark ? '#64748b' : '#94a3b8', fontSize: 11 }} width={25} axisLine={false} tickLine={false} /><Tooltip cursor={{ fill: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }} contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#fff', border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)', borderRadius: '8px', color: isDark ? '#fff' : '#0f172a', fontSize: '12px' }} /><Bar dataKey="value" fill={isDark ? "#475569" : "#94a3b8"} radius={[0, 4, 4, 0]} barSize={8} /></BarChart></ResponsiveContainer></CardContent>
                 </Card>
                 <Card className="bg-white/40 dark:bg-white/5 backdrop-blur-sm border border-slate-200 dark:border-white/5 shadow-sm opacity-80 hover:opacity-100 transition-opacity">
-                    <CardHeader className="py-2 border-b border-slate-100 dark:border-white/5"><CardTitle className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Pipeline (Volume)</CardTitle></CardHeader>
-                    <CardContent className="h-[200px] pt-4"><ResponsiveContainer width="100%" height="100%"><BarChart data={charts.funnelData} layout="vertical"><YAxis dataKey="name" type="category" tick={{ fill: isDark ? '#64748b' : '#94a3b8', fontSize: 9 }} width={100} tickFormatter={(v) => v.length > 15 ? v.substring(0, 15) : v} axisLine={false} tickLine={false} /><Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={8} fill={isDark ? "#475569" : "#94a3b8"} /></BarChart></ResponsiveContainer></CardContent>
+                    <CardHeader className="py-2 border-b border-slate-100 dark:border-white/5"><CardTitle className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Pipeline (Volume)</CardTitle></CardHeader>
+                    <CardContent className="h-[200px] pt-4"><ResponsiveContainer width="100%" height="100%"><BarChart data={charts.funnelData} layout="vertical"><YAxis dataKey="name" type="category" tick={{ fill: isDark ? '#64748b' : '#94a3b8', fontSize: 11 }} width={100} tickFormatter={(v) => v.length > 15 ? v.substring(0, 15) : v} axisLine={false} tickLine={false} /><Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={8} fill={isDark ? "#475569" : "#94a3b8"} /></BarChart></ResponsiveContainer></CardContent>
                 </Card>
             </div>
         </div>

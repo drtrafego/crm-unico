@@ -114,7 +114,7 @@ export function Column({ column, leads, index, orgId, overrides }: ColumnProps) 
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-3">
                   <span className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-800 dark:text-white/90">{column.title}</span>
-                  <span className="bg-indigo-500/10 dark:bg-white/10 text-indigo-600 dark:text-white/60 px-2.5 py-0.5 rounded-lg text-[10px] font-black border border-indigo-500/10 dark:border-white/5 shadow-sm">
+                  <span className="bg-indigo-500/10 dark:bg-white/10 text-indigo-600 dark:text-white/60 px-2.5 py-0.5 rounded-lg text-xs font-black border border-indigo-500/10 dark:border-white/5 shadow-sm">
                     {leads.length}
                   </span>
                 </div>

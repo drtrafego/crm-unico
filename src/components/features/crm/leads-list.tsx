@@ -92,7 +92,7 @@ export function LeadsList({ leads, columns, orgId, overrides }: LeadsListProps) 
         return (
           <div className="flex items-center gap-1">
             <span className={cn(
-              "px-2 py-0.5 rounded-full text-[10px] font-medium border",
+              "px-2 py-0.5 rounded-full text-[11px] font-medium border",
               source === 'Google' ? 'bg-blue-50 text-blue-700 border-blue-200' :
                 source === 'Meta' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
                   'bg-slate-100 text-slate-600 border-slate-200'
