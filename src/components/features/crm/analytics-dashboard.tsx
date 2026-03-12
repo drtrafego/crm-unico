@@ -13,10 +13,12 @@ import { ptBR } from "date-fns/locale";
 import {
     Wallet, TrendingUp, Users, Target, Clock, CalendarClock,
     RotateCcw, FileText, MousePointerClick, Gem, BrainCircuit, Link2,
-    AlertTriangle, Activity, Zap, Award, Timer
+    AlertTriangle, Activity, Zap, Award, Timer, DollarSign, Filter,
+    CheckCircle2, ArrowRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { DateRangePickerWithPresets } from "./date-range-picker";
 import { DateRange } from "react-day-picker";
 import { KPI } from "./analytics-components";
@@ -78,6 +80,9 @@ export function AnalyticsDashboard({ initialLeads, columns, initialSales }: Anal
     const [selectedUTMSource, setSelectedUTMSource] = useState<string | null>(null);
     const [selectedUTMTerm, setSelectedUTMTerm] = useState<string | null>(null);
     const [selectedPage, setSelectedPage] = useState<string | null>(null);
+
+    // ROI Simulator State
+    const [cpaValue, setCpaValue] = useState<number>(30); // Default CPA 30 BRL
 
     const {
         kpis, charts, uniqueOrigins, states, 
@@ -408,118 +413,137 @@ export function AnalyticsDashboard({ initialLeads, columns, initialSales }: Anal
                 </Card>
             </div>
 
-            {/* Time of Day Pie Chart */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="bg-white dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-white/10 overflow-hidden shadow-2xl h-[350px]">
-                    <CardHeader className="py-4 border-b border-slate-100 dark:border-white/5">
-                        <CardTitle className="text-xs font-black uppercase tracking-widest flex items-center gap-2 text-slate-500 dark:text-slate-400">
-                            <Clock className="w-3.5 h-3.5 text-indigo-500" /> Horário de Entrada (UTC-3 / BsAs)
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="h-[250px] pt-6 pb-2 px-2">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    data={charts.timeOfDayData}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={50}
-                                    outerRadius={80}
-                                    paddingAngle={5}
-                                    dataKey="value"
-                                    stroke="none"
-                                >
-                                    {charts.timeOfDayData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                                    ))}
-                                </Pie>
-                                <Tooltip
-                                    contentStyle={{
-                                        backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.95)',
-                                        backdropFilter: 'blur(8px)',
-                                        border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)',
-                                        borderRadius: '12px',
-                                        color: isDark ? '#fff' : '#0f172a'
-                                    }}
-                                    itemStyle={{ color: '#fff' }}
-                                />
-                                <Legend layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{ fontSize: '12px', color: isDark ? '#94a3b8' : '#64748b', paddingLeft: '20px' }} iconType="circle" />
-                            </PieChart>
-                        </ResponsiveContainer>
-                    </CardContent>
-                </Card>
-            </div>
+            {/* ===== TRAFFIC PERFORMANCE & ROI INTEL (REACTION TO FEEDBACK) ===== */}
+            <Card className="bg-slate-900/90 backdrop-blur-2xl border border-white/10 shadow-3xl overflow-hidden glass-card">
+                <CardHeader className="py-5 px-6 border-b border-white/5 bg-slate-950/40">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <CardTitle className="text-lg font-black text-white flex items-center gap-3 uppercase tracking-[0.2em] italic">
+                                <Activity className="h-5 w-5 text-indigo-400 animate-pulse" /> Traffic Performance & ROI Intel
+                            </CardTitle>
+                            <CardDescription className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Matriz de Conversão e Atribuição de Receita por Canal</CardDescription>
+                        </div>
+                        
+                        {/* ROI Simulator Controls */}
+                        <div className="flex items-center gap-3 bg-white/5 p-2 rounded-2xl border border-white/10">
+                            <div className="flex flex-col">
+                                <span className="text-[9px] font-black text-slate-500 uppercase px-2">Custo Médio por Lead (BRL)</span>
+                                <div className="flex items-center gap-2 px-2">
+                                    <span className="text-xs text-slate-400">R$</span>
+                                    <Input 
+                                        type="number" 
+                                        value={cpaValue} 
+                                        onChange={(e) => setCpaValue(Number(e.target.value))}
+                                        className="h-7 w-16 bg-transparent border-none p-0 text-white font-black text-sm focus-visible:ring-0"
+                                    />
+                                </div>
+                            </div>
+                            <div className="h-8 w-[1px] bg-white/10" />
+                            <div className="flex flex-col items-center justify-center px-4">
+                                <span className="text-[9px] font-black text-indigo-400 uppercase">Simulador de ROI</span>
+                                <span className="text-xl font-black text-white italic tabular-nums">
+                                    {kpis.revenue > 0 ? ((kpis.revenue / (kpis.totalLeads * cpaValue)).toFixed(1)) : '0.0'}x
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </CardHeader>
+                
+                <CardContent className="p-0">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-white/5">
+                        
+                        {/* LEFT: Conversion Matrix (Sources) */}
+                        <div className="lg:col-span-7 p-6 space-y-4">
+                            <div className="flex items-center justify-between mb-4">
+                                <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                    <Filter className="w-3.5 h-3.5 text-indigo-400" /> Funil de Conversão por Origem
+                                </h4>
+                                <Badge variant="outline" className="text-[8px] bg-white/5 text-slate-500 border-white/10 uppercase">Top Canais</Badge>
+                            </div>
+                            
+                            <div className="space-y-3">
+                                {intelligence.attributionMetrics.roiBySource.slice(0, 5).map((src, i) => (
+                                    <div key={i} className="bg-white/5 rounded-xl p-4 border border-white/5 flex items-center gap-4 group hover:bg-white/[0.08] transition-all">
+                                        <div className="w-10 h-10 rounded-full bg-slate-950/60 border border-white/10 flex items-center justify-center text-indigo-400 font-black text-xs">
+                                            {src.conversionRate > 0 ? <CheckCircle2 className="w-5 h-5 text-emerald-400" /> : <Users className="w-5 h-5 opacity-40" />}
+                                        </div>
+                                        
+                                        <div className="flex-1">
+                                            <div className="flex justify-between items-center mb-1">
+                                                <span className="text-[11px] font-black text-white uppercase tracking-tighter">{src.name}</span>
+                                                <span className="text-[10px] font-bold text-indigo-400">{src.leads} Leads → {src.sales} Vendas</span>
+                                            </div>
+                                            <div className="h-1.5 w-full bg-slate-950/50 rounded-full overflow-hidden">
+                                                <div 
+                                                    className={cn("h-full rounded-full transition-all duration-1000", src.conversionRate > 0 ? "bg-emerald-500" : "bg-indigo-500/40")}
+                                                    style={{ width: `${Math.max(5, src.conversionRate)}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="text-right min-w-[80px]">
+                                            <div className="text-xs font-black text-white">{src.conversionRate.toFixed(1)}%</div>
+                                            <div className="text-[8px] font-bold text-slate-500 uppercase">Conv. Rate</div>
+                                        </div>
 
-            {/* ===== MARKETING INTELLIGENCE (NEW SECTION) ===== */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Top UTM Sources */}
-                <Card className="bg-white dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-white/10 shadow-2xl">
-                    <CardHeader className="py-3 px-4 flex flex-row items-center justify-between space-y-0 border-b border-slate-100 dark:border-white/5">
-                        <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Top UTM Sources</CardTitle>
-                        <MousePointerClick className="w-3.5 h-3.5 text-blue-500" />
-                    </CardHeader>
-                    <CardContent className="h-[220px] pt-4 pb-4 px-2">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={charts.analytics?.sourceData || []} layout="vertical" margin={{ left: -10, right: 20 }}>
-                                <XAxis type="number" hide />
-                                <YAxis dataKey="name" type="category" tick={{ fill: isDark ? '#64748b' : '#94a3b8', fontSize: 9 }} width={80} axisLine={false} tickLine={false} />
-                                <Tooltip
-                                    cursor={{ fill: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)' }}
-                                    contentStyle={{
-                                        backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.95)',
-                                        backdropFilter: 'blur(8px)',
-                                        border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)',
-                                        borderRadius: '12px',
-                                        color: isDark ? '#fff' : '#0f172a',
-                                        fontSize: '10px'
-                                    }}
-                                />
-                                <Bar dataKey="value" fill="#3b82f6" radius={[0, 6, 6, 0]} barSize={12} className="cursor-pointer"
-                                    onClick={(data) => { if (data && data.name) setSelectedUTMSource(data.name === selectedUTMSource ? null : data.name) }}
-                                >
-                                    {(charts.analytics?.sourceData || []).map((entry: any, index: number) => (
-                                        <Cell key={index} fill={entry.name === selectedUTMSource ? (isDark ? '#ffffff' : '#4f46e5') : '#3b82f6'} />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </CardContent>
-                </Card>
+                                        <div className="text-right min-w-[100px] border-l border-white/10 pl-4">
+                                            <div className="text-sm font-black text-emerald-400">{formatCurrency(src.revenue)}</div>
+                                            <div className="text-[8px] font-bold text-slate-500 uppercase">Receita</div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
 
-                {/* Top Landing Pages */}
-                <Card className="bg-white dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-white/10 shadow-2xl">
-                    <CardHeader className="py-3 px-4 flex flex-row items-center justify-between space-y-0 border-b border-slate-100 dark:border-white/5">
-                        <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Páginas de Entrada</CardTitle>
-                        <FileText className="w-3.5 h-3.5 text-emerald-500" />
-                    </CardHeader>
-                    <CardContent className="h-[220px] pt-4 pb-4 px-2">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={charts.analytics?.pageData || []} layout="vertical" margin={{ left: -10, right: 20 }}>
-                                <XAxis type="number" hide />
-                                <YAxis dataKey="name" type="category" tick={{ fill: isDark ? '#64748b' : '#94a3b8', fontSize: 9 }} width={100} axisLine={false} tickLine={false} tickFormatter={(v) => v.length > 20 ? v.substring(0, 18) + '...' : v} />
-                                <Tooltip
-                                    cursor={{ fill: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)' }}
-                                    contentStyle={{
-                                        backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.95)',
-                                        backdropFilter: 'blur(8px)',
-                                        border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)',
-                                        borderRadius: '12px',
-                                        color: isDark ? '#fff' : '#0f172a',
-                                        fontSize: '10px'
-                                    }}
-                                />
-                                <Bar dataKey="leads" fill="#10b981" radius={[0, 6, 6, 0]} barSize={12} className="cursor-pointer"
-                                    onClick={(data) => { if (data && data.name) setSelectedPage(data.name === selectedPage ? null : data.name) }}
-                                >
-                                    {(charts.analytics?.pageData || []).map((entry: any, index: number) => (
-                                        <Cell key={index} fill={entry.name === selectedPage ? (isDark ? '#ffffff' : '#4f46e5') : '#10b981'} />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </CardContent>
-                </Card>
-            </div>
+                        {/* RIGHT: Top Terms & Actionable Insights */}
+                        <div className="lg:col-span-5 p-6 bg-slate-950/20">
+                            <div className="space-y-6">
+                                {/* Keyword Efficiency */}
+                                <div>
+                                    <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-4">
+                                        <Zap className="w-3.5 h-3.5 text-amber-400" /> Eficiência de Termos (Keyword ROI)
+                                    </h4>
+                                    <div className="space-y-2">
+                                        {intelligence.attributionMetrics.roiByTerm.slice(0, 4).map((term, i) => (
+                                            <div key={i} className="flex items-center justify-between text-[11px] py-1.5 px-3 rounded-lg hover:bg-white/5 transition-colors">
+                                                <span className="font-mono text-slate-400 truncate max-w-[150px] italic">{term.name}</span>
+                                                <div className="flex items-center gap-3">
+                                                    <span className="font-black text-white">{term.sales} Vendas</span>
+                                                    <span className="text-emerald-400 font-black tabular-nums">{formatCurrency(term.revenue)}</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {intelligence.attributionMetrics.roiByTerm.length === 0 && (
+                                            <div className="text-[10px] text-slate-600 italic p-4 text-center">Aguardando mais dados de conversão por UTM Term...</div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Marketing Recommendation Card */}
+                                <div className="bg-indigo-600/10 rounded-2xl p-4 border border-indigo-500/20 relative overflow-hidden group">
+                                    <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:rotate-12 transition-transform">
+                                        <BrainCircuit className="w-24 h-24" />
+                                    </div>
+                                    <h5 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2">Recomendação de Tráfego</h5>
+                                    {intelligence.attributionMetrics.roiBySource.length > 0 ? (
+                                        <p className="text-[11px] text-slate-300 font-medium leading-relaxed">
+                                            {intelligence.attributionMetrics.paretoSummary.isConcentrado ? 
+                                                `Seu tráfego está concentrado em ${intelligence.attributionMetrics.paretoSummary.topSourceCount} origens que geram ${intelligence.attributionMetrics.paretoSummary.topRevenuePercentage.toFixed(0)}% da receita. Considere escalar o termo "${intelligence.attributionMetrics.roiByTerm[0]?.name || 'principal'}" para otimizar o ROI.` :
+                                                `Conversão equilibrada entre os canais. A fonte "${intelligence.attributionMetrics.roiBySource[0]?.name}" apresenta a melhor eficiência financeira com ${formatCurrency(intelligence.attributionMetrics.roiBySource[0]?.efficiencyScore || 0)} por lead.`
+                                            }
+                                        </p>
+                                    ) : (
+                                        <p className="text-[11px] text-slate-500 italic">Analise em tempo real indisponível. Continue captando leads para gerar insights preditivos.</p>
+                                    )}
+                                    <div className="mt-4 flex items-center gap-2 text-[9px] font-black text-indigo-400 uppercase cursor-pointer hover:underline">
+                                        Explorar Detalhamento <ArrowRight className="w-3 h-3" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
 
             {/* Keyword vs Page Relationship */}
             <Card className="bg-white dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-white/10 shadow-2xl overflow-hidden group">
@@ -586,116 +610,6 @@ export function AnalyticsDashboard({ initialLeads, columns, initialSales }: Anal
                     </CardContent>
                 </Card>
             )}
-
-            {/* Sales Intelligence v3.5 */}
-            <Card className="bg-slate-900/60 backdrop-blur-xl border border-white/10 shadow-3xl overflow-hidden glass-card">
-                <CardHeader className="py-4 px-6 border-b border-white/5 bg-slate-950/20 backdrop-blur-md">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <CardTitle className="text-sm font-black text-white flex items-center gap-2 uppercase tracking-widest italic">
-                                <Activity className="h-4 w-4 text-purple-400 animate-pulse" /> Statistical Intelligence v3.5
-                            </CardTitle>
-                            <CardDescription className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Machine Learning Insights & Pipeline Health Analysis</CardDescription>
-                        </div>
-                        <div className="flex items-center gap-2 px-4 py-1.5 rounded-2xl shadow-lg border border-white/5 bg-slate-950/40">
-                             <div className="flex flex-col items-end">
-                                <span className="text-[10px] font-black text-slate-500 uppercase">Health Score</span>
-                                <span className={cn("text-lg font-black italic", 
-                                    intelligence.health.score > 80 ? "text-emerald-400" : 
-                                    intelligence.health.score > 50 ? "text-amber-400" : "text-rose-400"
-                                )}>{intelligence.health.score}% | {intelligence.health.grade}</span>
-                             </div>
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent className="p-0">
-                    <div className="grid grid-cols-1 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-white/5">
-                        {/* 1. Lead Quality - ML Score */}
-                        <div className="p-6 space-y-4 hover:bg-white/5 transition-colors group relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-4 opacity-5">
-                                <Award className="h-20 w-20 text-indigo-400" />
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <TrendingUp className="h-4 w-4 text-emerald-400" />
-                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[.2em]">Qualidade de Leads</h4>
-                            </div>
-                            <div className="space-y-4">
-                                <div className="flex justify-between items-end">
-                                    <div className="text-3xl font-black text-white tabular-nums">{intelligence.advanced.leadScoreStats.avgScore}</div>
-                                    <div className="text-[10px] font-bold text-emerald-400 uppercase">Avg Score</div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <div className="bg-slate-950/40 rounded-lg p-2 border border-white/5">
-                                        <div className="text-xs font-black text-emerald-400">{intelligence.advanced.leadScoreStats.conversionsByGrade.A || 0}%</div>
-                                        <div className="text-[8px] font-bold text-slate-600 uppercase">Conv. Grade A</div>
-                                    </div>
-                                    <div className="bg-slate-950/40 rounded-lg p-2 border border-white/5">
-                                        <div className="text-xs font-black text-red-400">{intelligence.advanced.leadScoreStats.conversionsByGrade.F || 0}%</div>
-                                        <div className="text-[8px] font-bold text-slate-600 uppercase">Conv. Grade F</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* 2. Stagnation Risk & Stability */}
-                        <div className="p-6 space-y-4 hover:bg-white/5 transition-colors group">
-                            <div className="flex items-center gap-2">
-                                <Timer className="h-4 w-4 text-rose-400" />
-                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[.2em]">Risco de Estagnação</h4>
-                            </div>
-                            <div className="space-y-4">
-                                <div className="flex justify-between items-end">
-                                    <div className="text-3xl font-black text-rose-400 tabular-nums">{intelligence.advanced.stagnationMetrics.highRiskLeads}</div>
-                                    <div className="text-[10px] font-bold text-rose-400/70 uppercase">Leads em Risco</div>
-                                </div>
-                                <div className="text-[9px] text-slate-500 font-medium leading-relaxed">
-                                    Ciclo médio de {intelligence.advanced.stagnationMetrics.averageDaysToWin} dias. Desvio de {intelligence.advanced.stagnationMetrics.stdDevDaysToWin.toFixed(1)}d indica {intelligence.advanced.stagnationMetrics.stdDevDaysToWin > 10 ? 'alta instabilidade' : 'processo previsível'}.
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* 3. Pipeline Hygiene */}
-                        <div className="p-6 space-y-4 hover:bg-white/5 transition-colors group">
-                            <div className="flex items-center gap-2">
-                                <AlertTriangle className="h-4 w-4 text-amber-500" />
-                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[.2em]">Higiene de Pipeline</h4>
-                            </div>
-                            <div className="grid grid-cols-3 gap-3 text-center">
-                                <div className="bg-red-500/10 rounded-xl p-2 border border-red-500/20 shadow-lg">
-                                    <div className="text-xl font-black text-red-400 tabular-nums">{intelligence.critical?.length || 0}</div>
-                                    <div className="text-[9px] font-black text-red-400/70 uppercase tracking-tighter">+15d</div>
-                                </div>
-                                <div className="bg-amber-500/10 rounded-xl p-2 border border-amber-500/20 shadow-lg">
-                                    <div className="text-xl font-black text-amber-400 tabular-nums">{intelligence.warning?.length || 0}</div>
-                                    <div className="text-[9px] font-black text-amber-400/70 uppercase tracking-tighter">7-15d</div>
-                                </div>
-                                <div className="bg-emerald-500/10 rounded-xl p-2 border border-emerald-500/20 shadow-lg">
-                                    <div className="text-xl font-black text-emerald-400 tabular-nums">{intelligence.healthy || 0}</div>
-                                    <div className="text-[9px] font-black text-emerald-400/70 uppercase tracking-tighter">OK</div>
-                                </div>
-                            </div>
-                            <div className="text-[9px] text-slate-500 text-center italic">Compliance Follow-up: {intelligence.followUp.complianceRate}%</div>
-                        </div>
-
-                        {/* 4. ROI & Pareto Concentration */}
-                        <div className="p-6 space-y-4 hover:bg-white/5 transition-colors group">
-                            <div className="flex items-center gap-2">
-                                <Gem className="h-4 w-4 text-amber-400" />
-                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[.2em]">Concentração ROI</h4>
-                            </div>
-                            <div className="space-y-4">
-                                <div className="flex justify-between items-end">
-                                    <div className="text-3xl font-black text-amber-500 tabular-nums">{intelligence.advanced.attributionMetrics.roiBySource[0]?.roi.toFixed(1) || 0}x</div>
-                                    <div className="text-[10px] font-bold text-amber-500/70 uppercase">Top Source ROI</div>
-                                </div>
-                                <div className="text-[9px] text-slate-500 font-medium italic">
-                                    Pareto: {intelligence.advanced.attributionMetrics.paretoSummary.topSourceCount} origens geram {intelligence.advanced.attributionMetrics.paretoSummary.topRevenuePercentage.toFixed(0)}% da receita total.
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
 
             {/* Legacy Section at Bottom - SUBTLE GLASS STYLE */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-10 border-t border-slate-200 dark:border-white/5">

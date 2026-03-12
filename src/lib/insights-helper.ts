@@ -13,11 +13,25 @@ export interface DashboardInsights {
     highRiskLeads: number;
   };
   attributionMetrics: {
-    roiBySource: { name: string; revenue: number; leads: number; conversion: number; roi: number }[];
-    paretoAnalysis: { name: string; revenue: number; cumulativePercentage: number }[];
+    roiBySource: { 
+      name: string; 
+      revenue: number; 
+      leads: number; 
+      sales: number;
+      conversionRate: number; 
+      efficiencyScore: number;
+    }[];
+    roiByTerm: {
+      name: string;
+      revenue: number;
+      leads: number;
+      sales: number;
+      conversionRate: number;
+    }[];
     paretoSummary: {
       topSourceCount: number;
       topRevenuePercentage: number;
+      isConcentrated: boolean;
     };
   };
   behavioralPeaks: {
@@ -109,46 +123,74 @@ export function calculateAdvancedInsights(
   const riskThreshold = averageDaysToWin + (1.5 * stdDevDaysToWin);
   const highRiskLeads = stagnationDays.filter(d => d > riskThreshold).length;
 
-  // 3. Attribution & Pareto
-  const revenueMap = new Map<string, { revenue: number; leads: number }>();
+  // 3. Traffic Attribution & Performance Matrix
+  const sourcePerformance = new Map<string, { revenue: number; leads: number; sales: number }>();
+  const termPerformance = new Map<string, { revenue: number; leads: number; sales: number }>();
   
+  // Track sales back to sources
   sales.forEach(s => {
+    const price = parseFloat(s.price || "0");
     const src = s.utmSource || "Desconhecido";
-    if (!revenueMap.has(src)) revenueMap.set(src, { revenue: 0, leads: 0 });
-    const stat = revenueMap.get(src)!;
-    stat.revenue += parseFloat(s.price || "0");
+    const term = s.utmTerm || "Direto/Orgânico";
+
+    if (!sourcePerformance.has(src)) sourcePerformance.set(src, { revenue: 0, leads: 0, sales: 0 });
+    const srcStat = sourcePerformance.get(src)!;
+    srcStat.revenue += price;
+    srcStat.sales += 1;
+
+    if (!termPerformance.has(term)) termPerformance.set(term, { revenue: 0, leads: 0, sales: 0 });
+    const termStat = termPerformance.get(term)!;
+    termStat.revenue += price;
+    termStat.sales += 1;
   });
 
+  // Blend with lead volume for conversion rates
   totalBySource.forEach((count, src) => {
-    if (!revenueMap.has(src)) revenueMap.set(src, { revenue: 0, leads: 0 });
-    revenueMap.get(src)!.leads = count;
+    if (!sourcePerformance.has(src)) sourcePerformance.set(src, { revenue: 0, leads: count, sales: 0 });
+    else sourcePerformance.get(src)!.leads = count;
   });
 
-  const roiBySource = Array.from(revenueMap.entries())
+  // Calculate Lead volume per term from CRM data
+  leads.forEach(l => {
+    const term = l.utmTerm || "Direto/Orgânico";
+    if (!termPerformance.has(term)) termPerformance.set(term, { revenue: 0, leads: 1, sales: 0 });
+    else termPerformance.get(term)!.leads += 1;
+  });
+
+  const roiBySource = Array.from(sourcePerformance.entries())
     .map(([name, stat]) => ({
       name,
       revenue: stat.revenue,
       leads: stat.leads,
-      conversion: stat.leads > 0 ? (stat.revenue / stat.leads) : 0,
-      roi: stat.leads > 0 ? (stat.revenue / (stat.leads * 50)) : 0 // Assuming 50 BRL lead cost
+      sales: stat.sales,
+      conversionRate: stat.leads > 0 ? (stat.sales / stat.leads) * 100 : 0,
+      efficiencyScore: (stat.revenue > 0 && stat.leads > 0) ? (stat.revenue / stat.leads) : 0
     }))
-    .sort((a, b) => b.revenue - a.revenue);
+    .sort((a, b) => b.revenue - a.revenue || b.conversionRate - a.conversionRate);
+
+  const roiByTerm = Array.from(termPerformance.entries())
+    .filter(([name]) => name !== "Direto/Orgânico" || sourcePerformance.size > 1) // Filter if relevant
+    .map(([name, stat]) => ({
+      name,
+      revenue: stat.revenue,
+      leads: stat.leads,
+      sales: stat.sales,
+      conversionRate: stat.leads > 0 ? (stat.sales / stat.leads) * 100 : 0
+    }))
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, 10);
 
   const totalRevenue = roiBySource.reduce((a, b) => a + b.revenue, 0);
   let runningTotal = 0;
   let topSourceCount = 0;
-  const paretoAnalysis = roiBySource.map(r => {
-    runningTotal += r.revenue;
-    const perc = totalRevenue > 0 ? (runningTotal / totalRevenue) : 0;
-    if (perc <= 0.8) topSourceCount++;
-    return {
-      name: r.name,
-      revenue: r.revenue,
-      cumulativePercentage: Math.round(perc * 100)
-    };
+  roiBySource.forEach(r => {
+    if (runningTotal < totalRevenue * 0.8) {
+      runningTotal += r.revenue;
+      topSourceCount++;
+    }
   });
 
-  const topRevenuePercentage = totalRevenue > 0 ? (roiBySource.slice(0, Math.max(1, topSourceCount)).reduce((a, b) => a + b.revenue, 0) / totalRevenue) * 100 : 0;
+  const topRevenuePercentage = totalRevenue > 0 ? (runningTotal / totalRevenue) * 100 : 0;
 
   // 4. Behavioral Peaks
   const dayLabels = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
@@ -171,8 +213,12 @@ export function calculateAdvancedInsights(
     stagnationMetrics: { averageDaysToWin, stdDevDaysToWin, highRiskLeads },
     attributionMetrics: { 
       roiBySource, 
-      paretoAnalysis, 
-      paretoSummary: { topSourceCount: Math.max(1, topSourceCount), topRevenuePercentage } 
+      roiByTerm,
+      paretoSummary: { 
+        topSourceCount: Math.max(1, topSourceCount), 
+        topRevenuePercentage,
+        isConcentrated: topSourceCount <= (roiBySource.length * 0.2)
+      } 
     },
     behavioralPeaks: {
       bestDay: dayLabels[Number(bestDayIdx)],
