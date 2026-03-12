@@ -411,19 +411,19 @@ export function AnalyticsDashboard({ initialLeads, columns, initialSales }: Anal
                             </div>
                             <div className="flex items-center gap-3">
                                 <div className="flex flex-col items-center justify-center w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20">
-                                    <span className="text-xs font-black text-rose-500">{intelligence.staleCount}</span>
+                                    <span className="text-xs font-black text-rose-500">{intelligence.critical.length}</span>
                                     <span className="text-[7px] font-bold text-rose-500/60">+15D</span>
                                 </div>
                                 <div className="flex flex-col items-center justify-center w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20">
-                                    <span className="text-xs font-black text-amber-500">{intelligence.warningCount}</span>
+                                    <span className="text-xs font-black text-amber-500">{intelligence.warning.length}</span>
                                     <span className="text-[7px] font-bold text-amber-500/60">7-15D</span>
                                 </div>
                                 <div className="flex flex-col items-center justify-center w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
-                                    <span className="text-xs font-black text-emerald-400">{intelligence.totalLeads - intelligence.staleCount - intelligence.warningCount}</span>
+                                    <span className="text-xs font-black text-emerald-400">{intelligence.totalOpen - intelligence.critical.length - intelligence.warning.length}</span>
                                     <span className="text-[7px] font-bold text-emerald-500/60">OK</span>
                                 </div>
                             </div>
-                            <div className="text-[10px] text-slate-500">Compliance Follow-up: <span className="text-white font-bold">{intelligence.followUp.complianceScore}%</span></div>
+                            <div className="text-[10px] text-slate-500">Compliance Follow-up: <span className="text-white font-bold">{intelligence.followUp.complianceRate}%</span></div>
                         </div>
 
                         {/* 4. Attribution/Mix Card */}
@@ -436,14 +436,14 @@ export function AnalyticsDashboard({ initialLeads, columns, initialSales }: Anal
                             </div>
                             <div className="flex items-baseline gap-2">
                                 <span className="text-4xl font-black text-amber-500 italic">
-                                    {initialSales?.length > 0 ? `${(intelligence.advanced.attributionMetrics.roiBySource[0]?.efficiencyScore || 0).toFixed(1)}x` : intelligence.uniqueOrigins.length}
+                                    {initialSales?.length > 0 ? `${(intelligence.advanced.attributionMetrics.roiBySource[0]?.efficiencyScore || 0).toFixed(1)}x` : uniqueOrigins.length}
                                 </span>
                                 <span className="text-[9px] font-bold text-slate-500 uppercase">{initialSales?.length > 0 ? "Top Source ROI" : "Fontes Ativas"}</span>
                             </div>
                             <p className="text-[10px] text-slate-500 font-medium">
                                 {initialSales?.length > 0 
                                     ? `Pareto: ${intelligence.advanced.attributionMetrics.paretoSummary.topSourceCount} origens geram ${intelligence.advanced.attributionMetrics.paretoSummary.topRevenuePercentage.toFixed(0)}% da receita.`
-                                    : `Concentração: ${intelligence.uniqueOrigins.length} fontes captando. Top fonte representa ${Math.round((intelligence.charts.analytics.sourceData[0]?.value / intelligence.kpis.totalLeads) * 100 || 0)}% do volume.`
+                                    : `Concentração: ${uniqueOrigins.length} fontes captando. Top fonte representa ${Math.round((charts.analytics.sourceData[0]?.value / kpis.totalLeads) * 100 || 0)}% do volume.`
                                 }
                             </p>
                         </div>
