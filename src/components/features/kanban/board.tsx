@@ -113,9 +113,15 @@ export function Board({ columns: initialColumns, initialLeads, orgId, overrides 
   };
 
   const getLeadsByColumn = (columnId: string) => {
+    const isFirstColumn = columns.length > 0 && columns[0].id === columnId;
     // Sort by position to ensure correct order
     return leads
-      .filter((lead) => lead.columnId === columnId)
+      .filter((lead) => {
+        if (lead.columnId === columnId) return true;
+        // Orphan leads (null/invalid columnId) go to the first column
+        if (isFirstColumn && (!lead.columnId || !columns.some(c => c.id === lead.columnId))) return true;
+        return false;
+      })
       .sort((a, b) => a.position - b.position);
   };
 

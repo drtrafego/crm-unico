@@ -88,10 +88,36 @@ export async function getColumns(orgId: string) {
 export async function getLeads(orgId: string) {
     const { targetDb, primaryOrgId } = await getContext(orgId);
 
-    return await targetDb.query.leads.findMany({
+    const allLeads = await targetDb.query.leads.findMany({
         where: eq(leads.organizationId, primaryOrgId),
         orderBy: [asc(leads.position), desc(leads.createdAt)],
     });
+
+    // Fix orphan leads (null or invalid columnId) by assigning them to the first column
+    const orgColumns = await targetDb.query.columns.findMany({
+        where: eq(columns.organizationId, primaryOrgId),
+        orderBy: [asc(columns.order)],
+    });
+
+    if (orgColumns.length > 0) {
+        const columnIds = new Set(orgColumns.map(c => c.id));
+        const firstColumnId = orgColumns[0].id;
+        const orphanLeads = allLeads.filter(l => !l.columnId || !columnIds.has(l.columnId));
+
+        if (orphanLeads.length > 0) {
+            await Promise.all(
+                orphanLeads.map(l =>
+                    targetDb.update(leads)
+                        .set({ columnId: firstColumnId })
+                        .where(eq(leads.id, l.id))
+                )
+            );
+            // Update in-memory data
+            orphanLeads.forEach(l => { l.columnId = firstColumnId; });
+        }
+    }
+
+    return allLeads;
 }
 
 export async function deleteLead(id: string, orgId: string) {

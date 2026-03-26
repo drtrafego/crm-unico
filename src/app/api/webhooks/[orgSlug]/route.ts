@@ -1,8 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { organizations, leads, columns, leadHistory } from "@/server/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, asc } from "drizzle-orm";
 import { normalizeSourceString } from "@/lib/leads-helper";
+
+// Ensures columns exist for the organization, creating defaults if needed
+async function ensureColumns(orgId: string) {
+  const existing = await db.query.columns.findMany({
+    where: eq(columns.organizationId, orgId),
+    orderBy: [asc(columns.order)],
+  });
+
+  if (existing.length > 0) return existing;
+
+  const defaultTitles = ["Novos Leads", "Em Contato", "Não Retornou", "Proposta Enviada", "Fechado", "Perdido"];
+  const inserted = await db.insert(columns).values(
+    defaultTitles.map((title, i) => ({ title, organizationId: orgId, order: i }))
+  ).returning();
+
+  return inserted.sort((a, b) => a.order - b.order);
+}
 
 // CORS headers for cross-origin requests
 const corsHeaders = {
@@ -167,10 +184,8 @@ export async function POST(
     }
     // --------------------------
 
-    const defaultColumn = await db.query.columns.findFirst({
-      where: eq(columns.organizationId, org.id),
-      orderBy: (columns, { asc }) => [asc(columns.order)],
-    });
+    const orgColumns = await ensureColumns(org.id);
+    const defaultColumn = orgColumns[0];
 
     const newLead = await db.insert(leads).values({
       name: normalizedData.name || "Sem Nome",
@@ -180,7 +195,7 @@ export async function POST(
       notes: normalizedData.message,
       organizationId: org.id,
       status: "New",
-      columnId: defaultColumn?.id,
+      columnId: defaultColumn.id,
       // Smart Source Fields
       campaignSource: campaignSource,
       utmSource: utmSource,
@@ -277,10 +292,8 @@ export async function GET(
     }
     // --------------------------
 
-    const defaultColumn = await db.query.columns.findFirst({
-      where: eq(columns.organizationId, org.id),
-      orderBy: (columns, { asc }) => [asc(columns.order)],
-    });
+    const orgColumns = await ensureColumns(org.id);
+    const defaultColumn = orgColumns[0];
 
     const newLead = await db.insert(leads).values({
       name: normalizedData.name || "Sem Nome",
@@ -290,7 +303,7 @@ export async function GET(
       notes: normalizedData.message,
       organizationId: org.id,
       status: "New",
-      columnId: defaultColumn?.id,
+      columnId: defaultColumn.id,
       // Smart Source Fields
       campaignSource: campaignSource,
       utmSource: utmSource as string,
