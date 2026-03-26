@@ -38,7 +38,7 @@ export default async function CRMPage({
         columns={columns}
         initialSales={hotmartData.success ? hotmartData.data?.allSales as any : []}
         companyName={org.name}
-        initialViewMode={settings?.viewMode || 'kanban'}
+        initialViewMode={settings?.viewMode || 'board'}
         orgId={org.id}
       />
     </div>

@@ -33,7 +33,13 @@ interface CrmViewProps {
 export function CrmView({ initialLeads, columns, initialSales = [], companyName, initialViewMode, orgId, overrides }: CrmViewProps) {
   const searchParams = useSearchParams();
 
-  const initialView = (searchParams.get("view") as "board" | "list" | "analytics") || (initialViewMode as "board" | "list" | "analytics") || "board";
+  const normalizeView = (v: string | null | undefined): "board" | "list" | "analytics" | null => {
+    if (v === "list") return "list";
+    if (v === "analytics") return "analytics";
+    if (v === "board" || v === "kanban") return "board";
+    return null;
+  };
+  const initialView = normalizeView(searchParams.get("view")) || normalizeView(initialViewMode) || "board";
   const [view, setView] = useState<"board" | "list" | "analytics">(initialView);
 
   useEffect(() => {
