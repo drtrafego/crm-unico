@@ -5,10 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState } from "react";
-import { Check, Copy, Loader2, Trash2, Zap, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Check, Copy, Loader2, Trash2, Zap, AlertCircle, CheckCircle2, Phone, Cloud } from "lucide-react";
 import { saveMetaIntegration, removeMetaIntegration, updateMetaIds } from "@/server/actions/meta-integrations";
 import { useRouter } from "next/navigation";
 import type { MetaIntegration } from "@/server/db/schema";
+import { cn } from "@/lib/utils";
 
 interface MetaIntegrationCardProps {
   orgId: string;
@@ -20,12 +21,16 @@ interface MetaIntegrationCardProps {
 export function MetaIntegrationCard({ orgId, orgSlug, metaWebhookUrl, existing }: MetaIntegrationCardProps) {
   const router = useRouter();
   const [adAccountId, setAdAccountId] = useState(existing?.adAccountId?.replace("act_", "") || "");
+  const [whatsappType, setWhatsappType] = useState<'waba' | 'business_number'>(
+    (existing?.whatsappType as 'waba' | 'business_number') || 'waba'
+  );
+  const [whatsappNumber, setWhatsappNumber] = useState(existing?.whatsappNumber || "");
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [errors, setErrors] = useState<string[]>([]);
   const [copiedUrl, setCopiedUrl] = useState(false);
 
-  // Campos manuais (caso auto-discovery não funcione)
+  // Campos manuais (fallback)
   const [showManual, setShowManual] = useState(false);
   const [manualWabaId, setManualWabaId] = useState(existing?.wabaId || "");
   const [manualPhoneNumberId, setManualPhoneNumberId] = useState(existing?.phoneNumberId || "");
@@ -33,19 +38,27 @@ export function MetaIntegrationCard({ orgId, orgSlug, metaWebhookUrl, existing }
 
   const handleConnect = async () => {
     if (!adAccountId.trim()) return;
+    if (whatsappType === 'business_number' && !whatsappNumber.trim()) return;
+
     setIsLoading(true);
     setErrors([]);
     setResult(null);
 
     try {
-      const res = await saveMetaIntegration(orgId, orgSlug, adAccountId.trim());
+      const res = await saveMetaIntegration(
+        orgId,
+        orgSlug,
+        adAccountId.trim(),
+        whatsappType,
+        whatsappType === 'business_number' ? whatsappNumber.trim() : undefined
+      );
       setResult(res.discovered);
       setErrors(res.errors);
       if (res.discovered.wabaId) setManualWabaId(res.discovered.wabaId);
       if (res.discovered.phoneNumberId) setManualPhoneNumberId(res.discovered.phoneNumberId);
       if (res.discovered.igAccountId) setManualIgAccountId(res.discovered.igAccountId);
       router.refresh();
-    } catch (err) {
+    } catch {
       setErrors(["Erro ao conectar. Verifique o ID da conta."]);
     } finally {
       setIsLoading(false);
@@ -57,6 +70,7 @@ export function MetaIntegrationCard({ orgId, orgSlug, metaWebhookUrl, existing }
     try {
       await removeMetaIntegration(orgId, orgSlug);
       setAdAccountId("");
+      setWhatsappNumber("");
       setResult(null);
       setManualWabaId("");
       setManualPhoneNumberId("");
@@ -74,6 +88,7 @@ export function MetaIntegrationCard({ orgId, orgSlug, metaWebhookUrl, existing }
         wabaId: manualWabaId || undefined,
         phoneNumberId: manualPhoneNumberId || undefined,
         igAccountId: manualIgAccountId || undefined,
+        whatsappNumber: whatsappNumber || undefined,
       });
       router.refresh();
     } finally {
@@ -116,13 +131,9 @@ export function MetaIntegrationCard({ orgId, orgSlug, metaWebhookUrl, existing }
       <CardContent className="space-y-6">
         {/* Webhook URL */}
         <div className="space-y-2">
-          <Label className="text-sm font-semibold text-slate-900 dark:text-white">Webhook URL (use no Meta Developer Console)</Label>
+          <Label className="text-sm font-semibold text-slate-900 dark:text-white">Webhook URL (Meta Developer Console)</Label>
           <div className="flex gap-2 items-center">
-            <Input
-              readOnly
-              value={metaWebhookUrl}
-              className="font-mono text-xs bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300"
-            />
+            <Input readOnly value={metaWebhookUrl} className="font-mono text-xs bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300" />
             <Button variant="outline" size="icon" className="shrink-0" onClick={handleCopyUrl}>
               {copiedUrl ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4 text-slate-500" />}
             </Button>
@@ -148,37 +159,114 @@ export function MetaIntegrationCard({ orgId, orgSlug, metaWebhookUrl, existing }
                 disabled={isLoading}
               />
             </div>
-            {!isConnected ? (
-              <Button
-                onClick={handleConnect}
-                disabled={isLoading || !adAccountId.trim()}
-                className="shrink-0 bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
-                <span className="ml-2">Conectar</span>
-              </Button>
-            ) : (
-              <div className="flex gap-2">
-                <Button
-                  onClick={handleConnect}
-                  disabled={isLoading}
-                  variant="outline"
-                  size="sm"
-                >
-                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Atualizar"}
-                </Button>
-                <Button
-                  onClick={handleDisconnect}
-                  disabled={isLoading}
-                  variant="outline"
-                  size="icon"
-                  className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
           </div>
+        </div>
+
+        {/* WhatsApp Type Selector */}
+        <div className="space-y-3">
+          <Label className="text-sm font-semibold text-slate-900 dark:text-white">Tipo de conexão WhatsApp</Label>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setWhatsappType('waba')}
+              className={cn(
+                "flex items-center gap-3 p-4 rounded-xl border-2 transition-all text-left",
+                whatsappType === 'waba'
+                  ? "border-blue-500 bg-blue-500/5 dark:bg-blue-500/10"
+                  : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
+              )}
+            >
+              <div className={cn(
+                "h-10 w-10 rounded-lg flex items-center justify-center shrink-0",
+                whatsappType === 'waba' ? "bg-blue-500/20" : "bg-slate-100 dark:bg-slate-800"
+              )}>
+                <Cloud className={cn("h-5 w-5", whatsappType === 'waba' ? "text-blue-500" : "text-slate-400")} />
+              </div>
+              <div>
+                <p className={cn(
+                  "text-sm font-bold",
+                  whatsappType === 'waba' ? "text-blue-600 dark:text-blue-400" : "text-slate-700 dark:text-slate-300"
+                )}>
+                  WABA (Cloud API)
+                </p>
+                <p className="text-[11px] text-slate-500">Conta oficial via Meta Business</p>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setWhatsappType('business_number')}
+              className={cn(
+                "flex items-center gap-3 p-4 rounded-xl border-2 transition-all text-left",
+                whatsappType === 'business_number'
+                  ? "border-green-500 bg-green-500/5 dark:bg-green-500/10"
+                  : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
+              )}
+            >
+              <div className={cn(
+                "h-10 w-10 rounded-lg flex items-center justify-center shrink-0",
+                whatsappType === 'business_number' ? "bg-green-500/20" : "bg-slate-100 dark:bg-slate-800"
+              )}>
+                <Phone className={cn("h-5 w-5", whatsappType === 'business_number' ? "text-green-500" : "text-slate-400")} />
+              </div>
+              <div>
+                <p className={cn(
+                  "text-sm font-bold",
+                  whatsappType === 'business_number' ? "text-green-600 dark:text-green-400" : "text-slate-700 dark:text-slate-300"
+                )}>
+                  Número Business
+                </p>
+                <p className="text-[11px] text-slate-500">Número WhatsApp direto</p>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        {/* WhatsApp Number (only for business_number type) */}
+        {whatsappType === 'business_number' && (
+          <div className="space-y-2">
+            <Label className="text-sm font-semibold text-slate-900 dark:text-white">Número do WhatsApp Business</Label>
+            <Input
+              value={whatsappNumber}
+              onChange={(e) => setWhatsappNumber(e.target.value.replace(/\D/g, ""))}
+              placeholder="5511999999999"
+              className="font-mono"
+              disabled={isLoading}
+            />
+            <p className="text-xs text-slate-500">
+              Número completo com DDI + DDD. Ex: <code className="bg-slate-100 dark:bg-slate-800 px-1 rounded">5511999999999</code>
+            </p>
+          </div>
+        )}
+
+        {/* Connect Button */}
+        <div className="flex gap-2">
+          {!isConnected ? (
+            <Button
+              onClick={handleConnect}
+              disabled={isLoading || !adAccountId.trim() || (whatsappType === 'business_number' && !whatsappNumber.trim())}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Zap className="h-4 w-4 mr-2" />}
+              Conectar Conta
+            </Button>
+          ) : (
+            <>
+              <Button onClick={handleConnect} disabled={isLoading} variant="outline" size="sm">
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Atualizar
+              </Button>
+              <Button
+                onClick={handleDisconnect}
+                disabled={isLoading}
+                variant="outline"
+                size="icon"
+                className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </>
+          )}
         </div>
 
         {/* Discovery Results */}
@@ -211,12 +299,23 @@ export function MetaIntegrationCard({ orgId, orgSlug, metaWebhookUrl, existing }
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-slate-900 dark:text-white">
-                    {(result?.displayPhone || existing?.displayPhone) || (result?.phoneNumberId || existing?.phoneNumberId ? `ID: ${result?.phoneNumberId || existing?.phoneNumberId}` : "Não detectado")}
-                  </p>
-                  <p className="text-xs text-slate-500">WhatsApp Business</p>
+                  {(existing?.whatsappType || whatsappType) === 'business_number' ? (
+                    <>
+                      <p className="text-sm font-bold text-slate-900 dark:text-white">
+                        {result?.whatsappNumber || existing?.whatsappNumber || "Não configurado"}
+                      </p>
+                      <p className="text-xs text-slate-500">WhatsApp Business (Número Direto)</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-sm font-bold text-slate-900 dark:text-white">
+                        {result?.displayPhone || existing?.displayPhone || (result?.phoneNumberId || existing?.phoneNumberId ? `ID: ${result?.phoneNumberId || existing?.phoneNumberId}` : "Não detectado")}
+                      </p>
+                      <p className="text-xs text-slate-500">WhatsApp Business (WABA Cloud API)</p>
+                    </>
+                  )}
                 </div>
-                {(result?.phoneNumberId || existing?.phoneNumberId) ? (
+                {(result?.phoneNumberId || existing?.phoneNumberId || result?.whatsappNumber || existing?.whatsappNumber) ? (
                   <CheckCircle2 className="h-4 w-4 text-green-500 ml-auto" />
                 ) : (
                   <AlertCircle className="h-4 w-4 text-amber-500 ml-auto" />
@@ -265,44 +364,34 @@ export function MetaIntegrationCard({ orgId, orgSlug, metaWebhookUrl, existing }
               onClick={() => setShowManual(!showManual)}
               className="text-xs font-bold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 uppercase tracking-widest"
             >
-              {showManual ? "Fechar" : "Configurar manualmente"} {showManual ? "▲" : "▼"}
+              {showManual ? "Fechar configuração manual" : "Configurar IDs manualmente"} {showManual ? "▲" : "▼"}
             </button>
 
             {showManual && (
               <div className="space-y-3 pt-2 border-t border-slate-200 dark:border-slate-700">
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-slate-500">WABA ID (WhatsApp Business Account)</Label>
-                  <Input
-                    value={manualWabaId}
-                    onChange={(e) => setManualWabaId(e.target.value)}
-                    placeholder="Ex: 123456789"
-                    className="font-mono text-xs"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-slate-500">Phone Number ID</Label>
-                  <Input
-                    value={manualPhoneNumberId}
-                    onChange={(e) => setManualPhoneNumberId(e.target.value)}
-                    placeholder="Ex: 115216611574100"
-                    className="font-mono text-xs"
-                  />
-                </div>
+                {whatsappType === 'waba' && (
+                  <>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-slate-500">WABA ID</Label>
+                      <Input value={manualWabaId} onChange={(e) => setManualWabaId(e.target.value)} placeholder="123456789" className="font-mono text-xs" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-slate-500">Phone Number ID</Label>
+                      <Input value={manualPhoneNumberId} onChange={(e) => setManualPhoneNumberId(e.target.value)} placeholder="115216611574100" className="font-mono text-xs" />
+                    </div>
+                  </>
+                )}
+                {whatsappType === 'business_number' && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-slate-500">Número WhatsApp</Label>
+                    <Input value={whatsappNumber} onChange={(e) => setWhatsappNumber(e.target.value.replace(/\D/g, ""))} placeholder="5511999999999" className="font-mono text-xs" />
+                  </div>
+                )}
                 <div className="space-y-1.5">
                   <Label className="text-xs text-slate-500">Instagram Account ID</Label>
-                  <Input
-                    value={manualIgAccountId}
-                    onChange={(e) => setManualIgAccountId(e.target.value)}
-                    placeholder="Ex: 17841400000000"
-                    className="font-mono text-xs"
-                  />
+                  <Input value={manualIgAccountId} onChange={(e) => setManualIgAccountId(e.target.value)} placeholder="17841400000000" className="font-mono text-xs" />
                 </div>
-                <Button
-                  onClick={handleSaveManual}
-                  disabled={isLoading}
-                  variant="outline"
-                  size="sm"
-                >
+                <Button onClick={handleSaveManual} disabled={isLoading} variant="outline" size="sm">
                   {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                   Salvar IDs Manuais
                 </Button>

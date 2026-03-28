@@ -21,8 +21,8 @@ export function KPI({
         <Card className="bg-white/80 dark:bg-slate-900/40 backdrop-blur-md border-slate-200/50 dark:border-white/10 overflow-hidden relative group hover:border-slate-300 dark:hover:border-white/20 transition-all duration-300 shadow-sm hover:shadow-indigo-500/10 hover:shadow-2xl">
             <CardContent className="p-4 flex items-start justify-between relative z-10">
                 <div className="space-y-1">
-                    <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-[0.1em] opacity-80">{label}</p>
-                    <div className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{value}</div>
+                    <p className="text-sm font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.1em] opacity-80">{label}</p>
+                    <div className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{value}</div>
                 </div>
                 <div className={cn(
                     "p-2.5 rounded-xl transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 shadow-inner",
@@ -74,8 +74,8 @@ export function InsightStat({
                 <div className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter drop-shadow-sm">{value}</div>
             </div>
             <div className="space-y-1">
-                <p className={cn("text-[10px] font-black uppercase tracking-[0.2em] mb-0.5", color)}>{label}</p>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight font-medium group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors uppercase">{sublabel}</p>
+                <p className={cn("text-xs font-black uppercase tracking-[0.2em] mb-0.5", color)}>{label}</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400 leading-tight font-bold group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors uppercase">{sublabel}</p>
             </div>
         </div>
     );
@@ -108,11 +108,11 @@ export function ActionTag({
                     : "border-slate-200 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/10",
             )}
         >
-            <div className={cn("p-1 rounded-md", color.replace('text-', 'bg-').replace('400', '500/10'))}>
-                <Icon className={cn("h-3.5 w-3.5", color)} />
+            <div className={cn("p-1.5 rounded-md", color.replace('text-', 'bg-').replace('400', '500/10'))}>
+                <Icon className={cn("h-4 w-4", color)} />
             </div>
-            <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
-                {label} <span className="text-slate-900 dark:text-white ml-1 px-1.5 py-0.5 rounded bg-slate-100 dark:bg-white/5">{count}</span>
+            <span className="text-sm font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider">
+                {label} <span className="text-slate-900 dark:text-white ml-2 px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-white/5">{count}</span>
             </span>
         </div>
     );
@@ -122,9 +122,9 @@ export function ActionTag({
 export function PeriodSummary({ title, leads, sales, color }: { title: string, leads: number, sales: number, color: string }) {
     return (
         <div className="p-5 bg-white/50 dark:bg-slate-950/40 backdrop-blur-md border border-slate-200 dark:border-white/5 rounded-2xl flex flex-col items-center text-center group hover:border-slate-300 dark:hover:border-white/20 transition-all duration-300 shadow-sm dark:shadow-xl">
-            <span className="text-[10px] text-slate-500 dark:text-slate-500 uppercase font-black tracking-[0.2em] mb-3 opacity-60">{title}</span>
+            <span className="text-xs text-slate-500 dark:text-slate-500 uppercase font-black tracking-[0.2em] mb-3 opacity-60">{title}</span>
             <div className={cn("text-4xl font-black tracking-tighter mb-2 drop-shadow-sm", color)}>{leads}</div>
-            <div className="px-3 py-1 rounded-lg bg-slate-100 dark:bg-white/5 text-[10px] text-slate-700 dark:text-slate-300 font-black border border-slate-200 dark:border-white/10 uppercase tracking-widest shadow-inner">
+            <div className="px-4 py-1.5 rounded-xl bg-slate-100 dark:bg-white/5 text-sm text-slate-700 dark:text-slate-300 font-black border border-slate-200 dark:border-white/10 uppercase tracking-widest shadow-inner">
                 {sales} <span className="text-slate-500 ml-1">vendas</span>
             </div>
         </div>

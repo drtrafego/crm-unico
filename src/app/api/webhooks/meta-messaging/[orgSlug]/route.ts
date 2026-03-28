@@ -61,11 +61,12 @@ async function leadExists(orgId: string, whatsapp: string): Promise<boolean> {
 /**
  * Resolve a organização:
  * - Se orgSlug != "router", busca pelo slug
- * - Se orgSlug == "router", busca pelo mapeamento Meta (phone_number_id, waba_id, ig_account_id)
+ * - Se orgSlug == "router", busca pelo mapeamento Meta
+ *   Suporta WABA (phone_number_id, waba_id) E Business Number (whatsapp_number)
  */
 async function resolveOrganization(
   orgSlug: string,
-  identifiers: { wabaId?: string; phoneNumberId?: string; igAccountId?: string }
+  identifiers: { wabaId?: string; phoneNumberId?: string; igAccountId?: string; displayPhoneNumber?: string }
 ): Promise<string | null> {
   // Modo direto: slug real
   if (orgSlug !== "router") {
@@ -76,8 +77,9 @@ async function resolveOrganization(
   }
 
   // Modo router: busca pela tabela meta_integrations
-  // Prioridade: phone_number_id > waba_id > ig_account_id
+  // Prioridade: phone_number_id > waba_id > whatsapp_number > ig_account_id
 
+  // 1. WABA: phone_number_id
   if (identifiers.phoneNumberId) {
     const match = await db.query.metaIntegrations.findFirst({
       where: and(
@@ -91,6 +93,7 @@ async function resolveOrganization(
     }
   }
 
+  // 2. WABA: waba_id
   if (identifiers.wabaId) {
     const match = await db.query.metaIntegrations.findFirst({
       where: and(
@@ -104,6 +107,24 @@ async function resolveOrganization(
     }
   }
 
+  // 3. Business Number: display_phone_number do metadata
+  if (identifiers.displayPhoneNumber) {
+    const cleanPhone = identifiers.displayPhoneNumber.replace(/\D/g, "");
+    if (cleanPhone) {
+      const match = await db.query.metaIntegrations.findFirst({
+        where: and(
+          eq(metaIntegrations.whatsappNumber, cleanPhone),
+          eq(metaIntegrations.isActive, true)
+        ),
+      });
+      if (match) {
+        console.log(`[Meta Router] Matched whatsapp_number ${cleanPhone} → org ${match.organizationId}`);
+        return match.organizationId;
+      }
+    }
+  }
+
+  // 4. Instagram: ig_account_id
   if (identifiers.igAccountId) {
     const match = await db.query.metaIntegrations.findFirst({
       where: and(
@@ -124,23 +145,28 @@ async function resolveOrganization(
 /**
  * Extrai os IDs do Meta a partir do payload do webhook
  */
-function extractMetaIds(body: any): { wabaId?: string; phoneNumberId?: string; igAccountId?: string } {
+function extractMetaIds(body: any): {
+  wabaId?: string;
+  phoneNumberId?: string;
+  igAccountId?: string;
+  displayPhoneNumber?: string;
+} {
   const objectType = body.object;
   const entry = body.entry?.[0];
 
   if (!entry) return {};
 
   if (objectType === "whatsapp_business_account") {
+    const metadata = entry.changes?.[0]?.value?.metadata;
     return {
       wabaId: entry.id,
-      phoneNumberId: entry.changes?.[0]?.value?.metadata?.phone_number_id,
+      phoneNumberId: metadata?.phone_number_id,
+      displayPhoneNumber: metadata?.display_phone_number, // Para match com business_number
     };
   }
 
   if (objectType === "instagram") {
-    return {
-      igAccountId: entry.id,
-    };
+    return { igAccountId: entry.id };
   }
 
   if (objectType === "page") {

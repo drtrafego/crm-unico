@@ -351,14 +351,14 @@ export function AnalyticsDashboard({ initialLeads, columns, initialSales }: Anal
                         <div className="flex items-center gap-4">
                             <Activity className="h-6 w-6 text-indigo-400 animate-pulse" />
                             <div>
-                                <CardTitle className="text-xl font-black text-white uppercase tracking-[0.3em] italic">Statistical Intelligence V3.5</CardTitle>
-                                <CardDescription className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Machine Learning Insights & Pipeline Health Analysis</CardDescription>
+                                <CardTitle className="text-2xl font-black text-white uppercase tracking-[0.3em] italic">Statistical Intelligence V3.5</CardTitle>
+                                <CardDescription className="text-sm text-slate-500 font-bold uppercase tracking-widest mt-1">Machine Learning Insights & Pipeline Health Analysis</CardDescription>
                             </div>
                         </div>
                         <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-2xl border border-white/10">
                             <div className="text-right">
-                                <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Health Score</div>
-                                <div className={cn("text-2xl font-black italic tabular-nums", 
+                                <div className="text-xs font-black text-slate-500 uppercase tracking-widest">Health Score</div>
+                                <div className={cn("text-3xl font-black italic tabular-nums", 
                                     intelligence.health.score > 70 ? "text-emerald-400" : intelligence.health.score > 40 ? "text-amber-400" : "text-rose-500")}>
                                     {intelligence.health.score}% | {intelligence.health.grade}
                                 </div>
@@ -371,23 +371,23 @@ export function AnalyticsDashboard({ initialLeads, columns, initialSales }: Anal
                         {/* 1. Quality Card */}
                         <div className="p-6 space-y-4 group">
                             <div className="flex items-center justify-between">
-                                <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                    <TrendingUp className="w-3.5 h-3.5 text-emerald-400" /> Qualidade de Leads
+                                <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                    <TrendingUp className="w-4 h-4 text-emerald-400" /> Qualidade de Leads
                                 </h4>
-                                <Badge variant="outline" className="text-[8px] border-emerald-500/20 text-emerald-500 bg-emerald-500/5 uppercase">Predictive</Badge>
+                                <Badge variant="outline" className="text-[10px] border-emerald-500/20 text-emerald-500 bg-emerald-500/5 uppercase">Predictive</Badge>
                             </div>
                             <div className="flex items-baseline gap-2">
-                                <span className="text-4xl font-black text-white italic">{intelligence.advanced.leadScoreStats.avgScore}</span>
-                                <span className="text-[10px] font-bold text-emerald-500 uppercase">Avg Score</span>
+                                <span className="text-5xl font-black text-white italic">{intelligence.advanced.leadScoreStats.avgScore}</span>
+                                <span className="text-xs font-bold text-emerald-500 uppercase">Avg Score</span>
                             </div>
                             <div className="grid grid-cols-2 gap-2 pt-2">
-                                <div className="bg-white/5 p-2 rounded-xl border border-white/5">
-                                    <div className="text-[10px] font-black text-emerald-500">{intelligence.advanced.leadScoreStats.conversionsByGrade['A']}%</div>
-                                    <div className="text-[7px] font-bold text-slate-500 uppercase">Conv. Grade A</div>
+                                <div className="bg-white/5 p-3 rounded-xl border border-white/5">
+                                    <div className="text-sm font-black text-emerald-500">{intelligence.advanced.leadScoreStats.conversionsByGrade['A']}%</div>
+                                    <div className="text-[10px] font-bold text-slate-500 uppercase">Conv. Grade A</div>
                                 </div>
-                                <div className="bg-white/5 p-2 rounded-xl border border-white/5">
-                                    <div className="text-[10px] font-black text-rose-500">{intelligence.advanced.leadScoreStats.conversionsByGrade['F']}%</div>
-                                    <div className="text-[7px] font-bold text-slate-500 uppercase">Conv. Grade F</div>
+                                <div className="bg-white/5 p-3 rounded-xl border border-white/5">
+                                    <div className="text-sm font-black text-rose-500">{intelligence.advanced.leadScoreStats.conversionsByGrade['F']}%</div>
+                                    <div className="text-[10px] font-bold text-slate-500 uppercase">Conv. Grade F</div>
                                 </div>
                             </div>
                         </div>
@@ -395,58 +395,58 @@ export function AnalyticsDashboard({ initialLeads, columns, initialSales }: Anal
                         {/* 2. Stagnation Card */}
                         <div className="p-6 space-y-4">
                             <div className="flex items-center justify-between">
-                                <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                    <Timer className="w-3.5 h-3.5 text-rose-400" /> Risco de Estagnação
+                                <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                    <Timer className="w-4 h-4 text-rose-400" /> Risco de Estagnação
                                 </h4>
-                                <Badge variant="outline" className="text-[8px] border-rose-500/20 text-rose-500 bg-rose-500/5 uppercase">Anomaly</Badge>
+                                <Badge variant="outline" className="text-[10px] border-rose-500/20 text-rose-500 bg-rose-500/5 uppercase">Anomaly</Badge>
                             </div>
                             <div className="flex items-baseline gap-2">
-                                <span className="text-4xl font-black text-rose-500 italic">{intelligence.advanced.stagnationMetrics.highRiskLeads}</span>
-                                <span className="text-[9px] font-bold text-slate-500 uppercase">Leads em Risco</span>
+                                <span className="text-5xl font-black text-rose-500 italic">{intelligence.advanced.stagnationMetrics.highRiskLeads}</span>
+                                <span className="text-xs font-bold text-slate-500 uppercase">Leads em Risco</span>
                             </div>
-                            <p className="text-[10px] text-slate-500 leading-tight">Ciclo médio de {intelligence.advanced.stagnationMetrics.averageDaysToWin} dias. Desvio de {intelligence.advanced.stagnationMetrics.stdDevDaysToWin.toFixed(1)}d indica processo previsível.</p>
+                            <p className="text-sm text-slate-500 leading-tight">Ciclo médio de {intelligence.advanced.stagnationMetrics.averageDaysToWin} dias. Desvio de {intelligence.advanced.stagnationMetrics.stdDevDaysToWin.toFixed(1)}d indica processo previsível.</p>
                         </div>
 
                         {/* 3. Hygiene Card */}
                         <div className="p-6 space-y-4">
                             <div className="flex items-center justify-between">
-                                <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                    <AlertTriangle className="w-3.5 h-3.5 text-amber-400" /> Higiene de Pipeline
+                                <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                    <AlertTriangle className="w-4 h-4 text-amber-400" /> Higiene de Pipeline
                                 </h4>
-                                <Badge variant="outline" className="text-[8px] border-amber-500/20 text-amber-500 bg-amber-500/5 uppercase">Compliance</Badge>
+                                <Badge variant="outline" className="text-[10px] border-amber-500/20 text-amber-500 bg-amber-500/5 uppercase">Compliance</Badge>
                             </div>
                             <div className="flex items-center gap-3">
-                                <div className="flex flex-col items-center justify-center w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20">
-                                    <span className="text-xs font-black text-rose-500">{intelligence.critical.length}</span>
-                                    <span className="text-[7px] font-bold text-rose-500/60">+15D</span>
+                                <div className="flex flex-col items-center justify-center w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/20">
+                                    <span className="text-base font-black text-rose-500">{intelligence.critical.length}</span>
+                                    <span className="text-[10px] font-bold text-rose-500/60">+15D</span>
                                 </div>
-                                <div className="flex flex-col items-center justify-center w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20">
-                                    <span className="text-xs font-black text-amber-500">{intelligence.warning.length}</span>
-                                    <span className="text-[7px] font-bold text-amber-500/60">7-15D</span>
+                                <div className="flex flex-col items-center justify-center w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20">
+                                    <span className="text-base font-black text-amber-500">{intelligence.warning.length}</span>
+                                    <span className="text-[10px] font-bold text-amber-500/60">7-15D</span>
                                 </div>
-                                <div className="flex flex-col items-center justify-center w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
-                                    <span className="text-xs font-black text-emerald-400">{intelligence.totalOpen - intelligence.critical.length - intelligence.warning.length}</span>
-                                    <span className="text-[7px] font-bold text-emerald-500/60">OK</span>
+                                <div className="flex flex-col items-center justify-center w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+                                    <span className="text-base font-black text-emerald-400">{intelligence.totalOpen - intelligence.critical.length - intelligence.warning.length}</span>
+                                    <span className="text-[10px] font-bold text-emerald-500/60">OK</span>
                                 </div>
                             </div>
-                            <div className="text-[10px] text-slate-500">Compliance Follow-up: <span className="text-white font-bold">{intelligence.followUp.complianceRate}%</span></div>
+                            <div className="text-sm text-slate-500">Compliance Follow-up: <span className="text-white font-bold">{intelligence.followUp.complianceRate}%</span></div>
                         </div>
 
                         {/* 4. Attribution/Mix Card */}
                         <div className="p-6 space-y-4 bg-white/[0.02]">
                             <div className="flex items-center justify-between">
-                                <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                    <Zap className="w-3.5 h-3.5 text-amber-400" /> {initialSales?.length > 0 ? 'Concentração ROI' : 'Mix de Origens'}
+                                <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                    <Zap className="w-4 h-4 text-amber-400" /> {initialSales?.length > 0 ? 'Concentração ROI' : 'Mix de Origens'}
                                 </h4>
-                                <Badge variant="outline" className="text-[8px] border-amber-500/20 text-amber-500 bg-amber-500/5 uppercase">Marketing</Badge>
+                                <Badge variant="outline" className="text-[10px] border-amber-500/20 text-amber-500 bg-amber-500/5 uppercase">Marketing</Badge>
                             </div>
                             <div className="flex items-baseline gap-2">
-                                <span className="text-4xl font-black text-amber-500 italic">
+                                <span className="text-5xl font-black text-amber-500 italic">
                                     {initialSales?.length > 0 ? `${(intelligence.advanced.attributionMetrics.roiBySource[0]?.efficiencyScore || 0).toFixed(1)}x` : uniqueOrigins.length}
                                 </span>
-                                <span className="text-[9px] font-bold text-slate-500 uppercase">{initialSales?.length > 0 ? "Top Source ROI" : "Fontes Ativas"}</span>
+                                <span className="text-xs font-bold text-slate-500 uppercase">{initialSales?.length > 0 ? "Top Source ROI" : "Fontes Ativas"}</span>
                             </div>
-                            <p className="text-[10px] text-slate-500 font-medium">
+                            <p className="text-sm text-slate-500 font-medium">
                                 {initialSales?.length > 0 
                                     ? `Pareto: ${intelligence.advanced.attributionMetrics.paretoSummary.topSourceCount} origens geram ${intelligence.advanced.attributionMetrics.paretoSummary.topRevenuePercentage.toFixed(0)}% da receita.`
                                     : `Concentração: ${uniqueOrigins.length} fontes captando. Top fonte representa ${Math.round((charts.analytics.sourceData[0]?.value / kpis.totalLeads) * 100 || 0)}% do volume.`
@@ -464,33 +464,33 @@ export function AnalyticsDashboard({ initialLeads, columns, initialSales }: Anal
                         <CardHeader className="py-4 px-6 border-b border-white/5 bg-slate-950/40">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <CardTitle className="text-sm font-black text-white flex items-center gap-3 uppercase tracking-widest italic">
-                                        <TrendingUp className="h-4 w-4 text-emerald-400" /> Vencedores: {milestone.stageName}
+                                    <CardTitle className="text-base font-black text-white flex items-center gap-3 uppercase tracking-widest italic">
+                                        <TrendingUp className="h-5 w-5 text-emerald-400" /> Vencedores: {milestone.stageName}
                                     </CardTitle>
-                                    <CardDescription className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-0.5">Keywords que mais convertem para este marco</CardDescription>
+                                    <CardDescription className="text-sm text-slate-500 font-bold uppercase tracking-widest mt-0.5">Keywords que mais convertem para este marco</CardDescription>
                                 </div>
-                                <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-xs font-black italic">TOP CONV</Badge>
+                                <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-sm font-black italic">TOP CONV</Badge>
                             </div>
                         </CardHeader>
                         <CardContent className="p-0">
                             <div className="divide-y divide-white/5">
                                 {milestone.keywords.map((kw, kidx) => (
-                                    <div key={kidx} className="flex items-center justify-between py-3 px-6 hover:bg-white/[0.02] transition-colors group">
+                                    <div key={kidx} className="flex items-center justify-between py-4 px-6 hover:bg-white/[0.02] transition-colors group">
                                         <div className="flex flex-col">
-                                            <span className="text-xs font-black text-white uppercase italic group-hover:text-emerald-400 transition-colors truncate max-w-[200px]">
+                                            <span className="text-sm font-black text-white uppercase italic group-hover:text-emerald-400 transition-colors truncate max-w-[200px]">
                                                 {kw.name}
                                             </span>
-                                            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-tighter">Termo da Campanha</span>
+                                            <span className="text-xs font-bold text-slate-500 uppercase tracking-tighter">Termo da Campanha</span>
                                         </div>
-                                        <div className="flex items-center gap-6">
+                                        <div className="flex items-center gap-8">
                                             <div className="flex flex-col items-end">
-                                                <span className="text-sm font-black text-white italic tabular-nums">{kw.count}</span>
-                                                <span className="text-[11px] font-bold text-slate-500 uppercase">Leads</span>
+                                                <span className="text-base font-black text-white italic tabular-nums">{kw.count}</span>
+                                                <span className="text-xs font-bold text-slate-500 uppercase">Leads</span>
                                             </div>
-                                            <div className="h-8 w-[1px] bg-white/5" />
-                                            <div className="flex flex-col items-end min-w-[60px]">
-                                                <span className="text-sm font-black text-emerald-400 italic tabular-nums">{kw.rate.toFixed(1)}%</span>
-                                                <span className="text-[11px] font-bold text-slate-500 uppercase underline decoration-emerald-500/30">Taxa Cnv</span>
+                                            <div className="h-10 w-[1px] bg-white/5" />
+                                            <div className="flex flex-col items-end min-w-[70px]">
+                                                <span className="text-base font-black text-emerald-400 italic tabular-nums">{kw.rate.toFixed(1)}%</span>
+                                                <span className="text-xs font-bold text-slate-500 uppercase underline decoration-emerald-500/30">Taxa Cnv</span>
                                             </div>
                                         </div>
                                     </div>
@@ -601,7 +601,7 @@ export function AnalyticsDashboard({ initialLeads, columns, initialSales }: Anal
                 {/* Volume de Leads Diários */}
                 <Card className="bg-white dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-white/10 overflow-hidden shadow-2xl">
                     <CardHeader className="py-4 border-b border-slate-100 dark:border-white/5"><CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-slate-500 dark:text-slate-400"><CalendarClock className="w-4 h-4 text-purple-500" /> Volume de Leads Diários</CardTitle></CardHeader>
-                    <CardContent className="h-[300px] pt-6 pb-2 px-2">
+                    <CardContent className="h-[450px] pt-6 pb-2 px-2">
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart data={charts.dailyData}>
                                 <defs><linearGradient id="gradLeads" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#a855f7" stopOpacity={isDark ? 0.4 : 0.6} /><stop offset="95%" stopColor="#a855f7" stopOpacity={0} /></linearGradient></defs>
@@ -618,9 +618,9 @@ export function AnalyticsDashboard({ initialLeads, columns, initialSales }: Anal
                 {/* Behavioral Peaks (Day/Time) - FIXED LAYOUT */}
                 <Card className="bg-white dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-white/10 overflow-hidden shadow-2xl">
                     <CardHeader className="py-4 border-b border-slate-100 dark:border-white/5"><CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-slate-500 dark:text-slate-400"><Clock className="w-4 h-4 text-amber-500" /> Picos Comportamentais</CardTitle></CardHeader>
-                    <CardContent className="h-[300px] pt-2 pb-0 px-4">
+                    <CardContent className="h-[450px] pt-2 pb-0 px-4">
                         <div className="flex flex-col h-full">
-                            <div className="flex-1 min-h-[200px]">
+                            <div className="flex-1 min-h-[300px]">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <PieChart>
                                         <Pie
@@ -641,10 +641,11 @@ export function AnalyticsDashboard({ initialLeads, columns, initialSales }: Anal
                                             contentStyle={{ backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.95)', border: 'none', borderRadius: '12px', fontSize: '13px' }}
                                         />
                                         <Legend 
-                                            verticalAlign="bottom" 
-                                            align="center"
+                                            layout="vertical"
+                                            verticalAlign="middle" 
+                                            align="right"
                                             iconType="circle"
-                                            wrapperStyle={{ fontSize: '13px', fontWeight: 'bold', textTransform: 'uppercase', paddingBottom: '20px' }} 
+                                            wrapperStyle={{ fontSize: '13px', fontWeight: 'bold', textTransform: 'uppercase', paddingLeft: '20px' }} 
                                         />
                                     </PieChart>
                                 </ResponsiveContainer>
@@ -691,13 +692,13 @@ export function AnalyticsDashboard({ initialLeads, columns, initialSales }: Anal
                     </div>
                 </CardHeader>
                 <CardContent className="p-0">
-                    <div className="grid grid-cols-12 bg-slate-50 dark:bg-slate-950/50 p-3 text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] border-b border-slate-100 dark:border-white/5"><div className="col-span-6 pl-4 font-mono">UTM Term (Palavra-chave)</div><div className="col-span-4">Página (Slug)</div><div className="col-span-2 text-right pr-4 italic">Leads</div></div>
-                    <div className="divide-y divide-slate-100 dark:divide-white/5 max-h-[300px] overflow-y-auto custom-scrollbar bg-white dark:bg-transparent">
+                    <div className="grid grid-cols-12 bg-slate-50 dark:bg-slate-950/50 p-4 text-[13px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] border-b border-slate-100 dark:border-white/5"><div className="col-span-6 pl-4 font-mono">UTM Term (Palavra-chave)</div><div className="col-span-4">Página (Slug)</div><div className="col-span-2 text-right pr-4 italic">Leads</div></div>
+                    <div className="divide-y divide-slate-100 dark:divide-white/5 max-h-[400px] overflow-y-auto custom-scrollbar bg-white dark:bg-transparent">
                         {(charts.termPageRelation || []).map((rel: any, i: number) => (
-                            <div key={i} className="grid grid-cols-12 p-3 text-[11px] hover:bg-slate-50 dark:hover:bg-white/5 transition-all group/row">
+                            <div key={i} className="grid grid-cols-12 p-4 text-sm hover:bg-slate-50 dark:hover:bg-white/5 transition-all group/row">
                                 <div className="col-span-6 pl-2 font-black text-slate-700 dark:text-slate-200 truncate pr-2 border-l-2 border-purple-500/30 group-hover/row:border-purple-500 transition-colors uppercase tracking-tight">{rel.term}</div>
-                                <div className="col-span-4 text-slate-500 dark:text-slate-400 truncate text-[11px] italic">{rel.page}</div>
-                                <div className="col-span-2 text-right pr-4 font-black text-purple-600 dark:text-purple-400 text-xl tabular-nums">{rel.leads}</div>
+                                <div className="col-span-4 text-slate-500 dark:text-slate-400 truncate text-xs italic">{rel.page}</div>
+                                <div className="col-span-2 text-right pr-4 font-black text-purple-600 dark:text-purple-400 text-2xl tabular-nums">{rel.leads}</div>
                             </div>
                         ))}
                     </div>
@@ -710,14 +711,14 @@ export function AnalyticsDashboard({ initialLeads, columns, initialSales }: Anal
                     <CardHeader className="border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 py-4"><CardTitle className="text-xs font-black uppercase tracking-widest flex items-center gap-2 text-slate-500 dark:text-slate-400"><Link2 className="w-4 h-4 text-blue-600 dark:text-blue-500" /> Detalhamento de Campanhas (UTMs)</CardTitle></CardHeader>
                     <CardContent className="p-0">
                         <div className="overflow-hidden bg-white dark:bg-transparent">
-                            <div className="grid grid-cols-12 bg-slate-50 dark:bg-slate-950/50 p-3 text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] border-b border-slate-100 dark:border-white/5"><div className="col-span-2">Source</div><div className="col-span-2">Medium</div><div className="col-span-4">Campaign</div><div className="col-span-3">Term (Keyword)</div><div className="col-span-1 text-right pr-2">Leads</div></div>
-                            <div className="divide-y divide-slate-100 dark:divide-white/5 max-h-[400px] overflow-y-auto custom-scrollbar">
+                            <div className="grid grid-cols-12 bg-slate-50 dark:bg-slate-950/50 p-4 text-[13px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] border-b border-slate-100 dark:border-white/5"><div className="col-span-2">Source</div><div className="col-span-2">Medium</div><div className="col-span-4">Campaign</div><div className="col-span-3">Term (Keyword)</div><div className="col-span-1 text-right pr-2">Leads</div></div>
+                            <div className="divide-y divide-slate-100 dark:divide-white/5 max-h-[500px] overflow-y-auto custom-scrollbar">
                                 {utmStats.map((item, idx) => (
-                                    <div key={idx} className="grid grid-cols-12 p-3 text-[11px] text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group">
+                                    <div key={idx} className="grid grid-cols-12 p-4 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group">
                                         <div className="col-span-2 truncate pr-2 opacity-60 group-hover:opacity-100">{item.source}</div>
-                                        <div className="col-span-2 truncate pr-2 text-slate-400 dark:text-slate-500 text-[11px]">{item.medium}</div>
+                                        <div className="col-span-2 truncate pr-2 text-slate-400 dark:text-slate-500 text-xs">{item.medium}</div>
                                         <div className="col-span-4 truncate pr-2 font-bold text-blue-600 dark:text-blue-400/80 group-hover:text-blue-500">{item.campaign}</div>
-                                        <div className="col-span-3 truncate pr-2 text-slate-500 dark:text-slate-400 font-mono italic text-[11px]">{item.term}</div>
+                                        <div className="col-span-3 truncate pr-2 text-slate-500 dark:text-slate-400 font-mono italic text-xs">{item.term}</div>
                                         <div className="col-span-1 text-right font-black pr-2 text-slate-900 dark:text-white">{item.size}</div>
                                     </div>
                                 ))}
@@ -730,12 +731,12 @@ export function AnalyticsDashboard({ initialLeads, columns, initialSales }: Anal
             {/* Bottom Regions/Pipeline Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-10 border-t border-slate-200 dark:border-white/5">
                 <Card className="bg-white/40 dark:bg-white/5 backdrop-blur-sm border border-slate-200 dark:border-white/5 shadow-sm opacity-80 hover:opacity-100 transition-opacity">
-                    <CardHeader className="py-2 border-b border-slate-100 dark:border-white/5"><CardTitle className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Regional (Ativos)</CardTitle></CardHeader>
-                    <CardContent className="h-[200px] pt-4"><ResponsiveContainer width="100%" height="100%"><BarChart data={charts.regionalData} layout="vertical"><YAxis dataKey="name" type="category" tick={{ fill: isDark ? '#64748b' : '#94a3b8', fontSize: 11 }} width={25} axisLine={false} tickLine={false} /><Tooltip cursor={{ fill: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }} contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#fff', border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)', borderRadius: '8px', color: isDark ? '#fff' : '#0f172a', fontSize: '12px' }} /><Bar dataKey="value" fill={isDark ? "#475569" : "#94a3b8"} radius={[0, 4, 4, 0]} barSize={8} /></BarChart></ResponsiveContainer></CardContent>
+                    <CardHeader className="py-2 border-b border-slate-100 dark:border-white/5"><CardTitle className="text-sm font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Regional (Ativos)</CardTitle></CardHeader>
+                    <CardContent className="h-[300px] pt-4"><ResponsiveContainer width="100%" height="100%"><BarChart data={charts.regionalData} layout="vertical"><YAxis dataKey="name" type="category" tick={{ fill: isDark ? '#64748b' : '#94a3b8', fontSize: 13 }} width={35} axisLine={false} tickLine={false} /><Tooltip cursor={{ fill: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }} contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#fff', border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)', borderRadius: '8px', color: isDark ? '#fff' : '#0f172a', fontSize: '13px' }} /><Bar dataKey="value" fill={isDark ? "#475569" : "#94a3b8"} radius={[0, 4, 4, 0]} barSize={12} /></BarChart></ResponsiveContainer></CardContent>
                 </Card>
                 <Card className="bg-white/40 dark:bg-white/5 backdrop-blur-sm border border-slate-200 dark:border-white/5 shadow-sm opacity-80 hover:opacity-100 transition-opacity">
-                    <CardHeader className="py-2 border-b border-slate-100 dark:border-white/5"><CardTitle className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Pipeline (Volume)</CardTitle></CardHeader>
-                    <CardContent className="h-[200px] pt-4"><ResponsiveContainer width="100%" height="100%"><BarChart data={charts.funnelData} layout="vertical"><YAxis dataKey="name" type="category" tick={{ fill: isDark ? '#64748b' : '#94a3b8', fontSize: 11 }} width={100} tickFormatter={(v) => v.length > 15 ? v.substring(0, 15) : v} axisLine={false} tickLine={false} /><Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={8} fill={isDark ? "#475569" : "#94a3b8"} /></BarChart></ResponsiveContainer></CardContent>
+                    <CardHeader className="py-2 border-b border-slate-100 dark:border-white/5"><CardTitle className="text-sm font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Pipeline (Volume)</CardTitle></CardHeader>
+                    <CardContent className="h-[300px] pt-4"><ResponsiveContainer width="100%" height="100%"><BarChart data={charts.funnelData} layout="vertical"><YAxis dataKey="name" type="category" tick={{ fill: isDark ? '#64748b' : '#94a3b8', fontSize: 13 }} width={120} tickFormatter={(v) => v.length > 20 ? v.substring(0, 20) : v} axisLine={false} tickLine={false} /><Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={12} fill={isDark ? "#475569" : "#94a3b8"} /></BarChart></ResponsiveContainer></CardContent>
                 </Card>
             </div>
         </div>

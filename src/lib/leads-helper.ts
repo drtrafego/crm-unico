@@ -10,6 +10,11 @@
  * - Meta (Facebook Ads genérico)
  * - WhatsApp (Click-to-WhatsApp campaigns / mensagens via WABA)
  * - Direct (Instagram Direct / DM campaigns)
+ * - ChatGPT (OpenAI)
+ * - Claude (Anthropic)
+ * - Gemini (Google AI)
+ * - Grok (xAI)
+ * - AI Search (Copilot, Perplexity, outras IAs)
  * - Orgânicos (SEO, tráfego orgânico)
  * - Captação Ativa (prospecção ativa)
  */
@@ -20,13 +25,58 @@ export const normalizeSourceString = (raw: string): string | null => {
     if (!raw) return null;
     const lower = raw.toLowerCase().trim();
 
+    // ============================================================
+    // IAs (DEVE vir ANTES de Google/Meta para evitar conflitos)
+    // Cada IA principal tem seu source próprio
+    // ============================================================
+
+    // ChatGPT / OpenAI
+    if (lower.includes('chatgpt') || lower.includes('openai') || lower === 'gpt' || lower.includes('gpt-')) {
+        return "ChatGPT";
+    }
+
+    // Claude / Anthropic
+    if (lower.includes('claude') || lower.includes('anthropic')) {
+        return "Claude";
+    }
+
+    // Gemini / Google AI (ANTES de Google Ads!)
+    if (lower.includes('gemini') || lower.includes('bard') || lower.includes('google_ai') || lower === 'google-ai') {
+        return "Gemini";
+    }
+
+    // Grok / xAI
+    if (lower.includes('grok') || lower.includes('xai') || lower === 'x.ai') {
+        return "Grok";
+    }
+
+    // Outras IAs genéricas → AI Search
+    if (
+        lower.includes('copilot') ||
+        lower.includes('perplexity') ||
+        lower === 'ai' ||
+        lower === 'ia' ||
+        lower.includes('ai_search') ||
+        lower.includes('ai-search') ||
+        lower.includes('inteligencia artificial') ||
+        lower.includes('inteligência artificial') ||
+        lower.includes('bing_chat') ||
+        lower.includes('you.com') ||
+        lower.includes('phind')
+    ) {
+        return "AI Search";
+    }
+
+    // ============================================================
+    // Tráfego pago e redes
+    // ============================================================
+
     // Google / Ads
     if (lower.includes('google') || lower.includes('adwords') || lower.includes('gads')) {
         return "Google";
     }
 
-    // WhatsApp (DEVE vir ANTES de "Meta" para não ser capturado pelo genérico)
-    // Aceita: "whatsapp", "waba", "ctwa" (click-to-whatsapp), "wpp"
+    // WhatsApp (DEVE vir ANTES de "Meta")
     if (
         lower === 'whatsapp' ||
         lower === 'waba' ||
@@ -37,8 +87,7 @@ export const normalizeSourceString = (raw: string): string | null => {
         return "WhatsApp";
     }
 
-    // Instagram Direct (DEVE vir ANTES de "Meta" para não ser capturado pelo genérico)
-    // Aceita: "direct", "instagram_direct", "ig_direct", "dm", "instagram_dm"
+    // Instagram Direct (DEVE vir ANTES de "Meta")
     if (
         lower === 'direct' ||
         lower === 'dm' ||

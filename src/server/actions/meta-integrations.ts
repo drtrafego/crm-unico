@@ -1,13 +1,15 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { metaIntegrations, organizations } from "@/server/db/schema";
-import { eq, and } from "drizzle-orm";
+import { metaIntegrations } from "@/server/db/schema";
+import { eq, and, or } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 // ============================================================
 // META INTEGRATIONS - Server Actions
-// Gerencia o mapeamento de contas Meta → organizações
+// Suporta 2 tipos de conexão WhatsApp:
+//   1. WABA (Cloud API) - webhook da Meta direto
+//   2. Business Number - número direto, integra via webhook genérico
 // ============================================================
 
 const META_ACCESS_TOKEN = process.env.META_ACCESS_TOKEN;
@@ -23,15 +25,16 @@ export async function getMetaIntegration(orgId: string) {
 }
 
 /**
- * Busca a organização pelo WABA ID, phone_number_id ou IG account ID
- * Usado pelo webhook para rotear mensagens pro cliente certo
+ * Busca a organização pelo identificador Meta (usado pelo webhook router)
+ * Suporta: phone_number_id, waba_id, ig_account_id, E whatsapp_number direto
  */
 export async function findOrgByMetaId(identifier: {
   wabaId?: string;
   phoneNumberId?: string;
   igAccountId?: string;
+  fromPhone?: string; // Número que enviou a mensagem (ex: "5511999999999")
 }): Promise<string | null> {
-  // Tenta pelo phone_number_id primeiro (mais específico)
+  // 1. Tenta pelo phone_number_id (WABA - mais específico)
   if (identifier.phoneNumberId) {
     const match = await db.query.metaIntegrations.findFirst({
       where: and(
@@ -42,7 +45,7 @@ export async function findOrgByMetaId(identifier: {
     if (match) return match.organizationId;
   }
 
-  // Tenta pelo WABA ID
+  // 2. Tenta pelo WABA ID
   if (identifier.wabaId) {
     const match = await db.query.metaIntegrations.findFirst({
       where: and(
@@ -53,11 +56,24 @@ export async function findOrgByMetaId(identifier: {
     if (match) return match.organizationId;
   }
 
-  // Tenta pelo IG Account ID
+  // 3. Tenta pelo IG Account ID
   if (identifier.igAccountId) {
     const match = await db.query.metaIntegrations.findFirst({
       where: and(
         eq(metaIntegrations.igAccountId, identifier.igAccountId),
+        eq(metaIntegrations.isActive, true)
+      ),
+    });
+    if (match) return match.organizationId;
+  }
+
+  // 4. Tenta pelo whatsapp_number (Business Number direto)
+  // Normaliza o número removendo +, espaços, etc.
+  if (identifier.fromPhone) {
+    const cleanPhone = identifier.fromPhone.replace(/\D/g, "");
+    const match = await db.query.metaIntegrations.findFirst({
+      where: and(
+        eq(metaIntegrations.whatsappNumber, cleanPhone),
         eq(metaIntegrations.isActive, true)
       ),
     });
@@ -69,24 +85,31 @@ export async function findOrgByMetaId(identifier: {
 
 /**
  * Salva/atualiza integração Meta para uma organização
- * Faz auto-discovery dos IDs do WhatsApp e Instagram via Meta Graph API
+ * whatsappType: "waba" = Cloud API, "business_number" = número direto
  */
 export async function saveMetaIntegration(
   orgId: string,
   orgSlug: string,
-  adAccountId: string
+  adAccountId: string,
+  whatsappType: 'waba' | 'business_number' = 'waba',
+  whatsappNumber?: string
 ) {
-  // Normalizar o ad account ID (aceita com ou sem "act_")
   const cleanAdAccountId = adAccountId.replace(/^act_/, "").trim();
   const formattedAdAccountId = `act_${cleanAdAccountId}`;
 
-  // Buscar dados via Meta Graph API
   let wabaId: string | null = null;
   let phoneNumberId: string | null = null;
   let igAccountId: string | null = null;
   let displayPhone: string | null = null;
   let accountName: string | null = null;
+  let cleanWhatsappNumber: string | null = null;
   let discoveryErrors: string[] = [];
+
+  // Limpar número do WhatsApp Business (se tipo = business_number)
+  if (whatsappType === 'business_number' && whatsappNumber) {
+    cleanWhatsappNumber = whatsappNumber.replace(/\D/g, "");
+    displayPhone = cleanWhatsappNumber;
+  }
 
   if (META_ACCESS_TOKEN) {
     // 1. Buscar detalhes da conta de anúncio
@@ -100,38 +123,40 @@ export async function saveMetaIntegration(
         const businessId = adAccountData.business?.id;
 
         if (businessId) {
-          // 2. Buscar WABAs do Business Manager
-          try {
-            const wabaRes = await fetch(
-              `${META_GRAPH_URL}/${businessId}/owned_whatsapp_business_accounts?fields=id,name,on_behalf_of_business_info&access_token=${META_ACCESS_TOKEN}`
-            );
-            if (wabaRes.ok) {
-              const wabaData = await wabaRes.json();
-              if (wabaData.data?.length > 0) {
-                wabaId = wabaData.data[0].id;
-
-                // 3. Buscar phone numbers do WABA
-                try {
-                  const phoneRes = await fetch(
-                    `${META_GRAPH_URL}/${wabaId}/phone_numbers?fields=id,display_phone_number,verified_name&access_token=${META_ACCESS_TOKEN}`
-                  );
-                  if (phoneRes.ok) {
-                    const phoneData = await phoneRes.json();
-                    if (phoneData.data?.length > 0) {
-                      phoneNumberId = phoneData.data[0].id;
-                      displayPhone = phoneData.data[0].display_phone_number || null;
+          // 2. Se tipo = WABA, buscar WABA e phone numbers
+          if (whatsappType === 'waba') {
+            try {
+              const wabaRes = await fetch(
+                `${META_GRAPH_URL}/${businessId}/owned_whatsapp_business_accounts?fields=id,name&access_token=${META_ACCESS_TOKEN}`
+              );
+              if (wabaRes.ok) {
+                const wabaData = await wabaRes.json();
+                if (wabaData.data?.length > 0) {
+                  wabaId = wabaData.data[0].id;
+                  try {
+                    const phoneRes = await fetch(
+                      `${META_GRAPH_URL}/${wabaId}/phone_numbers?fields=id,display_phone_number,verified_name&access_token=${META_ACCESS_TOKEN}`
+                    );
+                    if (phoneRes.ok) {
+                      const phoneData = await phoneRes.json();
+                      if (phoneData.data?.length > 0) {
+                        phoneNumberId = phoneData.data[0].id;
+                        displayPhone = phoneData.data[0].display_phone_number || displayPhone;
+                      }
                     }
+                  } catch {
+                    discoveryErrors.push("Não foi possível buscar os números de telefone do WABA");
                   }
-                } catch (e) {
-                  discoveryErrors.push("Não foi possível buscar os números de telefone do WhatsApp");
+                } else {
+                  discoveryErrors.push("Nenhuma conta WABA encontrada neste Business Manager");
                 }
               }
+            } catch {
+              discoveryErrors.push("Não foi possível buscar as contas WhatsApp Business");
             }
-          } catch (e) {
-            discoveryErrors.push("Não foi possível buscar as contas WhatsApp Business");
           }
 
-          // 4. Buscar Instagram accounts do Business Manager
+          // 3. Buscar Instagram accounts (para ambos os tipos)
           try {
             const igRes = await fetch(
               `${META_GRAPH_URL}/${businessId}/owned_instagram_accounts?fields=id,username,name&access_token=${META_ACCESS_TOKEN}`
@@ -142,7 +167,6 @@ export async function saveMetaIntegration(
                 igAccountId = igData.data[0].id;
               }
             } else {
-              // Fallback: tentar por instagram_accounts
               const igRes2 = await fetch(
                 `${META_GRAPH_URL}/${businessId}/instagram_accounts?fields=id,username&access_token=${META_ACCESS_TOKEN}`
               );
@@ -153,7 +177,7 @@ export async function saveMetaIntegration(
                 }
               }
             }
-          } catch (e) {
+          } catch {
             discoveryErrors.push("Não foi possível buscar as contas do Instagram");
           }
         } else {
@@ -161,9 +185,9 @@ export async function saveMetaIntegration(
         }
       } else {
         const errorData = await adAccountRes.json().catch(() => ({}));
-        discoveryErrors.push(`Erro ao acessar conta de anúncio: ${errorData?.error?.message || adAccountRes.status}`);
+        discoveryErrors.push(`Erro ao acessar conta: ${errorData?.error?.message || adAccountRes.status}`);
       }
-    } catch (e) {
+    } catch {
       discoveryErrors.push("Erro de conexão com a Meta Graph API");
     }
   } else {
@@ -178,8 +202,10 @@ export async function saveMetaIntegration(
   const data = {
     organizationId: orgId,
     adAccountId: formattedAdAccountId,
-    wabaId,
-    phoneNumberId,
+    whatsappType,
+    wabaId: whatsappType === 'waba' ? wabaId : null,
+    phoneNumberId: whatsappType === 'waba' ? phoneNumberId : null,
+    whatsappNumber: whatsappType === 'business_number' ? cleanWhatsappNumber : null,
     igAccountId,
     displayPhone,
     accountName,
@@ -202,8 +228,10 @@ export async function saveMetaIntegration(
     discovered: {
       accountName,
       adAccountId: formattedAdAccountId,
+      whatsappType,
       wabaId,
       phoneNumberId,
+      whatsappNumber: cleanWhatsappNumber,
       displayPhone,
       igAccountId,
     },
@@ -217,13 +245,12 @@ export async function saveMetaIntegration(
 export async function removeMetaIntegration(orgId: string, orgSlug: string) {
   await db.delete(metaIntegrations)
     .where(eq(metaIntegrations.organizationId, orgId));
-
   revalidatePath(`/org/${orgSlug}/settings`);
   return { success: true };
 }
 
 /**
- * Atualiza manualmente IDs específicos (caso auto-discovery não funcione)
+ * Atualiza manualmente IDs específicos
  */
 export async function updateMetaIds(
   orgId: string,
@@ -232,6 +259,7 @@ export async function updateMetaIds(
     wabaId?: string;
     phoneNumberId?: string;
     igAccountId?: string;
+    whatsappNumber?: string;
   }
 ) {
   const existing = await db.query.metaIntegrations.findFirst({
@@ -239,14 +267,17 @@ export async function updateMetaIds(
   });
 
   if (!existing) {
-    return { success: false, error: "Integração não encontrada. Configure a conta de anúncio primeiro." };
+    return { success: false, error: "Configure a conta de anúncio primeiro." };
+  }
+
+  // Limpar número se fornecido
+  const cleanUpdates = { ...updates };
+  if (cleanUpdates.whatsappNumber) {
+    cleanUpdates.whatsappNumber = cleanUpdates.whatsappNumber.replace(/\D/g, "");
   }
 
   await db.update(metaIntegrations)
-    .set({
-      ...updates,
-      updatedAt: new Date(),
-    })
+    .set({ ...cleanUpdates, updatedAt: new Date() })
     .where(eq(metaIntegrations.id, existing.id));
 
   revalidatePath(`/org/${orgSlug}/settings`);
