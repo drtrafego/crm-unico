@@ -1,9 +1,9 @@
 'use client';
 
 import Link from "next/link";
-import { usePathname, useParams } from "next/navigation";
+import { usePathname, useParams, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, KanbanSquare, Settings, LogOut, LineChart, CalendarDays, ChevronLeft, ChevronRight, Rocket } from "lucide-react";
+import { LayoutDashboard, KanbanSquare, Settings, LogOut, LineChart, CalendarDays, ChevronLeft, ChevronRight, Rocket, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { stackApp } from "@/stack";
 import { getOrganizationFeatures } from "@/server/actions/sidebar-features";
@@ -17,6 +17,8 @@ interface SidebarProps {
 export function Sidebar({ isCollapsed = false, toggle }: SidebarProps) {
   const pathname = usePathname();
   const params = useParams();
+  const searchParams = useSearchParams();
+  const currentView = searchParams?.get('view');
 
   const orgSlug = params?.orgSlug as string;
   const [hasLaunchDashboard, setHasLaunchDashboard] = useState(false);
@@ -95,6 +97,7 @@ export function Sidebar({ isCollapsed = false, toggle }: SidebarProps) {
 
   const items = [
     { title: "Kanban", url: `/org/${orgSlug}/kanban`, icon: KanbanSquare },
+    { title: "Leads", url: `/org/${orgSlug}/kanban?view=list`, icon: List },
     ...(hasLaunchDashboard ? [{ title: "Lançamento Captação", url: `/org/${orgSlug}/launch-leads`, icon: Rocket }] : []),
     { title: "Analytics", url: `/org/${orgSlug}/analytics`, icon: LineChart },
     { title: "Calendário", url: `/org/${orgSlug}/kanban/calendar`, icon: CalendarDays },
@@ -129,7 +132,21 @@ export function Sidebar({ isCollapsed = false, toggle }: SidebarProps) {
 
       <nav className="flex-1 p-4 space-y-2">
         {items.map((item) => {
-          const isActive = pathname === item.url || pathname?.startsWith(item.url);
+          // Lógica especial para Kanban vs Leads (ambos usam /kanban mas com query param diferente)
+          const itemUrl = new URL(item.url, 'http://x');
+          const itemPath = itemUrl.pathname;
+          const itemView = itemUrl.searchParams.get('view');
+
+          let isActive: boolean;
+          if (item.title === "Kanban") {
+            // Kanban ativo quando está em /kanban SEM ?view= ou com ?view=board
+            isActive = (pathname === itemPath || pathname?.startsWith(itemPath + '/')) && !currentView && !pathname?.includes('/calendar');
+          } else if (item.title === "Leads") {
+            // Leads ativo quando está em /kanban com ?view=list
+            isActive = pathname === itemPath && currentView === 'list';
+          } else {
+            isActive = pathname === item.url || pathname?.startsWith(item.url) || false;
+          }
           const isLaunchMenu = item.title === "Lançamento Captação";
 
           return (
