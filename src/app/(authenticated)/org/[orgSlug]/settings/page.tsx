@@ -11,9 +11,11 @@ import { notFound } from "next/navigation";
 
 import { getMembers } from "@/server/actions/members";
 import { getSettings } from "@/server/actions/settings";
+import { getMetaIntegration } from "@/server/actions/meta-integrations";
 import { MembersList } from "./members-list";
 import { SettingsClient } from "./settings-client";
 import { IntegrationsCard } from "./integrations-card";
+import { MetaIntegrationCard } from "./meta-integration-card";
 import { ContactExportCard } from "./contact-export-card";
 
 export default async function SettingsPage({
@@ -45,6 +47,7 @@ export default async function SettingsPage({
 
   const allMembers = await getMembers(org.id);
   const settings = await getSettings(org.id);
+  const metaIntegration = await getMetaIntegration(org.id);
 
   const webhookPayload = {
     name: "Nome do Cliente",
@@ -147,7 +150,18 @@ export default async function SettingsPage({
         <ContactExportCard orgId={org.id} />
 
         {/* Integrations Section - Only admin/owner can see webhook */}
-        {canEdit && <IntegrationsCard webhookUrl={webhookUrl} webhookPayload={webhookPayload} metaWebhookUrl={metaWebhookUrl} />}
+        {/* Meta Messaging Integration */}
+        {canEdit && (
+          <MetaIntegrationCard
+            orgId={org.id}
+            orgSlug={orgSlug}
+            metaWebhookUrl={`${baseUrl}/api/webhooks/meta-messaging/router`}
+            existing={metaIntegration || null}
+          />
+        )}
+
+        {/* Generic Webhook (forms, Zapier, etc.) */}
+        {canEdit && <IntegrationsCard webhookUrl={webhookUrl} webhookPayload={webhookPayload} />}
 
       </div>
     </div>

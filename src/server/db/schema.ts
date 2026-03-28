@@ -163,3 +163,24 @@ export const vendasHotmart = pgTable("vendas_hotmart", {
 
 export type VendaHotmart = typeof vendasHotmart.$inferSelect;
 export type NewVendaHotmart = typeof vendasHotmart.$inferInsert;
+
+// --- Meta Integrations Table ---
+// Mapeia contas de anúncio Meta → organizações no CRM
+// Permite rotear webhooks do WhatsApp/Instagram para o cliente certo
+
+export const metaIntegrations = pgTable("meta_integrations", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  organizationId: text("organization_id").notNull(),
+  adAccountId: text("ad_account_id").notNull(), // ex: "act_123456789" ou "123456789"
+  wabaId: text("waba_id"), // WhatsApp Business Account ID (entry[].id no webhook)
+  phoneNumberId: text("phone_number_id"), // Phone Number ID (metadata.phone_number_id no webhook)
+  igAccountId: text("ig_account_id"), // Instagram Account ID (entry[].id no webhook IG)
+  displayPhone: text("display_phone"), // Número formatado para exibição (ex: +55 11 99999-9999)
+  accountName: text("account_name"), // Nome da conta para exibição
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type MetaIntegration = typeof metaIntegrations.$inferSelect;
+export type NewMetaIntegration = typeof metaIntegrations.$inferInsert;
