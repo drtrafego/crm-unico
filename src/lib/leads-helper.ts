@@ -4,6 +4,14 @@
  * 1. Origem explícita (campaignSource)
  * 2. Dedução via UTM (utmSource)
  * 3. Fallback (Direto/Sem Origem)
+ *
+ * Sources suportados:
+ * - Google (Google Ads, AdWords)
+ * - Meta (Facebook Ads genérico)
+ * - WhatsApp (Click-to-WhatsApp campaigns / mensagens via WABA)
+ * - Direct (Instagram Direct / DM campaigns)
+ * - Orgânicos (SEO, tráfego orgânico)
+ * - Captação Ativa (prospecção ativa)
  */
 /**
  * Normaliza uma string de origem para os padrões do sistema.
@@ -17,7 +25,32 @@ export const normalizeSourceString = (raw: string): string | null => {
         return "Google";
     }
 
-    // Meta / Facebook / Instagram / Bio
+    // WhatsApp (DEVE vir ANTES de "Meta" para não ser capturado pelo genérico)
+    // Aceita: "whatsapp", "waba", "ctwa" (click-to-whatsapp), "wpp"
+    if (
+        lower === 'whatsapp' ||
+        lower === 'waba' ||
+        lower === 'wpp' ||
+        lower.includes('click-to-whatsapp') ||
+        lower.includes('ctwa')
+    ) {
+        return "WhatsApp";
+    }
+
+    // Instagram Direct (DEVE vir ANTES de "Meta" para não ser capturado pelo genérico)
+    // Aceita: "direct", "instagram_direct", "ig_direct", "dm", "instagram_dm"
+    if (
+        lower === 'direct' ||
+        lower === 'dm' ||
+        lower === 'ig_direct' ||
+        lower === 'instagram_direct' ||
+        lower === 'instagram_dm' ||
+        lower === 'ig_dm'
+    ) {
+        return "Direct";
+    }
+
+    // Meta / Facebook / Instagram genérico (Ads, forms, etc.)
     if (
         lower.includes('meta') ||
         lower.includes('facebook') ||
@@ -31,19 +64,18 @@ export const normalizeSourceString = (raw: string): string | null => {
         return "Meta";
     }
 
-    // Orgânico / Direct / SEO
+    // Orgânico / SEO (removido "direct" daqui - agora é Instagram Direct)
     if (
         lower.includes('organic') ||
         lower.includes('organico') ||
         lower.includes('orgânico') ||
-        lower.includes('direct') ||
         lower.includes('direto') ||
         lower.includes('seo')
     ) {
         return "Orgânicos";
     }
 
-    // Captação Ativa (exemplo comum, mantendo por precaução se houver)
+    // Captação Ativa
     if (lower.includes('captacao') || lower.includes('captação') || lower.includes('ativa')) {
         return "Captação Ativa";
     }

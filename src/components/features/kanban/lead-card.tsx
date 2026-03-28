@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Lead } from "@/server/db/schema";
 import { cn } from "@/lib/utils";
-import { Calendar, Pencil } from "lucide-react";
+import { Calendar, Pencil, Search } from "lucide-react";
 import { useState } from "react";
 import { EditLeadDialog } from "./edit-lead-dialog";
 import { Button } from "@/components/ui/button";
@@ -23,12 +23,115 @@ interface LeadCardProps {
   index: number;
 }
 
-const ORIGIN_OPTIONS = [
-  { value: 'Google', className: 'bg-rose-50 text-rose-700 border-rose-100 dark:bg-rose-900/30 dark:text-rose-300' },
-  { value: 'Meta', className: 'bg-sky-50 text-sky-700 border-sky-100 dark:bg-sky-900/30 dark:text-sky-300' },
-  { value: 'Captação Ativa', className: 'bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-900/30 dark:text-amber-300' },
-  { value: 'Orgânicos', className: 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300' },
-];
+// ============================================================
+// SOURCE ICONS (SVG inline para não depender de pacotes externos)
+// ============================================================
+function GoogleIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} xmlns="http://www.w3.org/2000/svg">
+      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
+      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+    </svg>
+  );
+}
+
+function MetaIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+      <path d="M6.915 4.03c-1.968 0-3.286 1.17-4.286 3.066C1.515 8.586.8 10.57.8 12.07c0 2.026 1.128 3.97 3.205 3.97 1.208 0 2.134-.678 3.028-1.873.654-.873 1.263-1.965 1.783-2.947l.367-.694c.862-1.63 1.857-3.46 3.206-4.742C13.502 4.7 14.74 4.03 16.18 4.03c2.084 0 3.628 1.08 4.636 2.746C21.78 8.36 22.2 10.26 22.2 12.07c0 1.89-.46 3.74-1.444 5.18-.97 1.42-2.492 2.52-4.576 2.52-1.428 0-2.574-.507-3.544-1.294l-1.2 1.984c1.28.95 2.83 1.51 4.744 1.51 2.834 0 4.98-1.47 6.227-3.3 1.228-1.81 1.793-4.1 1.793-6.6 0-2.23-.507-4.53-1.683-6.41C21.345 3.87 19.264 2.03 16.18 2.03c-2.01 0-3.57.84-4.803 2.07-1.076 1.074-1.925 2.47-2.678 3.88l-.366.694c-.56 1.06-1.1 2.04-1.678 2.8-.664.87-1.194 1.266-1.75 1.266-.87 0-1.404-.764-1.404-1.97 0-1.14.503-2.79 1.28-4.32.698-1.38 1.262-2 2.134-2l.038-.002c.7.008 1.267.345 1.903.96l1.322-1.94C8.95 4.54 8.003 4.03 6.915 4.03z"/>
+    </svg>
+  );
+}
+
+function WhatsAppIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} xmlns="http://www.w3.org/2000/svg">
+      <path d="M17.498 14.382c-.301-.15-1.767-.867-2.04-.966-.274-.101-.473-.15-.673.15-.197.295-.771.964-.944 1.162-.175.195-.349.21-.646.065-.301-.15-1.265-.462-2.406-1.485-.888-.795-1.484-1.77-1.66-2.07-.174-.3-.019-.465.13-.615.136-.135.301-.345.451-.523.146-.181.194-.301.297-.496.095-.21.049-.375-.025-.524-.075-.15-.672-1.62-.922-2.206-.24-.584-.487-.51-.672-.51-.172-.015-.371-.015-.571-.015-.197 0-.523.074-.797.359-.273.3-1.045 1.02-1.045 2.475s1.07 2.865 1.219 3.075c.149.21 2.095 3.2 5.077 4.485.709.305 1.262.485 1.694.62.713.225 1.362.195 1.874.115.576-.09 1.767-.721 2.016-1.426.248-.705.248-1.305.174-1.425-.074-.121-.274-.196-.574-.346z"/>
+      <path d="M12.001 2C6.478 2 2 6.478 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.932-1.41A9.953 9.953 0 0012.001 22C17.523 22 22 17.522 22 12S17.523 2 12.001 2zm0 18.15c-1.726 0-3.375-.472-4.816-1.358l-.345-.206-3.578.938.955-3.487-.224-.357A8.097 8.097 0 013.85 12c0-4.498 3.652-8.15 8.15-8.15S20.15 7.502 20.15 12s-3.652 8.15-8.149 8.15z"/>
+    </svg>
+  );
+}
+
+function InstagramIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
+    </svg>
+  );
+}
+
+function CaptacaoIcon({ className }: { className?: string }) {
+  return <Search className={className} />;
+}
+
+function OrganicIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M7 20h10"/>
+      <path d="M10 20c5.5-2.5.8-6.4 3-10"/>
+      <path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/>
+      <path d="M14.1 6a7 7 0 00-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/>
+    </svg>
+  );
+}
+
+// ============================================================
+// SOURCE CONFIG (centralizado)
+// ============================================================
+const SOURCE_CONFIG: Record<string, {
+  icon: React.FC<{ className?: string }>;
+  badgeClass: string;
+  popoverClass: string;
+  label: string;
+}> = {
+  Google: {
+    icon: GoogleIcon,
+    badgeClass: "bg-rose-500/20 text-rose-300 border-rose-500/30 shadow-[0_0_10px_rgba(244,63,94,0.2)]",
+    popoverClass: "bg-rose-50 text-rose-700 border-rose-100 dark:bg-rose-900/30 dark:text-rose-300",
+    label: "Google Ads",
+  },
+  Meta: {
+    icon: MetaIcon,
+    badgeClass: "bg-sky-500/20 text-sky-300 border-sky-500/30 shadow-[0_0_10px_rgba(14,165,233,0.2)]",
+    popoverClass: "bg-sky-50 text-sky-700 border-sky-100 dark:bg-sky-900/30 dark:text-sky-300",
+    label: "Meta Ads",
+  },
+  WhatsApp: {
+    icon: WhatsAppIcon,
+    badgeClass: "bg-green-500/20 text-green-300 border-green-500/30 shadow-[0_0_10px_rgba(34,197,94,0.2)]",
+    popoverClass: "bg-green-50 text-green-700 border-green-100 dark:bg-green-900/30 dark:text-green-300",
+    label: "WhatsApp",
+  },
+  Direct: {
+    icon: InstagramIcon,
+    badgeClass: "bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/30 shadow-[0_0_10px_rgba(217,70,239,0.2)]",
+    popoverClass: "bg-fuchsia-50 text-fuchsia-700 border-fuchsia-100 dark:bg-fuchsia-900/30 dark:text-fuchsia-300",
+    label: "Direct",
+  },
+  "Captação Ativa": {
+    icon: CaptacaoIcon,
+    badgeClass: "bg-amber-500/20 text-amber-300 border-amber-500/30 shadow-[0_0_10px_rgba(245,158,11,0.2)]",
+    popoverClass: "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-900/30 dark:text-amber-300",
+    label: "Captação Ativa",
+  },
+  "Orgânicos": {
+    icon: OrganicIcon,
+    badgeClass: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.2)]",
+    popoverClass: "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300",
+    label: "Orgânicos",
+  },
+};
+
+const ORIGIN_KEYS = Object.keys(SOURCE_CONFIG);
+
+const DEFAULT_SOURCE_CONFIG = {
+  icon: ({ className }: { className?: string }) => <Search className={className} />,
+  badgeClass: "bg-indigo-500/20 text-indigo-300 border-indigo-500/30 shadow-[0_0_10px_rgba(99,102,241,0.2)]",
+  popoverClass: "bg-indigo-50 text-indigo-700 border-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-300",
+  label: "Outro",
+};
 
 export function LeadCard({ lead, index }: LeadCardProps) {
   const router = useRouter();
@@ -48,6 +151,8 @@ export function LeadCard({ lead, index }: LeadCardProps) {
   };
 
   const source = getLeadSource(lead);
+  const sourceConf = SOURCE_CONFIG[source] || DEFAULT_SOURCE_CONFIG;
+  const SourceIcon = sourceConf.icon;
 
   const cardContent = (provided: DraggableProvided, snapshot: DraggableStateSnapshot) => (
     <div
@@ -90,19 +195,24 @@ export function LeadCard({ lead, index }: LeadCardProps) {
                   <PopoverTrigger asChild>
                     <div onClick={(e) => { e.stopPropagation(); setOriginPopoverOpen(true); }}>
                       {source ? (
-                        <Badge
-                          variant="secondary"
-                          className={cn(
-                            "px-2 py-0.5 text-[11px] font-black uppercase tracking-widest border transition-all duration-300",
-                            source === "Google" && "bg-rose-500/20 text-rose-300 border-rose-500/30 shadow-[0_0_10px_rgba(244,63,94,0.2)]",
-                            source === "Meta" && "bg-sky-500/20 text-sky-300 border-sky-500/30 shadow-[0_0_10px_rgba(14,165,233,0.2)]",
-                            source === "Captação Ativa" && "bg-amber-500/20 text-amber-300 border-amber-500/30 shadow-[0_0_10px_rgba(245,158,11,0.2)]",
-                            source === "Orgânicos" && "bg-emerald-500/20 text-emerald-300 border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.2)]",
-                            !["Google", "Meta", "Captação Ativa", "Orgânicos"].includes(source) && "bg-indigo-500/20 text-indigo-300 border-indigo-500/30 shadow-[0_0_10px_rgba(99,102,241,0.2)]"
-                          )}
-                        >
-                          {source}
-                        </Badge>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Badge
+                                variant="secondary"
+                                className={cn(
+                                  "px-2 py-1 border transition-all duration-300 cursor-pointer hover:scale-110",
+                                  sourceConf.badgeClass
+                                )}
+                              >
+                                <SourceIcon className="h-3.5 w-3.5" />
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 font-bold text-xs uppercase tracking-widest px-3 py-2 text-slate-900 dark:text-white">
+                              {sourceConf.label || source}
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       ) : (
                         <Badge
                           variant="outline"
@@ -114,26 +224,31 @@ export function LeadCard({ lead, index }: LeadCardProps) {
                     </div>
                   </PopoverTrigger>
                   <PopoverContent
-                    className="w-44 p-2 bg-slate-900/90 backdrop-blur-xl border border-white/10 shadow-3xl z-[100000] rounded-2xl"
+                    className="w-48 p-2 bg-slate-900/90 backdrop-blur-xl border border-white/10 shadow-3xl z-[100000] rounded-2xl"
                     align="start"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div className="space-y-1.5">
                       <p className="text-xs font-black uppercase tracking-widest text-white/40 mb-2 px-1">Origem do Lead</p>
-                      {ORIGIN_OPTIONS.map((opt) => (
-                        <button
-                          key={opt.value}
-                          onClick={() => handleOriginChange(opt.value)}
-                          disabled={isUpdatingOrigin}
-                          className={cn(
-                            "w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all duration-300",
-                            "hover:bg-white/10 border border-transparent",
-                            lead.campaignSource === opt.value ? "bg-white/15 border-white/20 text-white shadow-lg" : "text-white/60 hover:text-white"
-                          )}
-                        >
-                          {opt.value}
-                        </button>
-                      ))}
+                      {ORIGIN_KEYS.map((key) => {
+                        const conf = SOURCE_CONFIG[key];
+                        const Icon = conf.icon;
+                        return (
+                          <button
+                            key={key}
+                            onClick={() => handleOriginChange(key)}
+                            disabled={isUpdatingOrigin}
+                            className={cn(
+                              "w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all duration-300 flex items-center gap-2.5",
+                              "hover:bg-white/10 border border-transparent",
+                              lead.campaignSource === key ? "bg-white/15 border-white/20 text-white shadow-lg" : "text-white/60 hover:text-white"
+                            )}
+                          >
+                            <Icon className="h-4 w-4 shrink-0" />
+                            {conf.label}
+                          </button>
+                        );
+                      })}
                     </div>
                   </PopoverContent>
                 </Popover>

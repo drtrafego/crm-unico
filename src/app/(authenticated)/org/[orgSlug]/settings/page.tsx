@@ -56,8 +56,10 @@ export default async function SettingsPage({
     message: "Mensagem do cliente..."
   };
 
-  // Construct webhook URL dynamically if possible, or use relative
-  const webhookUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://seu-crm.com'}/api/webhooks/${orgSlug}`;
+  // Construct webhook URLs dynamically
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://seu-crm.com';
+  const webhookUrl = `${baseUrl}/api/webhooks/${orgSlug}`;
+  const metaWebhookUrl = `${baseUrl}/api/webhooks/meta-messaging/${orgSlug}`;
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-8 bg-slate-50 dark:bg-slate-950 min-h-screen">
@@ -145,7 +147,7 @@ export default async function SettingsPage({
         <ContactExportCard orgId={org.id} />
 
         {/* Integrations Section - Only admin/owner can see webhook */}
-        {canEdit && <IntegrationsCard webhookUrl={webhookUrl} webhookPayload={webhookPayload} />}
+        {canEdit && <IntegrationsCard webhookUrl={webhookUrl} webhookPayload={webhookPayload} metaWebhookUrl={metaWebhookUrl} />}
 
       </div>
     </div>
