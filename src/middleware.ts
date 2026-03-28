@@ -38,10 +38,11 @@ export async function middleware(request: NextRequest) {
     } catch (error) {
         console.error("=== ERRO NO MIDDLEWARE CRM ===");
         console.error(error);
-        return NextResponse.next();
+        // SECURITY: Fail-closed — redireciona para login em caso de erro de auth
+        return NextResponse.redirect(new URL("/handler/sign-in", request.url));
     }
 }
 
 export const config = {
-    matcher: ["/((?!api|handler|debug|audit|_next/static|_next/image|favicon.ico).*)"],
+    matcher: ["/((?!api|handler|_next/static|_next/image|favicon.ico).*)"],
 };

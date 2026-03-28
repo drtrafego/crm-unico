@@ -5,8 +5,11 @@ import { launchLeads, organizations, leads } from "@/server/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { fetchSheetData } from "@/lib/google-sheets";
 import { revalidatePath } from "next/cache";
+import { getAuthenticatedUser } from "@/lib/auth-helper";
 
 export async function getLaunchLeads(organizationId: string) {
+    const session = await getAuthenticatedUser();
+    if (!session?.id) throw new Error("Unauthorized");
     try {
         const leads = await db.query.launchLeads.findMany({
             where: eq(launchLeads.organizationId, organizationId),
@@ -21,6 +24,8 @@ export async function getLaunchLeads(organizationId: string) {
 }
 
 export async function getLaunchAnalyticsData(organizationId: string) {
+    const session = await getAuthenticatedUser();
+    if (!session?.id) throw new Error("Unauthorized");
     try {
         // Fetch base leads for all UTM analysis
         const baseLeads = await db.query.leads.findMany({
@@ -315,6 +320,8 @@ export async function getLaunchAnalyticsData(organizationId: string) {
 }
 
 export async function syncLaunchLeadsFromSheet(organizationId: string) {
+    const session = await getAuthenticatedUser();
+    if (!session?.id) throw new Error("Unauthorized");
     try {
         // 1. Get Organization Settings
         const org = await db.query.organizations.findFirst({

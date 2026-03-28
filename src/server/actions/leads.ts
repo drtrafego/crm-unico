@@ -48,6 +48,8 @@ async function checkPermissions(orgId: string) {
 // Helper `logHistory` removed - using DB trigger
 
 export async function getLeadHistory(leadId: string, orgId: string) {
+    const session = await getAuthenticatedUser();
+    if (!session?.id) throw new Error("Unauthorized");
     // Verificar que o lead pertence à organização do usuário
     const lead = await db.query.leads.findFirst({
         where: and(eq(leads.id, leadId), eq(leads.organizationId, orgId)),
@@ -77,6 +79,8 @@ export async function getLeadHistory(leadId: string, orgId: string) {
 }
 
 export async function getColumns(orgId: string) {
+    const session = await getAuthenticatedUser();
+    if (!session?.id) throw new Error("Unauthorized");
     const { targetDb, primaryOrgId } = await getContext(orgId);
 
     const existing = await targetDb.query.columns.findMany({
@@ -96,6 +100,8 @@ export async function getColumns(orgId: string) {
 }
 
 export async function getLeads(orgId: string) {
+    const session = await getAuthenticatedUser();
+    if (!session?.id) throw new Error("Unauthorized");
     const { targetDb, primaryOrgId } = await getContext(orgId);
 
     const allLeads = await targetDb.query.leads.findMany({
@@ -347,7 +353,7 @@ export async function updateLeadContent(id: string, data: Partial<typeof leads.$
 
     await targetDb.update(leads)
         .set(payload)
-        .where(eq(leads.id, id));
+        .where(and(eq(leads.id, id), eq(leads.organizationId, primaryOrgId)));
 
     revalidatePath(`/org/${orgId}/kanban`);
 }

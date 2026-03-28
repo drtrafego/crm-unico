@@ -28,6 +28,11 @@ export async function addMember(email: string, orgId: string, role: 'admin' | 'e
         throw new Error("Permission denied");
     }
 
+    // Somente admin ou owner pode adicionar membros
+    if (requester && requester.role !== 'admin' && requester.role !== 'owner' && !isSuperAdmin) {
+        throw new Error("Permission denied: Only admin or owner can add members");
+    }
+
     // 2. Find the user by email
     let targetUser = await db.query.users.findFirst({
         where: eq(users.email, email)
@@ -117,6 +122,8 @@ export async function removeMember(memberId: string, orgId: string) {
 }
 
 export async function getMembers(orgId: string) {
+    const session = await getAuthenticatedUser();
+    if (!session?.id) throw new Error("Unauthorized");
     // Join members with users to get names and emails
     const orgMembers = await db
         .select({

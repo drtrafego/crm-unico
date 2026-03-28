@@ -19,6 +19,11 @@ const META_GRAPH_URL = "https://graph.facebook.com/v22.0";
  * Busca a integração Meta de uma organização
  */
 export async function getMetaIntegration(orgId: string) {
+  // Auth check inline (não importa auth-helper pois é 'use server' já com server-only no db)
+  const { getAuthenticatedUser } = await import("@/lib/auth-helper");
+  const session = await getAuthenticatedUser();
+  if (!session?.id) throw new Error("Unauthorized");
+
   return await db.query.metaIntegrations.findFirst({
     where: eq(metaIntegrations.organizationId, orgId),
   });
@@ -115,7 +120,7 @@ export async function saveMetaIntegration(
     // 1. Buscar detalhes da conta de anúncio
     try {
       const adAccountRes = await fetch(
-        `${META_GRAPH_URL}/${formattedAdAccountId}?fields=name,business{id,name}&access_token=${META_ACCESS_TOKEN}`
+        `${META_GRAPH_URL}/${formattedAdAccountId}?fields=name,business{id,name}`, { headers: { 'Authorization': `Bearer ${META_ACCESS_TOKEN}` } }
       );
       if (adAccountRes.ok) {
         const adAccountData = await adAccountRes.json();
@@ -127,7 +132,7 @@ export async function saveMetaIntegration(
           if (whatsappType === 'waba') {
             try {
               const wabaRes = await fetch(
-                `${META_GRAPH_URL}/${businessId}/owned_whatsapp_business_accounts?fields=id,name&access_token=${META_ACCESS_TOKEN}`
+                `${META_GRAPH_URL}/${businessId}/owned_whatsapp_business_accounts?fields=id,name`, { headers: { 'Authorization': `Bearer ${META_ACCESS_TOKEN}` } }
               );
               if (wabaRes.ok) {
                 const wabaData = await wabaRes.json();
@@ -135,7 +140,7 @@ export async function saveMetaIntegration(
                   wabaId = wabaData.data[0].id;
                   try {
                     const phoneRes = await fetch(
-                      `${META_GRAPH_URL}/${wabaId}/phone_numbers?fields=id,display_phone_number,verified_name&access_token=${META_ACCESS_TOKEN}`
+                      `${META_GRAPH_URL}/${wabaId}/phone_numbers?fields=id,display_phone_number,verified_name`, { headers: { 'Authorization': `Bearer ${META_ACCESS_TOKEN}` } }
                     );
                     if (phoneRes.ok) {
                       const phoneData = await phoneRes.json();
@@ -159,7 +164,7 @@ export async function saveMetaIntegration(
           // 3. Buscar Instagram accounts (para ambos os tipos)
           try {
             const igRes = await fetch(
-              `${META_GRAPH_URL}/${businessId}/owned_instagram_accounts?fields=id,username,name&access_token=${META_ACCESS_TOKEN}`
+              `${META_GRAPH_URL}/${businessId}/owned_instagram_accounts?fields=id,username,name`, { headers: { 'Authorization': `Bearer ${META_ACCESS_TOKEN}` } }
             );
             if (igRes.ok) {
               const igData = await igRes.json();
@@ -168,7 +173,7 @@ export async function saveMetaIntegration(
               }
             } else {
               const igRes2 = await fetch(
-                `${META_GRAPH_URL}/${businessId}/instagram_accounts?fields=id,username&access_token=${META_ACCESS_TOKEN}`
+                `${META_GRAPH_URL}/${businessId}/instagram_accounts?fields=id,username`, { headers: { 'Authorization': `Bearer ${META_ACCESS_TOKEN}` } }
               );
               if (igRes2.ok) {
                 const igData2 = await igRes2.json();

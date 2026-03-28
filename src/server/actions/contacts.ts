@@ -3,6 +3,7 @@
 import { db } from "@/lib/db";
 import { leads } from "@/server/db/schema";
 import { and, eq, gte, lte } from "drizzle-orm";
+import { getAuthenticatedUser } from "@/lib/auth-helper";
 
 export async function exportContacts(
     orgId: string,
@@ -10,6 +11,8 @@ export async function exportContacts(
     startDate?: string,
     endDate?: string
 ) {
+    const session = await getAuthenticatedUser();
+    if (!session?.id) throw new Error("Unauthorized");
     try {
         const filters = [eq(leads.organizationId, orgId)];
 

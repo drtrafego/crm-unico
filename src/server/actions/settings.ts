@@ -33,6 +33,7 @@ async function checkSettingsPermission(orgId: string) {
 
 export async function getSettings(orgId: string) {
   const session = await getAuthenticatedUser();
+  if (!session?.id) throw new Error("Unauthorized");
   const email = session?.email || "";
   const name = session?.name || "Minha Empresa";
 

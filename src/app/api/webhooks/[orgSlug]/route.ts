@@ -29,6 +29,38 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type",
 };
 
+// SECURITY: Allowlist de domínios permitidos para redirect (previne open redirect)
+const ALLOWED_REDIRECT_DOMAINS = [
+  'wa.me',
+  'api.whatsapp.com',
+  'casaldotrafego.com',
+  'drtrafego.com',
+  'crm-unico.vercel.app',
+];
+
+function isRedirectAllowed(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    // Só permite HTTPS (exceto localhost em dev)
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return false;
+    // Verifica se o domínio está na allowlist
+    return ALLOWED_REDIRECT_DOMAINS.some(domain =>
+      parsed.hostname === domain || parsed.hostname.endsWith(`.${domain}`)
+    );
+  } catch {
+    return false;
+  }
+}
+
+function safeRedirect(url: string | null, fallbackResponse: NextResponse): NextResponse {
+  if (!url) return fallbackResponse;
+  if (!isRedirectAllowed(url)) {
+    console.warn(`[Webhook] Blocked redirect to non-allowed URL: ${url}`);
+    return fallbackResponse;
+  }
+  return NextResponse.redirect(url, { status: 302, headers: corsHeaders });
+}
+
 // Handle preflight requests (OPTIONS)
 export async function OPTIONS() {
   return new NextResponse(null, { status: 200, headers: corsHeaders });
@@ -56,7 +88,7 @@ function normalizeLeadData(rawData: Record<string, any>) {
     }
   }
 
-  console.log("[Webhook] Elementor parsed:", JSON.stringify(elementorData));
+  // Elementor data parsed (not logged for PII compliance)
 
   // Merge: use Elementor data if available, otherwise use LOWERCASED raw data
   const dataToNormalize = Object.keys(elementorData).length > 0 ? elementorData : lowerCasedRawData;
@@ -87,7 +119,7 @@ function normalizeLeadData(rawData: Record<string, any>) {
     message: findValue(messageFields),
   };
 
-  console.log("[Webhook] Normalized result:", JSON.stringify(result));
+  // Normalized result ready (not logged for PII compliance)
 
   return result;
 }
@@ -109,14 +141,12 @@ export async function POST(
 
     if (!org) {
       console.error(`[Webhook] Organization not found: ${orgSlug}`);
-      // Even if org not found, redirect if URL provided
-      if (redirectUrl) {
-        return NextResponse.redirect(redirectUrl, { status: 302, headers: corsHeaders });
-      }
-      return NextResponse.json(
+      const notFoundResp = NextResponse.json(
         { success: false, error: "Organization not found" },
         { status: 404, headers: corsHeaders }
       );
+      if (redirectUrl) return safeRedirect(redirectUrl, notFoundResp);
+      return notFoundResp;
     }
 
     // 2. Parse Request Body
@@ -143,17 +173,15 @@ export async function POST(
       }
     } catch (parseError) {
       console.error("[Webhook] Parse error:", parseError);
-      // Still try to redirect even on parse error
-      if (redirectUrl) {
-        return NextResponse.redirect(redirectUrl, { status: 302, headers: corsHeaders });
-      }
-      return NextResponse.json(
+      const parseResp = NextResponse.json(
         { success: false, error: "Invalid request body" },
         { status: 400, headers: corsHeaders }
       );
+      if (redirectUrl) return safeRedirect(redirectUrl, parseResp);
+      return parseResp;
     }
 
-    console.log("[Webhook] Received:", JSON.stringify(rawData));
+    console.log("[Webhook] Received lead data for org:", orgSlug);
 
     // 3. Normalize and Save Lead
     const normalizedData = normalizeLeadData(rawData);
@@ -211,32 +239,25 @@ export async function POST(
     console.log("[Webhook] Lead saved:", newLead[0]?.id);
 
     // 4. REDIRECT if URL provided, otherwise return JSON
-    if (redirectUrl) {
-      console.log("[Webhook] Redirecting to:", redirectUrl);
-      return NextResponse.redirect(redirectUrl, {
-        status: 302,
-        headers: corsHeaders
-      });
-    }
-
-    // Fallback: return JSON success
-    return NextResponse.json(
+    const successResp = NextResponse.json(
       { success: true, message: "Lead created successfully", leadId: newLead[0]?.id },
       { status: 200, headers: corsHeaders }
     );
+    if (redirectUrl) {
+      console.log("[Webhook] Redirecting to:", redirectUrl);
+      return safeRedirect(redirectUrl, successResp);
+    }
+    return successResp;
 
   } catch (error) {
     console.error("[Webhook] Error:", error);
 
-    // Even on error, try to redirect if URL provided
-    if (redirectUrl) {
-      return NextResponse.redirect(redirectUrl, { status: 302, headers: corsHeaders });
-    }
-
-    return NextResponse.json(
+    const errorResp = NextResponse.json(
       { success: false, error: "Internal server error" },
       { status: 500, headers: corsHeaders }
     );
+    if (redirectUrl) return safeRedirect(redirectUrl, errorResp);
+    return errorResp;
   }
 }
 
@@ -254,10 +275,9 @@ export async function GET(
     });
 
     if (!org) {
-      if (redirectUrl) {
-        return NextResponse.redirect(redirectUrl, { status: 302, headers: corsHeaders });
-      }
-      return NextResponse.json({ error: "Organization not found" }, { status: 404, headers: corsHeaders });
+      const notFoundResp = NextResponse.json({ error: "Organization not found" }, { status: 404, headers: corsHeaders });
+      if (redirectUrl) return safeRedirect(redirectUrl, notFoundResp);
+      return notFoundResp;
     }
 
     // Get all query params except 'redirect' as lead data
@@ -318,20 +338,17 @@ export async function GET(
 
     console.log("[Webhook GET] Lead saved:", newLead[0]?.id);
 
-    if (redirectUrl) {
-      return NextResponse.redirect(redirectUrl, { status: 302, headers: corsHeaders });
-    }
-
-    return NextResponse.json(
+    const getSuccessResp = NextResponse.json(
       { success: true, leadId: newLead[0]?.id },
       { status: 200, headers: corsHeaders }
     );
+    if (redirectUrl) return safeRedirect(redirectUrl, getSuccessResp);
+    return getSuccessResp;
 
   } catch (error) {
     console.error("[Webhook GET] Error:", error);
-    if (redirectUrl) {
-      return NextResponse.redirect(redirectUrl, { status: 302, headers: corsHeaders });
-    }
-    return NextResponse.json({ error: "Internal server error" }, { status: 500, headers: corsHeaders });
+    const getErrorResp = NextResponse.json({ error: "Internal server error" }, { status: 500, headers: corsHeaders });
+    if (redirectUrl) return safeRedirect(redirectUrl, getErrorResp);
+    return getErrorResp;
   }
 }
