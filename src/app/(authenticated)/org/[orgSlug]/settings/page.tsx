@@ -43,7 +43,9 @@ export default async function SettingsPage({
     )
   }) : null;
 
-  const canEdit = currentMember?.role === 'admin' || currentMember?.role === 'owner';
+  const adminEmails = process.env.ADMIN_EMAILS?.split(",") || [];
+  const isSuperAdmin = user?.email ? adminEmails.includes(user.email) : false;
+  const canEdit = isSuperAdmin || currentMember?.role === 'admin' || currentMember?.role === 'owner';
 
   const allMembers = await getMembers(org.id);
   const settings = await getSettings(org.id);

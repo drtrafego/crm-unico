@@ -28,6 +28,7 @@ import { Search, MessageCircle, Users, Wallet, Calendar, ChevronLeft, ChevronRig
 import { getWhatsAppLink, cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { getLeadSource } from "@/lib/leads-helper";
+import { SOURCE_CONFIG, DEFAULT_SOURCE_CONFIG } from "@/components/features/shared/source-icons";
 
 import { CRMActionOverrides } from "@/types/crm-actions";
 
@@ -85,24 +86,25 @@ export function LeadsList({ leads, columns, orgId, overrides }: LeadsListProps) 
       cell: ({ row }) => <span className="text-slate-600 dark:text-slate-400">{row.getValue("company") || "-"}</span>,
     },
     {
-      id: "source", // Virtual column for normalized source
+      id: "source",
       header: "Origem",
       cell: ({ row }) => {
         const source = getLeadSource(row.original);
+        const config = SOURCE_CONFIG[source] || DEFAULT_SOURCE_CONFIG;
+        const IconComponent = config.icon;
         return (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             <span className={cn(
-              "px-2 py-0.5 rounded-full text-[11px] font-medium border",
-              source === 'Google' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                source === 'Meta' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
-                  'bg-slate-100 text-slate-600 border-slate-200'
+              "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border",
+              config.popoverClass
             )}>
-              {source}
+              <IconComponent className="h-3 w-3" />
+              {config.label}
             </span>
           </div>
         );
       },
-      accessorFn: (row) => getLeadSource(row) // Allow sorting by normalized source
+      accessorFn: (row) => getLeadSource(row)
     },
     {
       accessorKey: "columnId",
@@ -119,30 +121,9 @@ export function LeadsList({ leads, columns, orgId, overrides }: LeadsListProps) 
             "inline-block rounded-full px-2 py-0.5 text-xs font-medium",
             isWon ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" :
               isLost ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" :
-                "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400"
+                "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300"
           )}>
             {title}
-          </span>
-        );
-      },
-    },
-    {
-      accessorKey: "campaignSource",
-      header: "Origem",
-      cell: ({ row }) => {
-        const source = row.getValue("campaignSource") as string | null;
-        if (!source) return <span className="text-slate-300 dark:text-slate-600">-</span>;
-
-        return (
-          <span className={cn(
-            "inline-block rounded-full px-2 py-0.5 text-xs font-medium border",
-            source === "Google" && "bg-rose-50 text-rose-700 border-rose-100 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-800",
-            source === "Meta" && "bg-sky-50 text-sky-700 border-sky-100 dark:bg-sky-900/30 dark:text-sky-300 dark:border-sky-800",
-            source === "Captação Ativa" && "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800",
-            source === "Orgânicos" && "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800",
-            !["Google", "Meta", "Captação Ativa", "Orgânicos"].includes(source) && "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700"
-          )}>
-            {source}
           </span>
         );
       },
