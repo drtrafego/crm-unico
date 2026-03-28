@@ -327,7 +327,8 @@ async function handleInstagram(body: any, orgId: string) {
         const accessToken = process.env.META_ACCESS_TOKEN;
         if (accessToken) {
           const res = await fetch(
-            `https://graph.instagram.com/${senderId}?fields=name,username&access_token=${accessToken}`
+            `https://graph.instagram.com/${senderId}?fields=name,username`,
+            { headers: { 'Authorization': `Bearer ${accessToken}` } }
           );
           if (res.ok) {
             const data = await res.json();

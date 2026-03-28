@@ -47,7 +47,17 @@ async function checkPermissions(orgId: string) {
 
 // Helper `logHistory` removed - using DB trigger
 
-export async function getLeadHistory(leadId: string) {
+export async function getLeadHistory(leadId: string, orgId: string) {
+    // Verificar que o lead pertence à organização do usuário
+    const lead = await db.query.leads.findFirst({
+        where: and(eq(leads.id, leadId), eq(leads.organizationId, orgId)),
+        columns: { id: true },
+    });
+
+    if (!lead) {
+        throw new Error("Lead not found or access denied");
+    }
+
     const history = await db.select({
         id: leadHistory.id,
         action: leadHistory.action,

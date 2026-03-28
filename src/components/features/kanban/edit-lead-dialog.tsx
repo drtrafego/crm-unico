@@ -51,7 +51,7 @@ export function EditLeadDialog({ lead, open, onOpenChange, orgId, overrides }: E
 
       const fetchHistory = overrides?.getHistory || getLeadHistory;
 
-      fetchHistory(lead.id)
+      fetchHistory(lead.id, orgId)
         .then(data => setHistory(data))
         .catch(err => console.error("Failed to load history:", err))
         .finally(() => setIsLoadingHistory(false));

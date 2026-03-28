@@ -21,12 +21,12 @@ async function ensureColumns(orgId: string) {
   return inserted.sort((a, b) => a.order - b.order);
 }
 
-// CORS headers for cross-origin requests
+// CORS headers — webhooks aceitam POST de qualquer origem (Zapier, n8n, Typeform, etc.)
+// mas restringimos métodos e removemos credentials para segurança
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With, Accept, Origin",
-  "Access-Control-Allow-Credentials": "true",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
 };
 
 // Handle preflight requests (OPTIONS)

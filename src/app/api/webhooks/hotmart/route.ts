@@ -5,13 +5,20 @@ import { vendasHotmart, organizations } from "@/server/db/schema";
 // Hottok is Hotmart's way of authenticating webhooks
 const HOTMART_HOTTOK = process.env.HOTMART_HOTTOK || "";
 
+// Mapeamento seguro de produto → organização (não aceitar orgId via query param)
+const PRODUCT_ORG_MAP: Record<string, string> = {
+    "7336724": "8f6eed8c-ce0d-472e-9531-aa4e76149be0", // Dona Doméstica
+};
+
 export async function POST(req: Request) {
     try {
-        // Validate Hottok (Optional based on user preference)
+        // Validação obrigatória do Hottok
         const hottok = req.headers.get("x-hotmart-hottok");
-        if (HOTMART_HOTTOK && hottok !== HOTMART_HOTTOK) {
-            console.warn(`Webhook received with invalid/missing Hottok: ${hottok}`);
-            // Not blocking the request since you mentioned you usually just use the webhook URL
+        if (HOTMART_HOTTOK) {
+            if (!hottok || hottok !== HOTMART_HOTTOK) {
+                console.warn(`[Hotmart] Webhook bloqueado - Hottok inválido`);
+                return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            }
         }
 
         const payload = await req.json();
@@ -61,24 +68,24 @@ export async function POST(req: Request) {
             utmSource = sckLink;
         }
 
-        // Need an organization to link this sale to. 
-        // 1. Check for orgId in query params
-        const { searchParams } = new URL(req.url);
-        let orgId = searchParams.get("orgId");
-        
+        // Resolver organização via mapeamento seguro de produto
+        // NÃO aceitar orgId via query param (vulnerabilidade de injeção)
+        let orgId: string | null = null;
+
+        // 1. Mapeamento por productId (seguro, hardcoded no servidor)
+        if (productId && PRODUCT_ORG_MAP[productId]) {
+            orgId = PRODUCT_ORG_MAP[productId];
+        }
+
+        // 2. Fallback: primeira org (apenas se não houver mapeamento)
         if (!orgId) {
-            // 2. Specific mapping for Dona Doméstica (as requested)
-            if (productId === "7336724") {
-                orgId = "8f6eed8c-ce0d-472e-9531-aa4e76149be0";
+            const orgs = await db.select().from(organizations).limit(1);
+            if (orgs.length > 0) {
+                orgId = orgs[0].id;
+                console.warn(`[Hotmart] Sem mapeamento para produto ${productId}, usando org fallback: ${orgId}`);
             } else {
-                // Fallback to first org if none provided and no specific mapping
-                const orgs = await db.select().from(organizations).limit(1);
-                if (orgs.length > 0) {
-                    orgId = orgs[0].id;
-                } else {
-                    console.warn("Hotmart Webhook: No organization found to assign the sale.");
-                    throw new Error("No organization found to assign the sale to.");
-                }
+                console.error("[Hotmart] Nenhuma organização encontrada");
+                return NextResponse.json({ error: "No organization found" }, { status: 400 });
             }
         }
 
