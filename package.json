@@ -50,6 +50,7 @@
     "react-hook-form": "^7.66.1",
     "react-wordcloud": "^1.2.7",
     "recharts": "^3.6.0",
+    "server-only": "^0.0.1",
     "tailwind-merge": "^3.4.0",
     "xlsx": "^0.18.5",
     "zod": "^4.1.13"

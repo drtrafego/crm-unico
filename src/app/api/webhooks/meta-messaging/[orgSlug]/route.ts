@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { organizations, leads, columns, metaIntegrations } from "@/server/db/schema";
 import { eq, asc, and, or } from "drizzle-orm";
+import crypto from "crypto";
 
 // ============================================================
 // META MESSAGING WEBHOOK - ROTEAMENTO AUTOMÁTICO
@@ -16,12 +17,37 @@ import { eq, asc, and, or } from "drizzle-orm";
 //   3. Se orgSlug = slug real, usa direto (fallback/compatibilidade)
 //   4. Cria o lead no CRM do cliente certo
 //
+// Segurança:
+//   - GET: Verifica hub.verify_token
+//   - POST: Verifica X-Hub-Signature-256 (HMAC SHA256) se META_APP_SECRET configurado
+//
 // Configuração no Meta Developer Console:
 //   Callback URL: https://crm.../api/webhooks/meta-messaging/router
 //   Verify Token: META_WEBHOOK_VERIFY_TOKEN
 // ============================================================
 
 const VERIFY_TOKEN = process.env.META_WEBHOOK_VERIFY_TOKEN || "crm_meta_verify_2024";
+const META_APP_SECRET = process.env.META_APP_SECRET;
+
+/**
+ * Verifica a assinatura X-Hub-Signature-256 enviada pela Meta.
+ * Usa timing-safe comparison para prevenir timing attacks.
+ */
+function verifyMetaSignature(rawBody: string, signatureHeader: string | null): boolean {
+  if (!META_APP_SECRET) return true; // Se não configurado, pula (log warning)
+  if (!signatureHeader) return false;
+
+  const expectedSig = 'sha256=' + crypto
+    .createHmac('sha256', META_APP_SECRET)
+    .update(rawBody)
+    .digest('hex');
+
+  const sigBuffer = Buffer.from(signatureHeader);
+  const expectedBuffer = Buffer.from(expectedSig);
+
+  if (sigBuffer.length !== expectedBuffer.length) return false;
+  return crypto.timingSafeEqual(sigBuffer, expectedBuffer);
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -228,7 +254,20 @@ export async function POST(
   const { orgSlug } = await params;
 
   try {
-    const body = await req.json();
+    // Verificar assinatura X-Hub-Signature-256 (HMAC SHA256)
+    const rawBody = await req.text();
+    const signature = req.headers.get('x-hub-signature-256');
+
+    if (META_APP_SECRET && !verifyMetaSignature(rawBody, signature)) {
+      console.error(`[Meta Webhook] Assinatura inválida - possível ataque`);
+      return NextResponse.json({ error: "Invalid signature" }, { status: 401, headers: corsHeaders });
+    }
+
+    if (!META_APP_SECRET) {
+      console.warn(`[Meta Webhook] META_APP_SECRET não configurado - assinatura não verificada`);
+    }
+
+    const body = JSON.parse(rawBody);
     const objectType = body.object;
 
     // Extrair IDs do Meta para roteamento

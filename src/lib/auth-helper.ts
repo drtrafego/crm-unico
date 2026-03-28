@@ -1,4 +1,4 @@
-
+import "server-only";
 import { stackServerApp } from "@/stack";
 import { db } from "@/lib/db";
 import { users, invitations, members } from "@/server/db/schema";
