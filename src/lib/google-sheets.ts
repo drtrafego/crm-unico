@@ -1,12 +1,12 @@
-import { JWT } from "google-auth-library";
 import { google } from "googleapis";
+import type { Auth } from "googleapis";
 
 // Singleton to prevent multiple initializations
-let authClient: JWT | null = null;
+let authClient: Auth.JWT | null = null;
 
 export async function getGoogleSheetsClient() {
     if (authClient) {
-        return google.sheets({ version: "v4", auth: authClient });
+        return google.sheets({ version: "v4", auth: authClient as any });
     }
 
     const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
@@ -31,7 +31,7 @@ export async function getGoogleSheetsClient() {
         scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"]
     });
 
-    return google.sheets({ version: "v4", auth: authClient });
+    return google.sheets({ version: "v4", auth: authClient as any });
 }
 
 export async function fetchSheetData(spreadsheetId: string, range: string) {
