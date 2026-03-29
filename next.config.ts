@@ -41,7 +41,7 @@ const nextConfig: NextConfig = {
     serverActions: {
       allowedOrigins: [
         'localhost:3000',
-        'crm-unico.vercel.app',
+        'crm.casaldotrafego.com',
         '*.vercel.app',
       ],
     },

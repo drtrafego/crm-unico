@@ -62,7 +62,7 @@ export default async function SettingsPage({
   };
 
   // Construct webhook URLs dynamically
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://seu-crm.com';
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://crm.casaldotrafego.com';
   const webhookUrl = `${baseUrl}/api/webhooks/${orgSlug}`;
   const metaWebhookUrl = `${baseUrl}/api/webhooks/meta-messaging/${orgSlug}`;
 

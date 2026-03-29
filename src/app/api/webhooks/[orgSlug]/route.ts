@@ -35,7 +35,7 @@ const ALLOWED_REDIRECT_DOMAINS = [
   'api.whatsapp.com',
   'casaldotrafego.com',
   'drtrafego.com',
-  'crm-unico.vercel.app',
+  'crm.casaldotrafego.com',
 ];
 
 function isRedirectAllowed(url: string): boolean {
