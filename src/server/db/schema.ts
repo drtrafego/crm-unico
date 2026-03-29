@@ -171,7 +171,7 @@ export type NewVendaHotmart = typeof vendasHotmart.$inferInsert;
 export const metaIntegrations = pgTable("meta_integrations", {
   id: uuid("id").defaultRandom().primaryKey(),
   organizationId: text("organization_id").notNull(),
-  adAccountId: text("ad_account_id").notNull(), // ex: "act_123456789"
+  adAccountId: text("ad_account_id"), // ex: "act_123456789" (opcional — nem todo cliente tem)
   // Tipo de conexão WhatsApp: "waba" (Cloud API oficial) ou "business_number" (número direto)
   whatsappType: text("whatsapp_type").$type<'waba' | 'business_number'>().default('waba'),
   // WABA fields (quando whatsappType = "waba")
@@ -181,6 +181,7 @@ export const metaIntegrations = pgTable("meta_integrations", {
   whatsappNumber: text("whatsapp_number"), // Número direto ex: "5511999999999"
   // Instagram
   igAccountId: text("ig_account_id"), // Instagram Account ID (entry[].id no webhook IG)
+  igUsername: text("ig_username"), // Instagram @ username para exibição
   // Display
   displayPhone: text("display_phone"), // Número formatado para exibição
   accountName: text("account_name"), // Nome da conta para exibição
