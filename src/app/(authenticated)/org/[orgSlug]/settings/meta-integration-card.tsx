@@ -101,10 +101,14 @@ export function MetaIntegrationCard({ orgId, orgSlug, metaWebhookUrl, existing }
     setIgLoading(true);
     setIgSuccess(false);
     try {
-      await saveInstagram(orgId, orgSlug, {
+      const res = await saveInstagram(orgId, orgSlug, {
         igUsername: igUsername.trim() || undefined,
         igAccountId: igAccountId.trim() || undefined,
       });
+      // Se o backend resolveu o Account ID automaticamente, atualiza o campo
+      if (res.igAccountId && !igAccountId.trim()) {
+        setIgAccountId(res.igAccountId);
+      }
       setIgSuccess(true);
       setTimeout(() => setIgSuccess(false), 3000);
       router.refresh();

@@ -223,14 +223,59 @@ export async function saveInstagram(
 ) {
   const record = await ensureIntegration(orgId);
   const username = data.igUsername?.replace(/^@/, "").trim() || null;
-  const accountId = data.igAccountId?.trim() || null;
+  let accountId = data.igAccountId?.trim() || null;
+
+  // Se tem username mas não tem Account ID, tenta resolver via Graph API
+  // Busca nas páginas conectadas → IG Business Account
+  if (username && !accountId && META_ACCESS_TOKEN) {
+    accountId = await resolveIgAccountId(username);
+  }
 
   await db.update(metaIntegrations)
     .set({ igAccountId: accountId, igUsername: username, updatedAt: new Date() })
     .where(eq(metaIntegrations.id, record.id));
 
   revalidatePath(`/org/${orgSlug}/settings`);
-  return { success: true };
+  return { success: true, igAccountId: accountId };
+}
+
+/**
+ * Resolve Instagram Account ID a partir do @username.
+ * Fluxo: /me/accounts → para cada Page → /{pageId}?fields=instagram_business_account
+ * Compara o username retornado com o informado.
+ */
+async function resolveIgAccountId(username: string): Promise<string | null> {
+  try {
+    // 1. Listar todas as Pages do token
+    const pagesRes = await metaFetch(
+      `${META_GRAPH_URL}/me/accounts?fields=id,name,instagram_business_account&limit=100`
+    );
+    if (!pagesRes.ok) return null;
+    const pagesData = await pagesRes.json();
+
+    for (const page of pagesData.data || []) {
+      const igBizId = page.instagram_business_account?.id;
+      if (!igBizId) continue;
+
+      // 2. Buscar username da conta IG conectada a esta Page
+      const igRes = await metaFetch(
+        `${META_GRAPH_URL}/${igBizId}?fields=username,id`
+      );
+      if (!igRes.ok) continue;
+      const igData = await igRes.json();
+
+      if (igData.username?.toLowerCase() === username.toLowerCase()) {
+        console.log(`[Meta/IG] Resolved @${username} → ${igBizId}`);
+        return igBizId;
+      }
+    }
+
+    console.log(`[Meta/IG] Could not resolve @${username} from connected pages`);
+    return null;
+  } catch (err) {
+    console.error(`[Meta/IG] Error resolving @${username}:`, err);
+    return null;
+  }
 }
 
 // ============================================================
