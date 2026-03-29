@@ -51,7 +51,6 @@ export function MetaIntegrationCard({ orgId, orgSlug, metaWebhookUrl, existing }
 
   // Instagram state
   const [igUsername, setIgUsername] = useState(existing?.igUsername || "");
-  const [igAccountId, setIgAccountId] = useState(existing?.igAccountId || "");
   const [igLoading, setIgLoading] = useState(false);
   const [igSuccess, setIgSuccess] = useState(false);
 
@@ -101,14 +100,9 @@ export function MetaIntegrationCard({ orgId, orgSlug, metaWebhookUrl, existing }
     setIgLoading(true);
     setIgSuccess(false);
     try {
-      const res = await saveInstagram(orgId, orgSlug, {
+      await saveInstagram(orgId, orgSlug, {
         igUsername: igUsername.trim() || undefined,
-        igAccountId: igAccountId.trim() || undefined,
       });
-      // Se o backend resolveu o Account ID automaticamente, atualiza o campo
-      if (res.igAccountId && !igAccountId.trim()) {
-        setIgAccountId(res.igAccountId);
-      }
       setIgSuccess(true);
       setTimeout(() => setIgSuccess(false), 3000);
       router.refresh();
@@ -125,7 +119,6 @@ export function MetaIntegrationCard({ orgId, orgSlug, metaWebhookUrl, existing }
       setPhoneNumberId("");
       setWhatsappNumber("");
       setIgUsername("");
-      setIgAccountId("");
       router.refresh();
     } finally { setDisconnecting(false); }
   };
@@ -323,32 +316,29 @@ export function MetaIntegrationCard({ orgId, orgSlug, metaWebhookUrl, existing }
             <SectionStatus connected={!!(existing?.igAccountId || existing?.igUsername)} label={existing?.igUsername ? `@${existing.igUsername}` : undefined} />
           </div>
 
-          <div className="space-y-2">
-            <div className="space-y-1">
-              <Label className="text-xs text-slate-500">@ do Instagram</Label>
-              <div className="flex items-center gap-0 flex-1">
-                <span className="inline-flex items-center px-3 h-9 bg-slate-100 dark:bg-slate-800 border border-r-0 border-slate-200 dark:border-slate-700 rounded-l-md text-sm text-slate-500">
-                  @
-                </span>
-                <Input
-                  value={igUsername}
-                  onChange={(e) => setIgUsername(e.target.value.replace(/^@/, "").replace(/\s/g, ""))}
-                  placeholder="seuinstagram"
-                  className="rounded-l-none text-xs h-9"
-                  disabled={igLoading}
-                />
-              </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-slate-500">@ do Instagram</Label>
+            <div className="flex items-center gap-0 flex-1">
+              <span className="inline-flex items-center px-3 h-9 bg-slate-100 dark:bg-slate-800 border border-r-0 border-slate-200 dark:border-slate-700 rounded-l-md text-sm text-slate-500">
+                @
+              </span>
+              <Input
+                value={igUsername}
+                onChange={(e) => setIgUsername(e.target.value.replace(/^@/, "").replace(/\s/g, ""))}
+                placeholder="seuinstagram"
+                className="rounded-l-none text-xs h-9"
+                disabled={igLoading}
+              />
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs text-slate-500">Account ID <span className="text-slate-400">(opcional)</span></Label>
-              <Input value={igAccountId} onChange={(e) => setIgAccountId(e.target.value)} placeholder="17841400000000" className="font-mono text-xs h-9" disabled={igLoading} />
-            </div>
+            {existing?.igAccountId && (
+              <p className="text-[10px] text-slate-500">ID: {existing.igAccountId} (resolvido automaticamente)</p>
+            )}
           </div>
 
           <div className="flex justify-end">
             <Button
               onClick={handleSaveInstagram}
-              disabled={igLoading || (!igUsername.trim() && !igAccountId.trim())}
+              disabled={igLoading || !igUsername.trim()}
               size="sm"
               variant={igSuccess ? "outline" : "default"}
               className={cn(igSuccess && "border-green-500 text-green-600")}
