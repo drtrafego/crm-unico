@@ -186,6 +186,7 @@ export async function createLead(formData: FormData, orgId: string) {
     const whatsapp = formData.get("whatsapp") as string;
     const notes = formData.get("notes") as string;
     const value = formData.get("value") ? String(formData.get("value")) : null;
+    const campaignSource = formData.get("campaignSource") as string || null;
 
     const firstColumn = await targetDb.query.columns.findFirst({
         where: eq(columns.organizationId, primaryOrgId),
@@ -196,6 +197,7 @@ export async function createLead(formData: FormData, orgId: string) {
 
     const [newLead] = await targetDb.insert(leads).values({
         name, company, email, whatsapp, notes, value,
+        campaignSource,
         status: 'active',
         columnId: firstColumn.id,
         organizationId: primaryOrgId,

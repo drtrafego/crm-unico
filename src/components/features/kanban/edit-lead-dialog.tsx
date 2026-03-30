@@ -213,12 +213,13 @@ export function EditLeadDialog({ lead, open, onOpenChange, orgId, overrides }: E
                       className="flex h-9 w-full rounded-md border border-slate-200 bg-slate-50 dark:bg-slate-900/50 dark:border-slate-800 px-3 py-1 text-sm transition-colors focus:bg-white dark:focus:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     >
                       <option value="">Selecione...</option>
-                      <option value="Google">Google</option>
-                      <option value="Meta">Meta</option>
+                      <option value="Google">Google Ads</option>
+                      <option value="Meta">Meta Ads</option>
+                      <option value="WhatsApp">WhatsApp</option>
+                      <option value="Direct">Instagram Direct</option>
                       <option value="Captação Ativa">Captação Ativa</option>
-                      <option value="Orgânicos">Orgânicos</option>
-                      <option value="Direto">Direto</option>
                       <option value="Indicação">Indicação</option>
+                      <option value="Orgânicos">Orgânicos</option>
                     </select>
                   </div>
                 </div>

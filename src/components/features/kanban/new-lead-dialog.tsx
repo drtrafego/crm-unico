@@ -89,6 +89,19 @@ export function NewLeadDialog({ orgId, overrides }: { orgId: string; overrides?:
               <Label htmlFor="value" className="text-slate-700 dark:text-slate-300">Valor (R$)</Label>
               <Input id="value" name="value" type="number" step="0.01" placeholder="0,00" className="bg-transparent border-slate-200 dark:border-slate-800 focus-visible:ring-indigo-500" />
             </div>
+            <div className="grid gap-2">
+              <Label htmlFor="campaignSource" className="text-slate-700 dark:text-slate-300">Origem</Label>
+              <select id="campaignSource" name="campaignSource" className="flex h-10 w-full rounded-md border border-slate-200 dark:border-slate-800 bg-transparent px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 text-slate-700 dark:text-slate-300">
+                <option value="">Selecione...</option>
+                <option value="Google">Google Ads</option>
+                <option value="Meta">Meta Ads</option>
+                <option value="WhatsApp">WhatsApp</option>
+                <option value="Direct">Instagram Direct</option>
+                <option value="Captação Ativa">Captação Ativa</option>
+                <option value="Indicação">Indicação</option>
+                <option value="Orgânicos">Orgânicos</option>
+              </select>
+            </div>
           </div>
 
           <div className="grid gap-2">
