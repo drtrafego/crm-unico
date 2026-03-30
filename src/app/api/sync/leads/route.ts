@@ -13,7 +13,7 @@ import { eq, asc, and } from "drizzle-orm";
 // Uso: MCP tools, agentes, n8n, qualquer sistema externo
 // ============================================================
 
-const SYNC_TOKEN = process.env.SYNC_API_TOKEN;
+const SYNC_TOKEN = process.env.SYNC_API_TOKEN || process.env.AUTH_SECRET;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
