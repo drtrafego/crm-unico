@@ -7,7 +7,7 @@ const securityHeaders = [
   },
   {
     key: 'X-Frame-Options',
-    value: 'DENY',
+    value: 'ALLOW-FROM https://cliente.casaldotrafego.com',
   },
   {
     key: 'X-Content-Type-Options',
