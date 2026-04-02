@@ -6,10 +6,6 @@ const securityHeaders = [
     value: 'max-age=63072000; includeSubDomains; preload',
   },
   {
-    key: 'X-Frame-Options',
-    value: 'ALLOW-FROM https://cliente.casaldotrafego.com',
-  },
-  {
     key: 'X-Content-Type-Options',
     value: 'nosniff',
   },
