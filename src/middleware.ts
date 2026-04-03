@@ -16,10 +16,11 @@ export async function middleware(request: NextRequest) {
         return NextResponse.next();
     }
 
+    // LOG DIAGNOSTICO
+    console.log(`[CRM MW] path=${pathname} params=${request.nextUrl.searchParams.toString().substring(0, 100)}`);
+    console.log(`[CRM MW] cookies=${request.cookies.getAll().map(c => c.name).join(',')}`);
+
     // ── Injecao de tokens via URL (portal envia __st com tokens Stack Auth) ──
-    // Resolve bloqueio de third-party cookies em iframes (Chrome 2025+).
-    // O portal codifica os tokens em base64 no param __st. Aqui decodificamos,
-    // setamos como cookies first-party e redirecionamos para a URL limpa.
     const stParam = request.nextUrl.searchParams.get('__st');
     if (stParam) {
         try {
