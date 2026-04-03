@@ -16,18 +16,55 @@ export async function middleware(request: NextRequest) {
         return NextResponse.next();
     }
 
+    // ── Injecao de tokens via URL (portal envia __st com tokens Stack Auth) ──
+    // Resolve bloqueio de third-party cookies em iframes (Chrome 2025+).
+    // O portal codifica os tokens em base64 no param __st. Aqui decodificamos,
+    // setamos como cookies first-party e redirecionamos para a URL limpa.
+    const stParam = request.nextUrl.searchParams.get('__st');
+    if (stParam) {
+        try {
+            const decoded = JSON.parse(Buffer.from(stParam, 'base64').toString());
+            const cleanUrl = new URL(request.url);
+            cleanUrl.searchParams.delete('__st');
+
+            const response = NextResponse.redirect(cleanUrl);
+
+            if (decoded.a) {
+                response.cookies.set('stack-access', decoded.a, {
+                    path: '/',
+                    httpOnly: true,
+                    secure: true,
+                    sameSite: 'lax',
+                    maxAge: 60 * 60 * 24 * 30,
+                });
+            }
+            if (decoded.rn && decoded.rv) {
+                response.cookies.set(decoded.rn, decoded.rv, {
+                    path: '/',
+                    httpOnly: true,
+                    secure: true,
+                    sameSite: 'lax',
+                    maxAge: 60 * 60 * 24 * 30,
+                });
+            }
+
+            console.log(`=== MIDDLEWARE CRM: tokens injetados via URL, redirecionando ===`);
+            return response;
+        } catch (e) {
+            console.error("=== ERRO ao decodificar __st ===", e);
+        }
+    }
+
     try {
         console.log(`=== MIDDLEWARE CRM: ${pathname} ===`);
         const user = await stackServerApp.getUser({ tokenStore: request as any });
 
         if (!user && pathname !== '/') {
-            // Se não estiver logado e tentar acessar algo que não seja a Home
             return NextResponse.redirect(new URL("/handler/sign-in", request.url));
         }
 
         const response = NextResponse.next();
 
-        // Adicionar cabeçalhos de segurança (necessário para o iframe deles)
         response.headers.set(
             "Content-Security-Policy",
             "frame-ancestors 'self' https://cliente.casaldotrafego.com https://clientes.casaldotrafego.com"
@@ -38,7 +75,6 @@ export async function middleware(request: NextRequest) {
     } catch (error) {
         console.error("=== ERRO NO MIDDLEWARE CRM ===");
         console.error(error);
-        // SECURITY: Fail-closed — redireciona para login em caso de erro de auth
         return NextResponse.redirect(new URL("/handler/sign-in", request.url));
     }
 }
