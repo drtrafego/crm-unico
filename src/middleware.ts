@@ -31,12 +31,13 @@ export async function middleware(request: NextRequest) {
             const response = NextResponse.redirect(cleanUrl);
 
             if (decoded.a) {
+                // httpOnly: false — Stack Auth client-side SDK le este cookie
                 response.cookies.set('stack-access', decoded.a, {
                     path: '/',
-                    httpOnly: true,
+                    httpOnly: false,
                     secure: true,
                     sameSite: 'lax',
-                    maxAge: 60 * 60 * 24 * 30,
+                    maxAge: 60 * 60 * 24,
                 });
             }
             if (decoded.rn && decoded.rv) {
