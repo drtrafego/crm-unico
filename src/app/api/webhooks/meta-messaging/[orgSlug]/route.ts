@@ -94,7 +94,7 @@ async function leadExists(orgId: string, whatsapp: string): Promise<boolean> {
  */
 async function resolveOrganization(
   orgSlug: string,
-  identifiers: { wabaId?: string; phoneNumberId?: string; igAccountId?: string; displayPhoneNumber?: string }
+  identifiers: { wabaId?: string; phoneNumberId?: string; igAccountId?: string; igUsername?: string; displayPhoneNumber?: string }
 ): Promise<string | null> {
   // Modo direto: slug real
   if (orgSlug !== "router") {
@@ -166,6 +166,23 @@ async function resolveOrganization(
     }
   }
 
+  // 5. Instagram: ig_username (busca pelo @username configurado nas Settings)
+  if (identifiers.igUsername) {
+    const cleanUsername = identifiers.igUsername.replace(/^@/, "").toLowerCase();
+    if (cleanUsername) {
+      const allActive = await db.query.metaIntegrations.findMany({
+        where: eq(metaIntegrations.isActive, true),
+      });
+      const match = allActive.find(m =>
+        m.igUsername && m.igUsername.replace(/^@/, "").toLowerCase() === cleanUsername
+      );
+      if (match) {
+        console.log(`[Meta Router] Matched ig_username @${cleanUsername} → org ${match.organizationId}`);
+        return match.organizationId;
+      }
+    }
+  }
+
   console.error(`[Meta Router] No org found for identifiers:`, identifiers);
   return null;
 }
@@ -177,6 +194,7 @@ function extractMetaIds(body: any): {
   wabaId?: string;
   phoneNumberId?: string;
   igAccountId?: string;
+  igUsername?: string;
   displayPhoneNumber?: string;
 } {
   const objectType = body.object;
@@ -189,12 +207,18 @@ function extractMetaIds(body: any): {
     return {
       wabaId: entry.id,
       phoneNumberId: metadata?.phone_number_id,
-      displayPhoneNumber: metadata?.display_phone_number, // Para match com business_number
+      displayPhoneNumber: metadata?.display_phone_number,
     };
   }
 
   if (objectType === "instagram") {
-    return { igAccountId: entry.id };
+    // entry.id é o ig_account_id da conta que recebeu a DM
+    // recipient em messaging é o mesmo ID
+    const recipientId = entry.messaging?.[0]?.recipient?.id || entry.id;
+    return {
+      igAccountId: recipientId,
+      // igUsername será resolvido via Graph API no POST handler se necessário
+    };
   }
 
   if (objectType === "page") {
@@ -286,7 +310,30 @@ export async function POST(
     console.log(`[Meta Webhook] type=${objectType}, slug=${orgSlug}, ids=`, metaIds);
 
     // Resolver organização (por slug direto OU por mapeamento)
-    const orgId = await resolveOrganization(orgSlug, metaIds);
+    let orgId = await resolveOrganization(orgSlug, metaIds);
+
+    // Fallback pra Instagram: se não achou por ig_account_id, resolver @username via Graph API
+    if (!orgId && objectType === "instagram" && metaIds.igAccountId) {
+      try {
+        const accessToken = process.env.META_ACCESS_TOKEN;
+        if (accessToken) {
+          const res = await fetch(
+            `https://graph.facebook.com/v21.0/${metaIds.igAccountId}?fields=username`,
+            { headers: { 'Authorization': `Bearer ${accessToken}` } }
+          );
+          if (res.ok) {
+            const data = await res.json();
+            if (data.username) {
+              metaIds.igUsername = data.username;
+              console.log(`[Meta Webhook] Resolved IG account ${metaIds.igAccountId} → @${data.username}`);
+              orgId = await resolveOrganization(orgSlug, metaIds);
+            }
+          }
+        }
+      } catch (err) {
+        console.error(`[Meta Webhook] Erro ao resolver IG username:`, err);
+      }
+    }
 
     if (!orgId) {
       console.error(`[Meta Webhook] Could not resolve org. slug=${orgSlug}, ids=`, metaIds);
