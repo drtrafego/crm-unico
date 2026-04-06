@@ -11,7 +11,7 @@ import crypto from "crypto";
 //   - orgSlug pode ser o slug real OU "router" para auto-routing
 //
 // Fluxo:
-//   1. Meta envia webhook pra cá
+//   1. Meta (ou agente externo) envia webhook pra cá
 //   2. Se orgSlug = "router", busca a org pelo phone_number_id/waba_id/ig_account_id
 //      na tabela meta_integrations (configurado nas Settings do cliente)
 //   3. Se orgSlug = slug real, usa direto (fallback/compatibilidade)
@@ -20,14 +20,16 @@ import crypto from "crypto";
 // Segurança:
 //   - GET: Verifica hub.verify_token
 //   - POST: Verifica X-Hub-Signature-256 (HMAC SHA256) se META_APP_SECRET configurado
+//           OU x-forward-token para webhooks encaminhados por agentes externos
 //
-// Configuração no Meta Developer Console:
-//   Callback URL: https://crm.../api/webhooks/meta-messaging/router
-//   Verify Token: META_WEBHOOK_VERIFY_TOKEN
+// Modos de uso:
+//   A) Meta direto → Callback URL: https://crm.../api/webhooks/meta-messaging/router
+//   B) Via agente/MCP → POST com header x-forward-token (pula HMAC, agente já validou)
 // ============================================================
 
 const VERIFY_TOKEN = process.env.META_WEBHOOK_VERIFY_TOKEN || "crm_meta_verify_2024";
 const META_APP_SECRET = process.env.META_APP_SECRET;
+const FORWARD_TOKEN = process.env.SYNC_API_TOKEN || process.env.AUTH_SECRET;
 
 /**
  * Verifica a assinatura X-Hub-Signature-256 enviada pela Meta.
@@ -254,17 +256,26 @@ export async function POST(
   const { orgSlug } = await params;
 
   try {
-    // Verificar assinatura X-Hub-Signature-256 (HMAC SHA256)
     const rawBody = await req.text();
-    const signature = req.headers.get('x-hub-signature-256');
 
-    if (META_APP_SECRET && !verifyMetaSignature(rawBody, signature)) {
-      console.error(`[Meta Webhook] Assinatura inválida - possível ataque`);
-      return NextResponse.json({ error: "Invalid signature" }, { status: 401, headers: corsHeaders });
-    }
+    // Autenticação: aceita HMAC da Meta OU token de forward de agente externo
+    const forwardToken = req.headers.get('x-forward-token');
+    const isForwarded = forwardToken && FORWARD_TOKEN && forwardToken === FORWARD_TOKEN;
 
-    if (!META_APP_SECRET) {
-      console.warn(`[Meta Webhook] META_APP_SECRET não configurado - assinatura não verificada`);
+    if (!isForwarded) {
+      // Verificar assinatura X-Hub-Signature-256 (HMAC SHA256)
+      const signature = req.headers.get('x-hub-signature-256');
+
+      if (META_APP_SECRET && !verifyMetaSignature(rawBody, signature)) {
+        console.error(`[Meta Webhook] Assinatura inválida, possível ataque`);
+        return NextResponse.json({ error: "Invalid signature" }, { status: 401, headers: corsHeaders });
+      }
+
+      if (!META_APP_SECRET) {
+        console.warn(`[Meta Webhook] META_APP_SECRET não configurado, assinatura não verificada`);
+      }
+    } else {
+      console.log(`[Meta Webhook] Forward confiável recebido via x-forward-token`);
     }
 
     const body = JSON.parse(rawBody);
