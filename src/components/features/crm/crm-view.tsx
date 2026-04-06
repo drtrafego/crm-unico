@@ -189,7 +189,7 @@ export function CrmView({ initialLeads, columns, initialSales = [], companyName,
   }, [totalLeads, wonLeads]);
 
   return (
-    <div className="flex flex-col gap-3 px-2 sm:px-0 h-full">
+    <div className="flex flex-col gap-3 px-2 sm:px-0 min-h-full lg:h-full">
       <CompanyOnboarding hasCompanyName={!!companyName} orgId={orgId} />
       {/* Header & Controls - Compacted */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
@@ -256,7 +256,7 @@ export function CrmView({ initialLeads, columns, initialSales = [], companyName,
 
       {/* Content Area */}
       {/* Content Area */}
-      <div className="flex-1 min-h-0 overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-y-auto lg:overflow-hidden">
         {view === "board" ? (
           <Board initialLeads={filteredLeads} columns={columns} orgId={orgId} overrides={overrides} />
         ) : view === "list" ? (

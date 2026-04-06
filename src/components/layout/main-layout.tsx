@@ -73,7 +73,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             <main
                 className={cn(
                     "flex-1 min-w-0 flex flex-col transition-all duration-500 ease-in-out relative",
-                    pathname?.includes('/kanban') ? "overflow-hidden" : "overflow-y-auto custom-scrollbar",
+                    pathname?.includes('/kanban') ? "overflow-y-auto lg:overflow-hidden custom-scrollbar" : "overflow-y-auto custom-scrollbar",
                     showSidebar ? (isCollapsed ? "lg:ml-28" : "lg:ml-72") : "ml-0",
                     "p-4 sm:p-6"
                 )}

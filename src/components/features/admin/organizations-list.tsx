@@ -176,6 +176,7 @@ export function OrganizationsList({ organizations }: OrganizationsListProps) {
 
             {selectedOrg && (
                 <EditOrgDialog
+                    key={selectedOrg.id}
                     organization={selectedOrg}
                     open={isEditDialogOpen}
                     onOpenChange={setIsEditDialogOpen}
