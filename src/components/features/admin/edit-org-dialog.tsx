@@ -221,7 +221,7 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[520px] p-0 border-0 overflow-hidden bg-slate-900 text-white shadow-2xl rounded-2xl">
+            <DialogContent className="sm:max-w-[520px] max-h-[90vh] p-0 border-0 overflow-y-auto bg-slate-900 text-white shadow-2xl rounded-2xl">
                 {/* Header */}
                 <div className="px-6 pt-6 pb-4 border-b border-white/5">
                     <DialogHeader>
