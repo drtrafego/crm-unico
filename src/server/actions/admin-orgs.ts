@@ -108,56 +108,69 @@ export async function addOrganizationMember(orgId: string, email: string, role: 
 
         if (!email) throw new Error("Email é obrigatório");
 
-        // Verificar se o usuário já existe
-        const existingUser = await db.query.users.findFirst({
-            where: eq(users.email, email.toLowerCase()),
-        });
+        // Suportar múltiplos emails separados por vírgula (ex: portal envia lista)
+        const emails = email.split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
+        const errors: string[] = [];
 
-        if (existingUser) {
-            // Verificar se já é membro
-            const existingMember = await db.query.members.findFirst({
-                where: and(
-                    eq(members.userId, existingUser.id),
-                    eq(members.organizationId, orgId)
-                ),
-            });
-
-            if (existingMember) {
-                return { success: false, error: "Usuário já é membro desta organização" };
+        for (const singleEmail of emails) {
+            try {
+                await addSingleMember(orgId, singleEmail, role);
+            } catch (err) {
+                errors.push(`${singleEmail}: ${err instanceof Error ? err.message : "erro"}`);
             }
-
-            // Adicionar direto como membro
-            await db.insert(members).values({
-                userId: existingUser.id,
-                organizationId: orgId,
-                role: role as 'admin' | 'editor' | 'viewer',
-            });
-        } else {
-            // Verificar se já tem convite
-            const existingInvite = await db.query.invitations.findFirst({
-                where: and(
-                    eq(invitations.email, email.toLowerCase()),
-                    eq(invitations.organizationId, orgId)
-                ),
-            });
-
-            if (existingInvite) {
-                return { success: false, error: "Convite já enviado para este email" };
-            }
-
-            // Criar convite
-            await db.insert(invitations).values({
-                email: email.toLowerCase(),
-                organizationId: orgId,
-                role: role as 'admin' | 'editor' | 'viewer',
-            });
         }
 
         revalidatePath("/adm/dashboard");
+
+        if (errors.length > 0 && errors.length === emails.length) {
+            return { success: false, error: errors.join("; ") };
+        }
         return { success: true };
     } catch (error: unknown) {
         console.error("Error adding member:", error);
         return { success: false, error: error instanceof Error ? error.message : "Falha ao adicionar membro" };
+    }
+}
+
+async function addSingleMember(orgId: string, email: string, role: string) {
+    const existingUser = await db.query.users.findFirst({
+        where: eq(users.email, email),
+    });
+
+    if (existingUser) {
+        const existingMember = await db.query.members.findFirst({
+            where: and(
+                eq(members.userId, existingUser.id),
+                eq(members.organizationId, orgId)
+            ),
+        });
+
+        if (existingMember) {
+            throw new Error("já é membro");
+        }
+
+        await db.insert(members).values({
+            userId: existingUser.id,
+            organizationId: orgId,
+            role: role as 'admin' | 'editor' | 'viewer',
+        });
+    } else {
+        const existingInvite = await db.query.invitations.findFirst({
+            where: and(
+                eq(invitations.email, email),
+                eq(invitations.organizationId, orgId)
+            ),
+        });
+
+        if (existingInvite) {
+            throw new Error("convite já enviado");
+        }
+
+        await db.insert(invitations).values({
+            email,
+            organizationId: orgId,
+            role: role as 'admin' | 'editor' | 'viewer',
+        });
     }
 }
 
