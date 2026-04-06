@@ -10,7 +10,7 @@ import { LeadsList } from "@/components/features/crm/leads-list";
 import { DateRangePickerWithPresets } from "./date-range-picker";
 import { NewLeadDialog } from "@/components/features/kanban/new-lead-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, TrendingUp, AlertCircle, Wallet, Search, LucideIcon } from "lucide-react";
+import { Users, TrendingUp, AlertCircle, Wallet, Search, LucideIcon, LayoutGrid, List, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { AnalyticsDashboard } from "./analytics-dashboard";
@@ -191,14 +191,33 @@ export function CrmView({ initialLeads, columns, initialSales = [], companyName,
   return (
     <div className="flex flex-col gap-3 px-2 sm:px-0 min-h-full lg:h-full">
       <CompanyOnboarding hasCompanyName={!!companyName} orgId={orgId} />
-      {/* Header & Controls - Compacted */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <div className="hidden sm:block">
-            <h1 className="text-xl font-black text-slate-900 dark:text-slate-100 leading-tight tracking-tight">{companyName || "Dashboard"}</h1>
-            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Gerencie seus leads e pipeline</p>
+      {/* Header & Controls */}
+      <div className="flex flex-col gap-3">
+        {/* Mobile: view toggle + search */}
+        <div className="flex items-center gap-2">
+          {/* View Toggle */}
+          <div className="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1 shrink-0">
+            {([
+              { id: "board" as const, icon: LayoutGrid, label: "Kanban" },
+              { id: "list" as const, icon: List, label: "Lista" },
+              { id: "analytics" as const, icon: BarChart3, label: "Analytics" },
+            ]).map(({ id, icon: Icon }) => (
+              <button
+                key={id}
+                onClick={() => setView(id)}
+                className={cn(
+                  "p-2 rounded-lg transition-all",
+                  view === id
+                    ? "bg-indigo-600 text-white shadow-sm"
+                    : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                )}
+              >
+                <Icon className="w-4 h-4" />
+              </button>
+            ))}
           </div>
-          <div className="relative w-full sm:w-[240px]">
+
+          <div className="relative flex-1">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
             <Input
               placeholder="Pesquisar leads..."
@@ -207,20 +226,26 @@ export function CrmView({ initialLeads, columns, initialSales = [], companyName,
               className="pl-9 bg-white dark:bg-slate-950 h-10 text-sm border-slate-200 dark:border-slate-800 rounded-xl shadow-sm focus:ring-indigo-500/20"
             />
           </div>
+
+          {mounted && (
+            <NewLeadDialog orgId={orgId} overrides={overrides} />
+          )}
         </div>
 
-        <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+        {/* Desktop: company name + date picker */}
+        <div className="flex items-center justify-between">
+          <div className="hidden sm:block">
+            <h1 className="text-xl font-black text-slate-900 dark:text-slate-100 leading-tight tracking-tight">{companyName || "Dashboard"}</h1>
+            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Gerencie seus leads e pipeline</p>
+          </div>
           {mounted && (
-            <div className="flex items-center gap-3">
-              <DateRangePickerWithPresets date={dateRange} setDate={setDateRange} className="h-10 text-sm rounded-xl" />
-              <NewLeadDialog orgId={orgId} overrides={overrides} />
-            </div>
+            <DateRangePickerWithPresets date={dateRange} setDate={setDateRange} className="h-10 text-sm rounded-xl hidden sm:flex" />
           )}
         </div>
       </div>
 
-      {/* Stats Cards - Redesigned for impact */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Stats Cards - hidden on mobile when board view to maximize kanban space */}
+      <div className={cn("grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4", view === "board" && "hidden sm:grid")}>
         <StatsCard
           title="Total de Leads"
           value={totalLeads}

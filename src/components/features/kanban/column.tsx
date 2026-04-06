@@ -74,7 +74,7 @@ export function Column({ column, leads, index, orgId, overrides }: ColumnProps) 
           ref={provided.innerRef}
           {...provided.draggableProps}
           className={cn(
-            "w-[340px] min-w-[340px] flex flex-col rounded-3xl shrink-0 h-fit",
+            "w-[280px] min-w-[280px] sm:w-[310px] sm:min-w-[310px] lg:w-[340px] lg:min-w-[340px] flex flex-col rounded-2xl sm:rounded-3xl shrink-0 h-fit",
             // Disable transitions during drag to prevent jumping
             !snapshot.isDragging && "transition-all duration-500",
             "glass-panel border-slate-200/40 dark:border-white/5 shadow-2xl",
