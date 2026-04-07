@@ -244,7 +244,7 @@ export function CrmView({ initialLeads, columns, initialSales = [], companyName,
         </div>
       </div>
 
-      {/* Stats Cards - hidden on mobile when board view to maximize kanban space */}
+      {/* Stats Cards - on desktop always visible; on mobile hidden in board view (shown below board instead) */}
       <div className={cn("grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4", view === "board" && "hidden sm:grid")}>
         <StatsCard
           title="Total de Leads"
@@ -280,7 +280,6 @@ export function CrmView({ initialLeads, columns, initialSales = [], companyName,
       </div>
 
       {/* Content Area */}
-      {/* Content Area */}
       <div className="flex-1 min-h-0 overflow-y-auto lg:overflow-hidden">
         {view === "board" ? (
           <Board initialLeads={filteredLeads} columns={columns} orgId={orgId} overrides={overrides} />
@@ -294,6 +293,43 @@ export function CrmView({ initialLeads, columns, initialSales = [], companyName,
           </div>
         )}
       </div>
+
+      {/* Mobile Stats Cards - shown below board on mobile only */}
+      {view === "board" && (
+        <div className="grid grid-cols-2 gap-2 pb-4 sm:hidden">
+          <StatsCard
+            title="Total de Leads"
+            value={totalLeads}
+            icon={Users}
+            description="registrados"
+            badge={{ text: `${lastMonthTotalLeads > 0 ? '+' : ''}${lastMonthTotalLeads}%`, variant: 'success' }}
+            iconClassName="h-4 w-4"
+          />
+          <StatsCard
+            title="Novos Leads"
+            value={newLeadsCount}
+            icon={AlertCircle}
+            description="aguardando"
+            badge={{ text: `+${todayLeadsCount} hoje`, variant: 'success' }}
+            iconClassName="h-4 w-4 text-blue-600 dark:text-blue-400"
+          />
+          <StatsCard
+            title="Potencial (Pipeline)"
+            value={formatCurrency(potentialValue)}
+            icon={TrendingUp}
+            description="em negociação"
+            iconClassName="h-4 w-4 text-amber-600 dark:text-amber-400"
+          />
+          <StatsCard
+            title="Ganhos (Receita)"
+            value={formatCurrency(wonValue)}
+            icon={Wallet}
+            description={`${wonLeads.length} fechados`}
+            badge={{ text: `${conversionRate}%`, variant: 'success' }}
+            iconClassName="h-4 w-4 text-emerald-600 dark:text-emerald-400"
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -317,19 +353,19 @@ function StatsCard({
 }) {
   return (
     <Card className={cn("glass-card group overflow-hidden hover:scale-[1.02] border-slate-200/60 dark:border-white/5", className)}>
-      <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-        <Icon className="h-12 w-12" />
+      <div className="absolute top-0 right-0 p-3 sm:p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+        <Icon className="h-8 w-8 sm:h-12 sm:w-12" />
       </div>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 p-5">
-        <CardTitle className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.15em] truncate">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 p-3 sm:p-5">
+        <CardTitle className="text-[10px] sm:text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.15em] truncate">
           {title}
         </CardTitle>
-        <div className="bg-indigo-500/10 dark:bg-white/5 p-2 rounded-xl transition-colors group-hover:bg-indigo-500 group-hover:text-white">
-          <Icon className={cn("h-4 w-4 transition-all", iconClassName)} />
+        <div className="bg-indigo-500/10 dark:bg-white/5 p-1.5 sm:p-2 rounded-xl transition-colors group-hover:bg-indigo-500 group-hover:text-white">
+          <Icon className={cn("h-3.5 w-3.5 sm:h-4 sm:w-4 transition-all", iconClassName)} />
         </div>
       </CardHeader>
-      <CardContent className="p-5 pt-0">
-        <div className="text-2xl font-black text-slate-900 dark:text-white truncate mb-1.5 tracking-tight italic">
+      <CardContent className="p-3 sm:p-5 pt-0">
+        <div className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white truncate mb-1 sm:mb-1.5 tracking-tight italic">
           {value}
         </div>
         <div className="flex items-center gap-2.5 flex-wrap">
