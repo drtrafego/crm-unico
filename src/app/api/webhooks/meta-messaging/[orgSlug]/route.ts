@@ -94,7 +94,7 @@ async function leadExists(orgId: string, whatsapp: string): Promise<boolean> {
  */
 async function resolveOrganization(
   orgSlug: string,
-  identifiers: { wabaId?: string; phoneNumberId?: string; igAccountId?: string; igUsername?: string; displayPhoneNumber?: string }
+  identifiers: { wabaId?: string; phoneNumberId?: string; igAccountId?: string; igUsername?: string; displayPhoneNumber?: string; facebookPageId?: string }
 ): Promise<string | null> {
   // Modo direto: slug real
   if (orgSlug !== "router") {
@@ -166,7 +166,21 @@ async function resolveOrganization(
     }
   }
 
-  // 5. Instagram: ig_username (busca pelo @username configurado nas Settings)
+  // 5. Facebook Page: facebook_page_id (para webhook objectType='page' - Messenger)
+  if (identifiers.facebookPageId) {
+    const match = await db.query.metaIntegrations.findFirst({
+      where: and(
+        eq(metaIntegrations.facebookPageId, identifiers.facebookPageId),
+        eq(metaIntegrations.isActive, true)
+      ),
+    });
+    if (match) {
+      console.log(`[Meta Router] Matched facebook_page_id ${identifiers.facebookPageId} → org ${match.organizationId}`);
+      return match.organizationId;
+    }
+  }
+
+  // 6. Instagram: ig_username (busca pelo @username configurado nas Settings)
   if (identifiers.igUsername) {
     const cleanUsername = identifiers.igUsername.replace(/^@/, "").toLowerCase();
     if (cleanUsername) {
@@ -196,6 +210,7 @@ function extractMetaIds(body: any): {
   igAccountId?: string;
   igUsername?: string;
   displayPhoneNumber?: string;
+  facebookPageId?: string;
 } {
   const objectType = body.object;
   const entry = body.entry?.[0];
@@ -222,7 +237,8 @@ function extractMetaIds(body: any): {
   }
 
   if (objectType === "page") {
-    return { igAccountId: entry.id };
+    // Webhook Messenger: entry.id é o Facebook Page ID
+    return { facebookPageId: entry.id };
   }
 
   return {};
@@ -345,6 +361,8 @@ export async function POST(
       await handleWhatsApp(body, orgId);
     } else if (objectType === "instagram") {
       await handleInstagram(body, orgId);
+    } else if (objectType === "page") {
+      await handleMessenger(body, orgId);
     } else {
       console.log(`[Meta Webhook] Unhandled object type: ${objectType}`);
     }
@@ -404,16 +422,105 @@ async function handleWhatsApp(body: any, orgId: string) {
 }
 
 // ============================================================
-// INSTAGRAM HANDLER
+// MESSENGER HANDLER (Click to Messenger ads APENAS)
+//
+// Só cria lead se o evento tiver `referral` (marcador da Meta que
+// indica que a DM veio de um anúncio tipo Click to Messenger).
+// DMs orgânicas (pessoas mandando mensagem espontânea para a Page)
+// são ignoradas por decisão explícita — o CRM é pipeline de campanha.
+// ============================================================
+async function handleMessenger(body: any, orgId: string) {
+  for (const entry of body.entry || []) {
+    for (const event of entry.messaging || []) {
+      if (!event.message) continue;
+      // Ignora mensagens enviadas PELA Page (echo)
+      if (event.message.is_echo) continue;
+
+      // Referral = marcação de Click to Messenger ad.
+      // Formato oficial: event.referral = { source: "ADS", type: "OPEN_THREAD", ad_id, ref, ... }
+      const referral = event.referral || event.message?.referral;
+      const isFromAd = !!referral && (referral.source === "ADS" || !!referral.ad_id || !!referral.ref);
+      if (!isFromAd) {
+        console.log(`[Meta/Messenger] DM orgânica ignorada (sem referral) — sender ${event.sender?.id}`);
+        continue;
+      }
+
+      const senderId = event.sender?.id;
+      const messageText = event.message?.text || "";
+
+      if (!senderId) continue;
+
+      // Busca nome do usuário via Graph API (PSID → perfil)
+      let userName = "";
+      try {
+        const accessToken = process.env.META_ACCESS_TOKEN;
+        if (accessToken) {
+          const res = await fetch(
+            `https://graph.facebook.com/v21.0/${senderId}?fields=first_name,last_name,name&access_token=${accessToken}`
+          );
+          if (res.ok) {
+            const data = await res.json();
+            userName = data.name || [data.first_name, data.last_name].filter(Boolean).join(" ") || "";
+          }
+        }
+      } catch {}
+
+      const leadName = userName || `FB Lead ${senderId.slice(-6)}`;
+      const identifier = `fb:${senderId}`;
+
+      console.log(`[Meta/Messenger] ${leadName} (${identifier}) via ad_id=${referral.ad_id} → org ${orgId}`);
+
+      if (await leadExists(orgId, identifier)) {
+        console.log(`[Meta/Messenger] Lead already exists: ${identifier}`);
+        continue;
+      }
+
+      const orgColumns = await ensureColumns(orgId);
+
+      await db.insert(leads).values({
+        name: leadName,
+        whatsapp: identifier,
+        notes: messageText ? `Messenger (ad): ${messageText}` : "Nova DM via Click to Messenger",
+        organizationId: orgId,
+        status: "New",
+        columnId: orgColumns[0].id,
+        campaignSource: "Messenger",
+        utmSource: "messenger",
+        utmMedium: "cpc",
+        utmCampaign: referral.ad_id || referral.source_id || null,
+        utmContent: referral.ref || null,
+      });
+
+      console.log(`[Meta/Messenger] Lead created for ${leadName}`);
+    }
+  }
+}
+
+// ============================================================
+// INSTAGRAM HANDLER (Click to Instagram Direct ads APENAS)
+//
+// Só cria lead se a DM veio de Click to Instagram Direct ad.
+// DMs orgânicas (seguidores mandando mensagem sem ad) são ignoradas
+// por decisão explícita — o CRM é pipeline de campanha.
 // ============================================================
 async function handleInstagram(body: any, orgId: string) {
   for (const entry of body.entry || []) {
     for (const event of entry.messaging || []) {
       if (!event.message) continue;
+      // Ignora echoes (mensagens enviadas pela própria conta IG Business)
+      if (event.message.is_echo) continue;
+
+      // Referral = marcação de Click to IG Direct.
+      // event.referral ou event.message.referral com { source: "ADS", ad_id, ref, ... }
+      const referral = event.referral || event.message?.referral;
+      const isFromAd = !!referral && (referral.source === "ADS" || !!referral.ad_id || !!referral.ref);
+      if (!isFromAd) {
+        console.log(`[Meta/IG] DM orgânica ignorada (sem referral) — sender ${event.sender?.id}`);
+        continue;
+      }
 
       const senderId = event.sender?.id;
       const messageText = event.message?.text || "";
-      const referral = event.referral || {};
 
       if (!senderId) continue;
 
@@ -438,7 +545,7 @@ async function handleInstagram(body: any, orgId: string) {
       const leadName = igName || (igUsername ? `@${igUsername}` : `IG Lead ${senderId.slice(-6)}`);
       const igIdentifier = igUsername ? `@${igUsername}` : `ig:${senderId}`;
 
-      console.log(`[Meta/IG] ${leadName} (${igIdentifier}) → org ${orgId}`);
+      console.log(`[Meta/IG] ${leadName} (${igIdentifier}) via ad_id=${referral.ad_id} → org ${orgId}`);
 
       if (await leadExists(orgId, igIdentifier)) {
         console.log(`[Meta/IG] Lead already exists: ${igIdentifier}`);
@@ -450,7 +557,7 @@ async function handleInstagram(body: any, orgId: string) {
       await db.insert(leads).values({
         name: leadName,
         whatsapp: igIdentifier,
-        notes: messageText ? `DM no Instagram: ${messageText}` : "Enviou DM no Instagram",
+        notes: messageText ? `DM no Instagram (ad): ${messageText}` : "Nova DM via Click to IG Direct",
         organizationId: orgId,
         status: "New",
         columnId: orgColumns[0].id,

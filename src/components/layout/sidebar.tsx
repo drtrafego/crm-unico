@@ -12,9 +12,10 @@ import { useEffect, useState } from "react";
 interface SidebarProps {
   isCollapsed?: boolean;
   toggle?: () => void;
+  mobile?: boolean;
 }
 
-export function Sidebar({ isCollapsed = false, toggle }: SidebarProps) {
+export function Sidebar({ isCollapsed = false, toggle, mobile = false }: SidebarProps) {
   const pathname = usePathname();
   const params = useParams();
   const searchParams = useSearchParams();
@@ -36,9 +37,11 @@ export function Sidebar({ isCollapsed = false, toggle }: SidebarProps) {
     if (pathname?.startsWith('/adm')) {
       return (
         <div className={cn(
-          "fixed left-4 top-4 bottom-4 z-50 transition-all duration-500 ease-in-out",
-          "bg-slate-950/40 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl overflow-hidden",
-          isCollapsed ? "w-20" : "w-64"
+          "transition-all duration-500 ease-in-out overflow-hidden flex flex-col",
+          mobile
+            ? "relative w-full h-full bg-slate-950"
+            : "fixed left-4 top-4 bottom-4 z-50 bg-slate-950/40 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl",
+          mobile ? "w-full" : (isCollapsed ? "w-20" : "w-64")
         )}>
           <div className={cn(
             "flex items-center border-b border-white/5",
@@ -106,10 +109,11 @@ export function Sidebar({ isCollapsed = false, toggle }: SidebarProps) {
 
   return (
     <div className={cn(
-      "fixed left-4 top-4 bottom-4 z-50 transition-all duration-500 ease-in-out",
-      "bg-white/80 dark:bg-slate-950/40 backdrop-blur-xl border-r lg:border border-slate-200 dark:border-white/10 shadow-2xl lg:rounded-3xl flex flex-col overflow-hidden",
-      isCollapsed ? "w-20" : "w-64 lg:w-72",
-      "h-full lg:h-auto"
+      "transition-all duration-500 ease-in-out flex flex-col overflow-hidden",
+      mobile
+        ? "relative w-full h-full bg-white dark:bg-slate-950"
+        : "fixed left-4 top-4 bottom-4 z-50 bg-white/80 dark:bg-slate-950/40 backdrop-blur-xl border-r lg:border border-slate-200 dark:border-white/10 shadow-2xl lg:rounded-3xl h-full lg:h-auto",
+      !mobile && (isCollapsed ? "w-20" : "w-64 lg:w-72")
     )}>
       <div className={cn(
         "flex items-center border-b border-white/5",

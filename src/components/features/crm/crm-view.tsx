@@ -294,42 +294,63 @@ export function CrmView({ initialLeads, columns, initialSales = [], companyName,
         )}
       </div>
 
-      {/* Mobile Stats Cards - shown below board on mobile only */}
+      {/* Mobile Stats Cards - shown below board on mobile only (compacto) */}
       {view === "board" && (
-        <div className="grid grid-cols-2 gap-2 pb-4 sm:hidden">
-          <StatsCard
-            title="Total de Leads"
+        <div className="grid grid-cols-2 gap-1.5 pb-3 sm:hidden">
+          <CompactStatsCard
+            title="Leads"
             value={totalLeads}
             icon={Users}
-            description="registrados"
-            badge={{ text: `${lastMonthTotalLeads > 0 ? '+' : ''}${lastMonthTotalLeads}%`, variant: 'success' }}
-            iconClassName="h-4 w-4"
+            iconClassName="text-indigo-500"
           />
-          <StatsCard
-            title="Novos Leads"
+          <CompactStatsCard
+            title="Novos"
             value={newLeadsCount}
             icon={AlertCircle}
-            description="aguardando"
-            badge={{ text: `+${todayLeadsCount} hoje`, variant: 'success' }}
-            iconClassName="h-4 w-4 text-blue-600 dark:text-blue-400"
+            iconClassName="text-blue-500"
           />
-          <StatsCard
-            title="Potencial (Pipeline)"
+          <CompactStatsCard
+            title="Pipeline"
             value={formatCurrency(potentialValue)}
             icon={TrendingUp}
-            description="em negociação"
-            iconClassName="h-4 w-4 text-amber-600 dark:text-amber-400"
+            iconClassName="text-amber-500"
           />
-          <StatsCard
-            title="Ganhos (Receita)"
+          <CompactStatsCard
+            title="Ganhos"
             value={formatCurrency(wonValue)}
             icon={Wallet}
-            description={`${wonLeads.length} fechados`}
-            badge={{ text: `${conversionRate}%`, variant: 'success' }}
-            iconClassName="h-4 w-4 text-emerald-600 dark:text-emerald-400"
+            iconClassName="text-emerald-500"
           />
         </div>
       )}
+    </div>
+  );
+}
+
+function CompactStatsCard({
+  title,
+  value,
+  icon: Icon,
+  iconClassName,
+}: {
+  title: string;
+  value: string | number;
+  icon: LucideIcon;
+  iconClassName?: string;
+}) {
+  return (
+    <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-xl px-2.5 py-2">
+      <div className="bg-slate-100 dark:bg-white/5 p-1.5 rounded-lg shrink-0">
+        <Icon className={cn("h-3.5 w-3.5", iconClassName)} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide truncate leading-none mb-0.5">
+          {title}
+        </p>
+        <p className="text-xs font-black text-slate-900 dark:text-white truncate leading-tight">
+          {value}
+        </p>
+      </div>
     </div>
   );
 }

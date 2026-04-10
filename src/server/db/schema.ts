@@ -182,6 +182,8 @@ export const metaIntegrations = pgTable("meta_integrations", {
   // Instagram
   igAccountId: text("ig_account_id"), // Instagram Account ID (entry[].id no webhook IG)
   igUsername: text("ig_username"), // Instagram @ username para exibição
+  // Facebook Page (usado para webhook Messenger - objectType='page')
+  facebookPageId: text("facebook_page_id"), // FB Page ID (entry[].id no webhook page)
   // Display
   displayPhone: text("display_phone"), // Número formatado para exibição
   accountName: text("account_name"), // Nome da conta para exibição

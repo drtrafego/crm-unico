@@ -37,6 +37,10 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
+    useEffect(() => {
+        setIsMobileMenuOpen(false);
+    }, [pathname]);
+
     const toggle = useCallback(() => {
         setIsCollapsed(prev => {
             const newState = !prev;
@@ -67,7 +71,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                             </Button>
                         </SheetTrigger>
                         <SheetContent side="left" className="p-0 w-72 bg-slate-950 border-white/10">
-                            <Sidebar isCollapsed={false} toggle={() => setIsMobileMenuOpen(false)} />
+                            <Sidebar isCollapsed={false} mobile toggle={() => setIsMobileMenuOpen(false)} />
                         </SheetContent>
                     </Sheet>
                 </header>
