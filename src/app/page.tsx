@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { members, organizations } from "@/server/db/schema";
 import { eq } from "drizzle-orm";
 import Link from "next/link";
+import { isSuperAdmin } from "@/lib/super-admin";
 
 export default async function HomePage() {
   const session = await getAuthenticatedUser();
@@ -14,8 +15,7 @@ export default async function HomePage() {
     const userId = session.id;
 
     // Verificar se é Super Admin
-    const adminEmails = process.env.ADMIN_EMAILS?.split(",") || [];
-    if (userEmail && adminEmails.includes(userEmail)) {
+    if (isSuperAdmin(userEmail)) {
       redirect("/adm/dashboard");
     }
 

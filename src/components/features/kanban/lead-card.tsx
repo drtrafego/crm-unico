@@ -300,7 +300,7 @@ export function LeadCard({ lead, index }: LeadCardProps) {
                       ) : (
                         <Badge
                           variant="outline"
-                          className="px-2 py-0.5 text-[11px] font-bold border-dashed border-white/20 text-white/40 cursor-pointer hover:border-indigo-400/50 hover:text-indigo-300 transition-colors"
+                          className="px-2 py-0.5 text-[11px] font-bold border-dashed border-slate-300 dark:border-white/20 text-slate-400 dark:text-white/40 cursor-pointer hover:border-indigo-400/50 hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors"
                         >
                           + Origem
                         </Badge>
@@ -308,12 +308,12 @@ export function LeadCard({ lead, index }: LeadCardProps) {
                     </div>
                   </PopoverTrigger>
                   <PopoverContent
-                    className="w-48 p-2 bg-slate-900/90 backdrop-blur-xl border border-white/10 shadow-3xl z-[100000] rounded-2xl"
+                    className="w-48 p-2 bg-white dark:bg-slate-900/90 backdrop-blur-xl border border-slate-200 dark:border-white/10 shadow-xl z-[100000] rounded-2xl"
                     align="start"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div className="space-y-1.5">
-                      <p className="text-xs font-black uppercase tracking-widest text-white/40 mb-2 px-1">Origem do Lead</p>
+                      <p className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-white/40 mb-2 px-1">Origem do Lead</p>
                       {ORIGIN_KEYS.map((key) => {
                         const conf = SOURCE_CONFIG[key];
                         const Icon = conf.icon;
@@ -324,8 +324,10 @@ export function LeadCard({ lead, index }: LeadCardProps) {
                             disabled={isUpdatingOrigin}
                             className={cn(
                               "w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all duration-300 flex items-center gap-2.5",
-                              "hover:bg-white/10 border border-transparent",
-                              lead.campaignSource === key ? "bg-white/15 border-white/20 text-white shadow-lg" : "text-white/60 hover:text-white"
+                              "hover:bg-slate-100 dark:hover:bg-white/10 border border-transparent",
+                              lead.campaignSource === key
+                                ? "bg-slate-100 dark:bg-white/15 border-slate-200 dark:border-white/20 text-slate-900 dark:text-white shadow-sm"
+                                : "text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white"
                             )}
                           >
                             <Icon className="h-4 w-4 shrink-0" />

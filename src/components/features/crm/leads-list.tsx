@@ -133,7 +133,7 @@ export function LeadsList({ leads, columns, orgId, overrides }: LeadsListProps) 
       header: "Retorno",
       cell: ({ row }) => {
         const date = row.getValue("followUpDate") as Date | null;
-        if (!date) return <span className="text-slate-300 dark:text-slate-600">-</span>;
+        if (!date) return <span className="text-slate-400 dark:text-slate-500">-</span>;
 
         const today = new Date();
         today.setHours(0, 0, 0, 0);

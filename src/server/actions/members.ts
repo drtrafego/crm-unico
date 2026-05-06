@@ -5,6 +5,7 @@ import { members, users, organizations, invitations } from "@/server/db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAuthenticatedUser } from "@/lib/auth-helper";
+import { isSuperAdmin as checkSuperAdmin } from "@/lib/super-admin";
 
 export async function addMember(email: string, orgId: string, role: 'admin' | 'editor' | 'viewer' = 'viewer') {
     const session = await getAuthenticatedUser();
@@ -21,8 +22,7 @@ export async function addMember(email: string, orgId: string, role: 'admin' | 'e
     });
 
     // Also allow Super Admins (from env) to add members
-    const adminEmails = process.env.ADMIN_EMAILS?.split(",") || [];
-    const isSuperAdmin = adminEmails.includes(session.email);
+    const isSuperAdmin = checkSuperAdmin(session.email);
 
     if (!requester && !isSuperAdmin) {
         throw new Error("Permission denied");
@@ -100,8 +100,7 @@ export async function removeMember(memberId: string, orgId: string) {
         )
     });
 
-    const adminEmails = process.env.ADMIN_EMAILS?.split(",") || [];
-    const isSuperAdmin = adminEmails.includes(session.email || '');
+    const isSuperAdmin = checkSuperAdmin(session.email);
 
     if ((!requester || (requester.role !== 'owner' && requester.role !== 'admin')) && !isSuperAdmin) {
         throw new Error("Permission denied");
@@ -172,8 +171,7 @@ export async function updateMemberRole(memberId: string, orgId: string, newRole:
         )
     });
 
-    const adminEmails = process.env.ADMIN_EMAILS?.split(",") || [];
-    const isSuperAdmin = adminEmails.includes(session.email || '');
+    const isSuperAdmin = checkSuperAdmin(session.email);
 
     if ((!requester || (requester.role !== 'owner' && requester.role !== 'admin')) && !isSuperAdmin) {
         throw new Error("Permission denied");

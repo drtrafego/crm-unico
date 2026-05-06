@@ -3,6 +3,7 @@ import { getAuthenticatedUser } from "@/lib/auth-helper";
 import { db } from "@/lib/db";
 import { members, organizations } from "@/server/db/schema";
 import { eq } from "drizzle-orm";
+import { isSuperAdmin } from "@/lib/super-admin";
 
 export default async function LoginPage() {
     const user = await getAuthenticatedUser();
@@ -12,8 +13,7 @@ export default async function LoginPage() {
     }
 
     // Superadmin → painel de administração
-    const adminEmails = process.env.ADMIN_EMAILS?.split(",") || [];
-    if (user.email && adminEmails.includes(user.email)) {
+    if (isSuperAdmin(user.email)) {
         redirect("/adm/dashboard");
     }
 
@@ -31,6 +31,6 @@ export default async function LoginPage() {
         }
     }
 
-    // Sem org ainda — volta para sign-in
-    redirect("/handler/sign-in");
+    // Sem org: redireciona para / (mostra mensagem "sem organizacao")
+    redirect("/");
 }

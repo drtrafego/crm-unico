@@ -5,13 +5,11 @@ import { organizations, leads, members, invitations, launchLeads, users } from "
 import { eq, and } from "drizzle-orm";
 import { getAuthenticatedUser } from "@/lib/auth-helper";
 import { revalidatePath } from "next/cache";
+import { isSuperAdmin } from "@/lib/super-admin";
 
 async function verifySuperAdmin() {
     const session = await getAuthenticatedUser();
-    const userEmail = session?.email;
-    const adminEmails = process.env.ADMIN_EMAILS?.split(",") || [];
-
-    if (!userEmail || !adminEmails.includes(userEmail)) {
+    if (!isSuperAdmin(session?.email)) {
         throw new Error("Unauthorized");
     }
 }

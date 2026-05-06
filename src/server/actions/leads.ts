@@ -5,6 +5,7 @@ import { leads, columns, leadHistory, members, organizations, users } from "@/se
 import { eq, asc, desc, and, ne, lt, gt, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAuthenticatedUser } from "@/lib/auth-helper";
+import { isSuperAdmin } from "@/lib/super-admin";
 
 // Helper to determine which OrgID to use (Simplified: always use the provided orgId)
 async function getContext(orgId: string) {
@@ -27,8 +28,7 @@ async function checkPermissions(orgId: string) {
     if (!session?.id) throw new Error("Unauthorized");
 
     // Super Admin Bypass
-    const adminEmails = process.env.ADMIN_EMAILS?.split(",") || [];
-    if (session.email && adminEmails.includes(session.email)) {
+    if (isSuperAdmin(session.email)) {
         return { role: 'owner', userId: session.id, organizationId: orgId };
     }
 

@@ -5,6 +5,7 @@ import { leads, columns, leadHistory, settings } from "@/server/db/schema";
 import { eq, asc, desc, and, ne, lt, gt } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAuthenticatedUser } from "@/lib/auth-helper";
+import { isSuperAdmin } from "@/lib/super-admin";
 
 const SUPER_ADMIN_ORG_ID = "super-admin-personal";
 
@@ -13,10 +14,7 @@ async function checkAdminPermissions() {
     if (!session) {
         throw new Error("Unauthorized: No active session");
     }
-    const userEmail = session?.email;
-    const adminEmails = process.env.ADMIN_EMAILS?.split(",") || [];
-
-    if (!userEmail || !adminEmails.includes(userEmail)) {
+    if (!isSuperAdmin(session.email)) {
         throw new Error("Unauthorized: Super Admin access required");
     }
     return session;

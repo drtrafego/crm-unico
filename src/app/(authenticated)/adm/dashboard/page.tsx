@@ -5,16 +5,14 @@ import { redirect } from "next/navigation";
 import { eq, desc } from "drizzle-orm";
 import { OrganizationsList } from "@/components/features/admin/organizations-list";
 import { CreateOrgDialog } from "./create-org-dialog";
+import { isSuperAdmin } from "@/lib/super-admin";
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminDashboard() {
   const session = await getAuthenticatedUser();
-  const userEmail = session?.email;
 
-  const adminEmails = process.env.ADMIN_EMAILS?.split(",") || [];
-
-  if (!userEmail || !adminEmails.includes(userEmail)) {
+  if (!isSuperAdmin(session?.email)) {
     return redirect("/");
   }
 
@@ -54,7 +52,7 @@ export default async function AdminDashboard() {
   }));
 
   return (
-    <div className="h-full bg-slate-950 px-6 py-8">
+    <div className="h-full bg-slate-50 dark:bg-slate-950 px-6 py-8">
       <div className="max-w-7xl mx-auto space-y-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>

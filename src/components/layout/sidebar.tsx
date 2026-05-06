@@ -39,12 +39,12 @@ export function Sidebar({ isCollapsed = false, toggle, mobile = false }: Sidebar
         <div className={cn(
           "transition-all duration-500 ease-in-out overflow-hidden flex flex-col",
           mobile
-            ? "relative w-full h-full bg-slate-950"
-            : "fixed left-4 top-4 bottom-4 z-50 bg-slate-950/40 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl",
+            ? "relative w-full h-full bg-white dark:bg-slate-950"
+            : "fixed left-4 top-4 bottom-4 z-50 bg-white/80 dark:bg-slate-950/40 backdrop-blur-xl border border-slate-200 dark:border-white/10 shadow-2xl rounded-3xl",
           mobile ? "w-full" : (isCollapsed ? "w-20" : "w-64")
         )}>
           <div className={cn(
-            "flex items-center border-b border-white/5",
+            "flex items-center border-b border-slate-200 dark:border-white/5",
             isCollapsed ? "h-20 justify-center p-0" : "h-20 p-6 justify-between"
           )}>
             {!isCollapsed && (
@@ -56,7 +56,7 @@ export function Sidebar({ isCollapsed = false, toggle, mobile = false }: Sidebar
               variant="ghost"
               size="icon"
               onClick={toggle}
-              className={cn("text-white/70 hover:text-white hover:bg-white/10", isCollapsed ? "h-8 w-8" : "h-8 w-8")}
+              className={cn("text-slate-500 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10", isCollapsed ? "h-8 w-8" : "h-8 w-8")}
             >
               {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
             </Button>
@@ -67,7 +67,7 @@ export function Sidebar({ isCollapsed = false, toggle, mobile = false }: Sidebar
               className={cn(
                 "group relative flex items-center gap-3 px-3 py-3 rounded-2xl text-sm font-bold transition-all duration-300",
                 isCollapsed ? "justify-center" : "",
-                "bg-white/10 text-white shadow-[inset_0_0_10px_rgba(255,255,255,0.05)] border border-white/10"
+                "bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white shadow-sm dark:shadow-[inset_0_0_10px_rgba(255,255,255,0.05)] border border-slate-200 dark:border-white/10"
               )}
             >
               <LayoutDashboard className="!h-5 !w-5 shrink-0 transition-transform group-hover:scale-110" />
@@ -79,11 +79,11 @@ export function Sidebar({ isCollapsed = false, toggle, mobile = false }: Sidebar
               )}
             </Link>
           </nav>
-          <div className="p-4 border-t border-white/5">
+          <div className="p-4 border-t border-slate-200 dark:border-white/5">
             <Button
               variant="ghost"
               className={cn(
-                "justify-start text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-2xl transition-all duration-300",
+                "justify-start text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-2xl transition-all duration-300",
                 isCollapsed ? "justify-center px-0 w-full" : "w-full gap-3 font-bold"
               )}
               onClick={() => stackApp.signOut()}
@@ -116,7 +116,7 @@ export function Sidebar({ isCollapsed = false, toggle, mobile = false }: Sidebar
       !mobile && (isCollapsed ? "w-20" : "w-64 lg:w-72")
     )}>
       <div className={cn(
-        "flex items-center border-b border-white/5",
+        "flex items-center border-b border-slate-200 dark:border-white/5",
         isCollapsed ? "h-20 justify-center p-0" : "h-20 p-6 justify-between"
       )}>
         {!isCollapsed && (
@@ -212,7 +212,7 @@ export function Sidebar({ isCollapsed = false, toggle, mobile = false }: Sidebar
         })}
       </nav>
 
-      <div className="p-4 border-t border-white/5 space-y-2">
+      <div className="p-4 border-t border-slate-200 dark:border-white/5 space-y-2">
         <Link href="/adm/dashboard" className="block">
           <Button
             variant="ghost"

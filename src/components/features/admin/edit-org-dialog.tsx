@@ -221,19 +221,19 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[520px] max-h-[90vh] p-0 border-0 overflow-y-auto bg-slate-900 text-white shadow-2xl rounded-2xl">
+            <DialogContent className="sm:max-w-[520px] max-h-[90vh] p-0 border-0 overflow-y-auto bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xl rounded-2xl">
                 {/* Header */}
-                <div className="px-6 pt-6 pb-4 border-b border-white/5">
+                <div className="px-6 pt-6 pb-4 border-b border-slate-200 dark:border-white/5">
                     <DialogHeader>
-                        <DialogTitle className="text-lg font-bold text-white">
+                        <DialogTitle className="text-lg font-bold text-slate-900 dark:text-white">
                             Configurações da Organização
                         </DialogTitle>
-                        <p className="text-sm text-slate-400 mt-0.5">{organization.name}</p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{organization.name}</p>
                     </DialogHeader>
                 </div>
 
                 {/* Tab Navigation */}
-                <div className="flex px-4 gap-1 border-b border-white/5 bg-slate-900/80">
+                <div className="flex px-4 gap-1 border-b border-slate-200 dark:border-white/5 bg-slate-50/80 dark:bg-slate-900/80">
                     {tabs.map((tab) => (
                         <button
                             key={tab.id}
@@ -242,9 +242,9 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
                                 "flex items-center gap-1.5 px-3 py-3 text-xs font-semibold transition-all duration-200 border-b-2 -mb-px",
                                 activeTab === tab.id
                                     ? tab.id === "danger"
-                                        ? "border-red-500 text-red-400"
-                                        : "border-indigo-500 text-indigo-400"
-                                    : "border-transparent text-slate-500 hover:text-slate-300"
+                                        ? "border-red-500 text-red-500 dark:text-red-400"
+                                        : "border-indigo-500 text-indigo-600 dark:text-indigo-400"
+                                    : "border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
                             )}
                         >
                             {tab.icon}
@@ -264,7 +264,7 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
                                 <Input
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    className="bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus:border-indigo-500 focus:ring-indigo-500/20 rounded-xl"
+                                    className="bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-indigo-500 focus:ring-indigo-500/20 rounded-xl"
                                 />
                             </div>
                             <div className="space-y-1.5">
@@ -283,7 +283,7 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
                                 <Input
                                     readOnly
                                     defaultValue={organization.id}
-                                    className="bg-black/20 border-white/5 text-slate-400 font-mono text-xs rounded-xl cursor-text select-all"
+                                    className="bg-slate-100 dark:bg-black/20 border-slate-200 dark:border-white/5 text-slate-500 dark:text-slate-400 font-mono text-xs rounded-xl cursor-text select-all"
                                     onFocus={(e) => e.target.select()}
                                 />
                             </div>
@@ -301,16 +301,16 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
                                         placeholder="email@exemplo.com"
                                         value={newMemberEmail}
                                         onChange={(e) => setNewMemberEmail(e.target.value)}
-                                        className="bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus:border-indigo-500 rounded-xl"
+                                        className="bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-indigo-500 rounded-xl"
                                     />
                                 </div>
                                 <div className="space-y-1.5 w-[115px]">
                                     <Label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Permissão</Label>
                                     <Select value={newMemberRole} onValueChange={setNewMemberRole}>
-                                        <SelectTrigger className="bg-white/5 border-white/10 text-white rounded-xl">
+                                        <SelectTrigger className="bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-xl">
                                             <SelectValue />
                                         </SelectTrigger>
-                                        <SelectContent className="bg-slate-800 border-white/10 text-white">
+                                        <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white">
                                             <SelectItem value="admin">Admin</SelectItem>
                                             <SelectItem value="editor">Editor</SelectItem>
                                             <SelectItem value="viewer">Leitor</SelectItem>
@@ -336,9 +336,9 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
                                             <h4 className="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
                                                 <Shield className="w-3.5 h-3.5 text-indigo-400" /> Membros Ativos
                                             </h4>
-                                            <div className="rounded-xl overflow-hidden divide-y divide-white/5 border border-white/8">
+                                            <div className="rounded-xl overflow-hidden divide-y divide-slate-100 dark:divide-white/5 border border-slate-200 dark:border-white/8">
                                                 {membersList.map((m) => (
-                                                    <div key={m.id} className="bg-white/3 hover:bg-white/5 transition-colors">
+                                                    <div key={m.id} className="bg-white dark:bg-white/3 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
                                                         {editingMemberId === m.id ? (
                                                             /* EDIT MODE */
                                                             <div className="px-4 py-3 space-y-2">
@@ -347,19 +347,19 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
                                                                         value={editingName}
                                                                         onChange={(e) => setEditingName(e.target.value)}
                                                                         placeholder="Nome"
-                                                                        className="flex-1 min-w-0 px-2.5 py-1.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500"
+                                                                        className="flex-1 min-w-0 px-2.5 py-1.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-indigo-500"
                                                                     />
                                                                     <input
                                                                         value={editingEmail}
                                                                         onChange={(e) => setEditingEmail(e.target.value)}
                                                                         placeholder="E-mail"
-                                                                        className="flex-1 min-w-0 px-2.5 py-1.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500"
+                                                                        className="flex-1 min-w-0 px-2.5 py-1.5 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-indigo-500"
                                                                     />
                                                                 </div>
                                                                 <div className="flex justify-end gap-2">
                                                                     <button
                                                                         onClick={() => setEditingMemberId(null)}
-                                                                        className="px-2.5 py-1 text-xs text-slate-400 hover:text-white bg-white/5 rounded-lg transition-colors"
+                                                                        className="px-2.5 py-1 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-white/5 rounded-lg transition-colors"
                                                                     >
                                                                         Cancelar
                                                                     </button>
@@ -375,7 +375,7 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
                                                             /* VIEW MODE */
                                                             <div className="flex items-center justify-between px-4 py-3 flex-wrap gap-2">
                                                                 <div>
-                                                                    <p className="text-sm font-medium text-white">{m.user.name || "Sem Nome"}</p>
+                                                                    <p className="text-sm font-medium text-slate-900 dark:text-white">{m.user.name || "Sem Nome"}</p>
                                                                     <p className="text-xs text-slate-500">{m.user.email}</p>
                                                                 </div>
                                                                 <div className="flex items-center gap-2">
@@ -383,10 +383,10 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
                                                                         value={m.role}
                                                                         onValueChange={(val) => handleUpdateRole(m.id, val)}
                                                                     >
-                                                                        <SelectTrigger className="h-7 px-2 text-xs bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 rounded-lg w-[90px]">
+                                                                        <SelectTrigger className="h-7 px-2 text-xs bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-300 rounded-lg w-[90px]">
                                                                             <SelectValue />
                                                                         </SelectTrigger>
-                                                                        <SelectContent className="bg-slate-800 border-white/10 text-white text-xs">
+                                                                        <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-xs">
                                                                             <SelectItem value="admin">Admin</SelectItem>
                                                                             <SelectItem value="editor">Editor</SelectItem>
                                                                             <SelectItem value="viewer">Leitor</SelectItem>
@@ -419,11 +419,11 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
                                     {invitationsList.length > 0 && (
                                         <div className="space-y-1.5">
                                             <h4 className="text-xs font-semibold text-slate-500">Convites Pendentes</h4>
-                                            <div className="rounded-xl overflow-hidden divide-y divide-white/5 border border-dashed border-white/8">
+                                            <div className="rounded-xl overflow-hidden divide-y divide-slate-100 dark:divide-white/5 border border-dashed border-slate-200 dark:border-white/8">
                                                 {invitationsList.map((inv) => (
                                                     <div key={inv.id} className="flex items-center justify-between px-4 py-3">
                                                         <div>
-                                                            <p className="text-sm text-slate-300">{inv.email}</p>
+                                                            <p className="text-sm text-slate-700 dark:text-slate-300">{inv.email}</p>
                                                             <p className="text-xs text-slate-600">
                                                                 Enviado {formatDistance(new Date(inv.createdAt), new Date(), { addSuffix: true, locale: ptBR })}
                                                             </p>
@@ -447,7 +447,7 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
 
                                     {membersList.length === 0 && invitationsList.length === 0 && (
                                         <div className="text-center py-8">
-                                            <Users className="w-8 h-8 text-slate-700 mx-auto mb-2" />
+                                            <Users className="w-8 h-8 text-slate-300 dark:text-slate-700 mx-auto mb-2" />
                                             <p className="text-sm text-slate-500">Nenhum membro cadastrado.</p>
                                         </div>
                                     )}
@@ -465,7 +465,7 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
                                     "w-full text-left flex items-center justify-between p-4 rounded-xl border transition-all duration-200",
                                     hasLaunchDashboard
                                         ? "bg-indigo-500/10 border-indigo-500/30"
-                                        : "bg-white/3 border-white/8 hover:bg-white/5"
+                                        : "bg-slate-50 dark:bg-white/3 border-slate-200 dark:border-white/8 hover:bg-slate-100 dark:hover:bg-white/5"
                                 )}
                             >
                                 <div className="flex items-center gap-3">
@@ -476,7 +476,7 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
                                         <Rocket className={cn("w-4 h-4", hasLaunchDashboard ? "text-indigo-400" : "text-slate-500")} />
                                     </div>
                                     <div>
-                                        <p className={cn("text-sm font-semibold", hasLaunchDashboard ? "text-indigo-300" : "text-slate-300")}>
+                                        <p className={cn("text-sm font-semibold", hasLaunchDashboard ? "text-indigo-600 dark:text-indigo-300" : "text-slate-700 dark:text-slate-300")}>
                                             Módulo de Lançamentos
                                         </p>
                                         <p className="text-xs text-slate-500 mt-0.5">
@@ -487,7 +487,7 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
                                 {/* Custom toggle */}
                                 <div className={cn(
                                     "relative w-11 h-6 rounded-full transition-colors duration-300 shrink-0",
-                                    hasLaunchDashboard ? "bg-indigo-600" : "bg-slate-700"
+                                    hasLaunchDashboard ? "bg-indigo-600" : "bg-slate-200 dark:bg-slate-700"
                                 )}>
                                     <div className={cn(
                                         "absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-300",
@@ -514,10 +514,10 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
                                                 value={launchSheetId}
                                                 onChange={(e) => setLaunchSheetId(e.target.value)}
                                                 placeholder="ex: 1BxiMvs0XRYFgwnAKnZJ-ZjC..."
-                                                className="bg-white/5 border-indigo-500/20 text-white placeholder:text-slate-500 focus:border-indigo-500 h-9 text-sm"
+                                                className="bg-slate-50 dark:bg-white/5 border-indigo-500/20 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-indigo-500 h-9 text-sm"
                                             />
                                             <p className="text-[10px] text-slate-500 mt-1">
-                                                O código que fica na URL entre <code className="bg-black/20 px-1 rounded">/d/</code> e <code className="bg-black/20 px-1 rounded">/edit</code>
+                                                O código que fica na URL entre <code className="bg-slate-100 dark:bg-black/20 px-1 rounded">/d/</code> e <code className="bg-slate-100 dark:bg-black/20 px-1 rounded">/edit</code>
                                             </p>
                                         </div>
                                         <div className="space-y-1.5">
@@ -526,7 +526,7 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
                                                 value={launchSheetTabName}
                                                 onChange={(e) => setLaunchSheetTabName(e.target.value)}
                                                 placeholder="ex: Página1 ou Respostas"
-                                                className="bg-white/5 border-indigo-500/20 text-white placeholder:text-slate-500 focus:border-indigo-500 h-9 text-sm"
+                                                className="bg-slate-50 dark:bg-white/5 border-indigo-500/20 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-indigo-500 h-9 text-sm"
                                             />
                                         </div>
                                     </div>
@@ -546,7 +546,7 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
                                                     value={studentsSheetId}
                                                     onChange={(e) => setStudentsSheetId(e.target.value)}
                                                     placeholder="ex: 1BxiMvs0XRYFgwnAKnZJ-ZjC..."
-                                                    className="bg-white/5 border-indigo-500/20 text-white placeholder:text-slate-500 focus:border-indigo-500 h-9 text-sm"
+                                                    className="bg-slate-50 dark:bg-white/5 border-indigo-500/20 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-indigo-500 h-9 text-sm"
                                                 />
                                                 <p className="text-[10px] text-slate-500 mt-1">
                                                     O código da planilha de respostas das alunas
@@ -558,7 +558,7 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
                                                     value={studentsSheetTabName}
                                                     onChange={(e) => setStudentsSheetTabName(e.target.value)}
                                                     placeholder="ex: Página1 ou Respostas"
-                                                    className="bg-white/5 border-indigo-500/20 text-white placeholder:text-slate-500 focus:border-indigo-500 h-9 text-sm"
+                                                    className="bg-slate-50 dark:bg-white/5 border-indigo-500/20 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-indigo-500 h-9 text-sm"
                                                 />
                                             </div>
                                         </div>
@@ -596,12 +596,12 @@ export function EditOrgDialog({ organization, open, onOpenChange }: EditOrgDialo
                 </div>
 
                 {/* Footer */}
-                <div className="flex justify-end gap-2 px-6 py-4 border-t border-white/5 bg-slate-900/60">
+                <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-200 dark:border-white/5 bg-slate-50/60 dark:bg-slate-900/60">
                     <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => onOpenChange(false)}
-                        className="text-slate-400 hover:text-white hover:bg-white/10 rounded-xl gap-1.5"
+                        className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl gap-1.5"
                     >
                         <X className="w-3.5 h-3.5" /> Fechar
                     </Button>

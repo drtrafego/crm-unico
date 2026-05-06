@@ -17,6 +17,7 @@ import { SettingsClient } from "./settings-client";
 import { IntegrationsCard } from "./integrations-card";
 import { MetaIntegrationCard } from "./meta-integration-card";
 import { ContactExportCard } from "./contact-export-card";
+import { isSuperAdmin } from "@/lib/super-admin";
 
 export default async function SettingsPage({
   params,
@@ -43,9 +44,7 @@ export default async function SettingsPage({
     )
   }) : null;
 
-  const adminEmails = process.env.ADMIN_EMAILS?.split(",") || [];
-  const isSuperAdmin = user?.email ? adminEmails.includes(user.email) : false;
-  const canEdit = isSuperAdmin || currentMember?.role === 'admin' || currentMember?.role === 'owner';
+  const canEdit = isSuperAdmin(user?.email) || currentMember?.role === 'admin' || currentMember?.role === 'owner';
 
   const allMembers = await getMembers(org.id);
   const settings = await getSettings(org.id);

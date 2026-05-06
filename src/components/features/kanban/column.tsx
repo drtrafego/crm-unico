@@ -160,7 +160,7 @@ export function Column({ column, leads, index, orgId, overrides }: ColumnProps) 
                 {...provided.droppableProps}
                 className={cn(
                   "p-3 flex-1 transition-all duration-300",
-                  snapshot.isDraggingOver && "bg-white/5 shadow-[inset_0_0_40px_rgba(255,255,255,0.02)]"
+                  snapshot.isDraggingOver && "bg-indigo-500/5 dark:bg-white/5 shadow-[inset_0_0_40px_rgba(99,102,241,0.06)] dark:shadow-[inset_0_0_40px_rgba(255,255,255,0.02)]"
                 )}
               >
                 <div className="flex flex-col gap-1 pb-4">

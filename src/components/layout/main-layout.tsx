@@ -53,24 +53,24 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         <div className="flex flex-col lg:flex-row h-full bg-slate-50 dark:bg-slate-950 overflow-hidden premium-gradient">
             {/* Mobile Header */}
             {showSidebar && (
-                <header className="lg:hidden flex items-center justify-between px-3 py-2 border-b border-white/5 bg-slate-950/40 backdrop-blur-xl z-[60] h-14 shrink-0">
+                <header className="lg:hidden flex items-center justify-between px-3 py-2 border-b border-slate-200 dark:border-white/5 bg-white/80 dark:bg-slate-950/40 backdrop-blur-xl z-[60] h-14 shrink-0">
                     <div className="flex items-center gap-1">
                         <Link href={pathname?.startsWith('/adm') ? '/' : '/adm/dashboard'}>
-                            <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white hover:bg-white/10 rounded-xl h-9 w-9">
+                            <Button variant="ghost" size="icon" className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl h-9 w-9">
                                 <ChevronLeft className="h-5 w-5" />
                             </Button>
                         </Link>
-                        <span className="font-bold text-sm text-white truncate max-w-[200px]">
+                        <span className="font-bold text-sm text-slate-900 dark:text-white truncate max-w-[200px]">
                             {orgSlug ? orgSlug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'CRM'}
                         </span>
                     </div>
                     <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                         <SheetTrigger asChild>
-                            <Button variant="ghost" size="icon" className="text-white hover:bg-white/10 rounded-xl h-9 w-9">
+                            <Button variant="ghost" size="icon" className="text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl h-9 w-9">
                                 <Menu className="h-5 w-5" />
                             </Button>
                         </SheetTrigger>
-                        <SheetContent side="left" className="p-0 w-72 bg-slate-950 border-white/10">
+                        <SheetContent side="left" className="p-0 w-72 bg-white dark:bg-slate-950 border-slate-200 dark:border-white/10">
                             <Sidebar isCollapsed={false} mobile toggle={() => setIsMobileMenuOpen(false)} />
                         </SheetContent>
                     </Sheet>

@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { organizations, members } from "@/server/db/schema";
 import { eq, and } from "drizzle-orm";
 import { getAuthenticatedUser } from "@/lib/auth-helper";
+import { isSuperAdmin } from "@/lib/super-admin";
 
 export default async function OrgLayout({
   children,
@@ -36,11 +37,8 @@ export default async function OrgLayout({
     ),
   });
 
-  const adminEmails = process.env.ADMIN_EMAILS?.split(",") || [];
-  const isSuperAdmin = session.email && adminEmails.includes(session.email);
-
   // If not a member and not a super-admin, deny access
-  if (!membership && !isSuperAdmin) {
+  if (!membership && !isSuperAdmin(session.email)) {
     redirect("/unauthorized");
   }
 
