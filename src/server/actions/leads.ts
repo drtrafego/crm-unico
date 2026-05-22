@@ -202,6 +202,7 @@ export async function createLead(formData: FormData, orgId: string) {
         columnId: firstColumn.id,
         organizationId: primaryOrgId,
         position: 0,
+        createdVia: 'manual_panel',
     }).returning();
 
     // History logging is handled by DB trigger

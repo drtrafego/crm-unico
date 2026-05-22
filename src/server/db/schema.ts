@@ -92,6 +92,18 @@ export const leads = pgTable("leads", {
   utmTerm: text("utm_term"),
   utmContent: text("utm_content"),
   pagePath: text("page_path"),
+  createdVia: text("created_via").$type<
+    | 'manual_panel'
+    | 'manual_admin'
+    | 'site_api'
+    | 'webhook_public'
+    | 'webhook_elementor'
+    | 'webhook_public_empty'
+    | 'meta_whatsapp'
+    | 'meta_messenger'
+    | 'meta_instagram'
+    | 'uazapi'
+  >(),
 });
 
 export const settings = pgTable("settings", {

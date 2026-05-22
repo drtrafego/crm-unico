@@ -414,6 +414,7 @@ async function handleWhatsApp(body: any, orgId: string) {
         utmMedium: "cpc",
         utmCampaign: referral.headline || referral.source_id || null,
         utmContent: referral.body || null,
+        createdVia: 'meta_whatsapp',
       });
 
       console.log(`[Meta/WA] Lead created for ${contactName} (${phone})`);
@@ -489,6 +490,7 @@ async function handleMessenger(body: any, orgId: string) {
         utmMedium: "cpc",
         utmCampaign: referral.ad_id || referral.source_id || null,
         utmContent: referral.ref || null,
+        createdVia: 'meta_messenger',
       });
 
       console.log(`[Meta/Messenger] Lead created for ${leadName}`);
@@ -566,6 +568,7 @@ async function handleInstagram(body: any, orgId: string) {
         utmMedium: "cpc",
         utmCampaign: referral.ad_id || null,
         utmContent: referral.ref || null,
+        createdVia: 'meta_instagram',
       });
 
       console.log(`[Meta/IG] Lead created for ${leadName}`);

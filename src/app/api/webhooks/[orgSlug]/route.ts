@@ -4,6 +4,36 @@ import { organizations, leads, columns, leadHistory } from "@/server/db/schema";
 import { eq, asc } from "drizzle-orm";
 import { normalizeSourceString } from "@/lib/leads-helper";
 
+// Extrai metadados de origem da request para investigação posterior.
+// Usado para distinguir leads legítimos (Elementor etc.) de pings de bots.
+function extractRequestMeta(req: NextRequest, method: 'POST' | 'GET') {
+  const h = req.headers;
+  return {
+    method,
+    ip: h.get('x-forwarded-for')?.split(',')[0].trim() || h.get('x-real-ip') || null,
+    userAgent: h.get('user-agent') || null,
+    referer: h.get('referer') || null,
+    origin: h.get('origin') || null,
+    contentType: h.get('content-type') || null,
+  };
+}
+
+async function recordWebhookMeta(leadId: string, meta: ReturnType<typeof extractRequestMeta>) {
+  const lines = [
+    `Método: ${meta.method}`,
+    `IP: ${meta.ip || 'desconhecido'}`,
+    `User-Agent: ${meta.userAgent || 'vazio'}`,
+    `Referer: ${meta.referer || 'vazio'}`,
+    `Origin: ${meta.origin || 'vazio'}`,
+    `Content-Type: ${meta.contentType || 'vazio'}`,
+  ];
+  await db.insert(leadHistory).values({
+    leadId,
+    action: 'metadata',
+    details: lines.join(' | '),
+  });
+}
+
 // Ensures columns exist for the organization, creating defaults if needed
 async function ensureColumns(orgId: string) {
   const existing = await db.query.columns.findMany({
@@ -215,6 +245,10 @@ export async function POST(
     const orgColumns = await ensureColumns(org.id);
     const defaultColumn = orgColumns[0];
 
+    // Decide entre lead legítimo (com dados) e ping vazio (provável bot)
+    const hasRealData = !!(normalizedData.name || normalizedData.email || normalizedData.phone);
+    const createdVia = hasRealData ? 'webhook_elementor' : 'webhook_public_empty';
+
     const newLead = await db.insert(leads).values({
       name: normalizedData.name || "Sem Nome",
       email: normalizedData.email,
@@ -231,12 +265,21 @@ export async function POST(
       utmCampaign: utmCampaign,
       utmTerm: utmTerm,
       utmContent: utmContent,
-      pagePath: pagePath
+      pagePath: pagePath,
+      createdVia,
     }).returning();
 
-    // History logging is handled by DB trigger
+    // Trigger grava entrada 'create' automaticamente. Aqui registramos entrada
+    // adicional 'metadata' com IP/UA/Referer para investigar a origem do request.
+    if (newLead[0]?.id) {
+      try {
+        await recordWebhookMeta(newLead[0].id, extractRequestMeta(req, 'POST'));
+      } catch (metaErr) {
+        console.error("[Webhook] Falha ao gravar metadata (não bloqueia o lead):", metaErr);
+      }
+    }
 
-    console.log("[Webhook] Lead saved:", newLead[0]?.id);
+    console.log("[Webhook] Lead saved:", newLead[0]?.id, "via:", createdVia);
 
     // 4. REDIRECT if URL provided, otherwise return JSON
     const successResp = NextResponse.json(
@@ -315,6 +358,10 @@ export async function GET(
     const orgColumns = await ensureColumns(org.id);
     const defaultColumn = orgColumns[0];
 
+    // Decide entre lead legítimo (com dados) e ping vazio (provável bot)
+    const hasRealData = !!(normalizedData.name || normalizedData.email || normalizedData.phone);
+    const createdVia = hasRealData ? 'webhook_elementor' : 'webhook_public_empty';
+
     const newLead = await db.insert(leads).values({
       name: normalizedData.name || "Sem Nome",
       email: normalizedData.email,
@@ -331,8 +378,17 @@ export async function GET(
       utmCampaign: utmCampaign as string,
       utmTerm: utmTerm as string,
       utmContent: utmContent as string,
-      pagePath: pagePath as string
+      pagePath: pagePath as string,
+      createdVia,
     }).returning();
+
+    if (newLead[0]?.id) {
+      try {
+        await recordWebhookMeta(newLead[0].id, extractRequestMeta(req, 'GET'));
+      } catch (metaErr) {
+        console.error("[Webhook GET] Falha ao gravar metadata (não bloqueia o lead):", metaErr);
+      }
+    }
 
     // History logging is handled by DB trigger
 

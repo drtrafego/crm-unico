@@ -246,6 +246,7 @@ export async function POST(
       campaignSource: "WhatsApp",
       utmSource: "whatsapp",
       utmMedium: "cpc",
+      createdVia: 'uazapi',
     });
 
     console.log(`[UAZapi] Lead criado: ${m.pushName} (${m.phone}) → ${orgSlug}`);

@@ -139,6 +139,7 @@ export async function createAdminLead(formData: FormData) {
         columnId: firstColumn.id,
         organizationId: SUPER_ADMIN_ORG_ID,
         position: 0,
+        createdVia: 'manual_admin',
     }).returning();
 
     // History logging is handled by DB trigger

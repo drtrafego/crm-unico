@@ -157,6 +157,7 @@ export async function POST(req: NextRequest) {
       utmMedium: body.utmMedium || null,
       utmCampaign: body.utmCampaign || null,
       utmContent: body.utmContent || null,
+      createdVia: 'site_api',
     }).returning({ id: leads.id });
 
     console.log(`[Sync] Lead created: ${name} (${whatsapp}) → org ${orgSlug}`);
